@@ -358,6 +358,86 @@ class InvoiceLineItem(db.Model):
     item = db.relationship('Item')
     tax_code = db.relationship('TaxCode')
 
+# Journal and Transaction Models
+class JournalEntry(db.Model):
+    __tablename__ = 'journal_entries'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    entry_number = db.Column(db.String(50), nullable=False)
+    reference = db.Column(db.String(100))
+    date = db.Column(db.Date, nullable=False, default=date.today)
+    description = db.Column(db.Text)
+    
+    # Totals (for validation - debits must equal credits)
+    debit_total = db.Column(db.Numeric(15, 2), default=0)
+    credit_total = db.Column(db.Numeric(15, 2), default=0)
+    
+    # Source document reference for audit trail
+    source_type = db.Column(db.String(50))  # invoice, bill, payment, manual, etc.
+    source_id = db.Column(db.Integer)
+    
+    # Status and approval workflow
+    status = db.Column(db.String(20), default='draft')  # draft, posted, reversed
+    posted_at = db.Column(db.DateTime)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Foreign Keys
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    posted_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    # Relationships
+    line_items = db.relationship('JournalLineItem', backref='journal_entry', cascade='all, delete-orphan')
+    creator = db.relationship('User', foreign_keys=[created_by])
+    poster = db.relationship('User', foreign_keys=[posted_by])
+    
+    @property
+    def is_balanced(self):
+        """Check if journal entry is balanced (debits = credits)"""
+        return abs(self.debit_total - self.credit_total) < 0.01
+    
+    def __repr__(self):
+        return f'<JournalEntry {self.entry_number}: {self.description[:50] if self.description else ""}>'
+
+class JournalLineItem(db.Model):
+    __tablename__ = 'journal_line_items'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    journal_entry_id = db.Column(db.Integer, db.ForeignKey('journal_entries.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    
+    # Line item details
+    description = db.Column(db.String(500))
+    debit = db.Column(db.Numeric(15, 2), default=0)
+    credit = db.Column(db.Numeric(15, 2), default=0)
+    
+    # Tax information
+    tax_code_id = db.Column(db.Integer, db.ForeignKey('tax_codes.id'))
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    
+    # Contact reference (for customer/vendor specific transactions)
+    contact_type = db.Column(db.String(50))  # customer, vendor
+    contact_id = db.Column(db.Integer)
+    
+    # Additional metadata
+    line_number = db.Column(db.Integer, default=1)  # Order within the journal entry
+    
+    # Relationships
+    account = db.relationship('Account')
+    tax_code = db.relationship('TaxCode')
+    
+    @property
+    def amount(self):
+        """Return the non-zero amount (either debit or credit)"""
+        return self.debit if self.debit > 0 else self.credit
+    
+    def __repr__(self):
+        amount = self.debit if self.debit > 0 else -self.credit
+        return f'<JournalLineItem {self.account.code if self.account else "N/A"}: {amount}>'
+
 # Payment Models
 class Payment(db.Model):
     __tablename__ = 'payments'
