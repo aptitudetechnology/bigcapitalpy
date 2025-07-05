@@ -1,26 +1,27 @@
-<p align="center">
 # BigCapitalPy
 
 **A complete Python rewrite of BigCapital accounting software using Flask, HTML, CSS, and vanilla JavaScript.**
 
 <p align="center">
-  <p align="center">
-    <a href="https://github.com/bigcapitalhq/bigcapital" target="_blank">
-      <img src="https://raw.githubusercontent.com/abouolia/blog/main/public/bigcapital.svg" alt="BigCapitalPy" width="280" height="75">
-    </a>
-  </p>
-  <p align="center">
-    BigCapitalPy - Python-based accounting software with HTML, CSS, and vanilla JavaScript frontend.
-  </p>
-  <p align="center">
-    A complete rewrite of BigCapital using Flask, SQLAlchemy, and modern web technologies.
-  </p>
+  <a href="https://github.com/bigcapitalhq/bigcapital" target="_blank">
+    <img src="https://raw.githubusercontent.com/abouolia/blog/main/public/bigcapital.svg" alt="BigCapitalPy" width="280" height="75">
+  </a>
+</p>
 
-  <p align="center">
-    <img src="https://img.shields.io/badge/python-3.8+-blue.svg" />
-    <img src="https://img.shields.io/badge/flask-2.3+-green.svg" />
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg" />
-  </p>
+<p align="center">
+  <strong>BigCapitalPy - Python-based accounting software with HTML, CSS, and vanilla JavaScript frontend.</strong>
+</p>
+
+<p align="center">
+  <em>A complete rewrite of BigCapital using Flask, SQLAlchemy, and modern web technologies.</em>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python 3.8+"/>
+  <img src="https://img.shields.io/badge/flask-2.3+-green.svg" alt="Flask 2.3+"/>
+  <img src="https://img.shields.io/badge/postgresql-15-blue.svg" alt="PostgreSQL 15"/>
+  <img src="https://img.shields.io/badge/docker-ready-blue.svg" alt="Docker Ready"/>
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"/>
 </p>
 
 ## 🚀 Quick Start
@@ -28,8 +29,9 @@
 ### Prerequisites
 - Python 3.8 or higher
 - pip (Python package manager)
+- Docker & Docker Compose (for containerized setup)
 
-### Installation & Setup
+### Option 1: Quick Local Setup
 
 1. **Clone the repository**
    ```bash
@@ -42,34 +44,70 @@
    python run_bigcapitalpy.py
    ```
 
-   This script will:
-   - Create a Python virtual environment
-   - Install all required dependencies
-   - Set up the database with sample data
-   - Start the development server
-
 3. **Access the application**
-   - Open your browser and go to `http://localhost:5000`
-   - Login with demo credentials:
+   - Open your browser: `http://localhost:5000`
+   - Login credentials:
      - **Email:** `admin@bigcapitalpy.com`
      - **Password:** `admin123`
+
+### Option 2: Docker Setup
+
+1. **Clone and start with Docker**
+   ```bash
+   git clone https://github.com/bigcapitalhq/bigcapital.git bigcapitalpy
+   cd bigcapitalpy
+   make quick-start-docker
+   ```
+
+2. **Access services**
+   - **Application:** http://localhost:5000
+   - **pgAdmin:** http://localhost:8080
+   - **Nginx Proxy:** http://localhost
+
+### Option 3: Makefile Commands
+
+```bash
+# View all available commands
+make help
+
+# Local development setup
+make setup
+make run
+
+# Docker development
+make up-build
+make logs
+
+# Database operations
+make db-upgrade
+make db-migrate MSG="Your migration message"
+```
 
 ## 🏗️ Architecture
 
 BigCapitalPy follows a modern, modular architecture:
 
-### Backend (Python/Flask)
-- **Flask** - Web framework
-- **SQLAlchemy** - Database ORM
-- **Flask-Login** - User authentication
+### Backend Stack
+- **Flask** - Web framework with Blueprint organization
+- **SQLAlchemy** - Database ORM with PostgreSQL
+- **Flask-Login** - User authentication and session management
 - **Flask-WTF** - Form handling and CSRF protection
-- **Flask-Migrate** - Database migrations
+- **Flask-Migrate** - Database migrations and versioning
+- **Redis** - Caching and session storage
+- **Celery** - Background task processing (planned)
 
-### Frontend (HTML/CSS/JS)
-- **Bootstrap 5** - UI framework
+### Frontend Stack
+- **Bootstrap 5** - Responsive UI framework
 - **Vanilla JavaScript** - No heavy frontend frameworks
-- **Chart.js** - Data visualization
+- **Chart.js** - Interactive data visualization
 - **Bootstrap Icons** - Icon library
+- **Jinja2** - Server-side templating
+
+### Infrastructure
+- **PostgreSQL** - Primary database
+- **Docker** - Containerization
+- **Nginx** - Reverse proxy and static file serving
+- **Gotenberg** - PDF generation service
 
 ### Project Structure
 ```
@@ -82,34 +120,52 @@ bigcapitalpy/
 │       ├── routes/           # Flask routes/blueprints
 │       ├── templates/        # Jinja2 HTML templates
 │       └── static/           # CSS, JS, images
+├── docker/                   # Docker configuration files
 ├── app.py                    # Main Flask application
-├── run_bigcapitalpy.py      # Quick start script
+├── Dockerfile               # Multi-stage Docker build
+├── docker-compose.yml       # Development services
+├── Makefile                 # Build and deployment automation
 └── requirements-python.txt  # Python dependencies
 ```
 
-## 🎯 Features
+## ✨ Features
 
-### Core Accounting Features
+### 🧾 Core Accounting Features
 - [x] **Dashboard** - Overview of key metrics and recent activity
-- [x] **Customer Management** - Add, edit, and manage customers
-- [x] **User Authentication** - Secure login system
-- [ ] **Invoicing** - Create and manage invoices
+- [x] **Customer Management** - Complete customer lifecycle management
+- [x] **User Authentication** - Secure multi-user login system
+- [x] **Multi-tenancy** - Support for multiple organizations
+- [ ] **Invoicing** - Create, send, and track invoices
 - [ ] **Vendor Management** - Track vendors and expenses
-- [ ] **Item/Inventory Management** - Product catalog
+- [ ] **Item/Inventory Management** - Product catalog and stock tracking
 - [ ] **Chart of Accounts** - Customizable accounting structure
-- [ ] **Financial Reports** - P&L, Balance Sheet, etc.
+- [ ] **Financial Reports** - P&L, Balance Sheet, Cash Flow
 - [ ] **Payment Tracking** - Record payments and receipts
 - [ ] **Journal Entries** - Manual accounting entries
+- [ ] **Bank Reconciliation** - Match transactions with bank statements
+- [ ] **Tax Management** - Sales tax and VAT calculations
 
-### Technical Features
-- [x] **Multi-tenancy** - Support for multiple organizations
-- [x] **Responsive Design** - Works on desktop and mobile
+### 🔧 Technical Features
+- [x] **Responsive Design** - Works on desktop, tablet, and mobile
 - [x] **CSRF Protection** - Security against cross-site attacks
-- [x] **Database Migrations** - Schema versioning
-- [ ] **API Endpoints** - RESTful API for integrations
+- [x] **Database Migrations** - Schema versioning with Flask-Migrate
+- [x] **Docker Support** - Full containerization with docker-compose
+- [x] **Health Checks** - Service monitoring and status endpoints
+- [x] **Nginx Integration** - Production-ready reverse proxy setup
+- [ ] **RESTful API** - Complete API for integrations
 - [ ] **PDF Generation** - Export invoices and reports
 - [ ] **Excel Export** - Data export capabilities
-- [ ] **Email Integration** - Send invoices via email
+- [ ] **Email Integration** - Send invoices and notifications
+- [ ] **Backup & Restore** - Automated database backups
+- [ ] **Audit Trail** - Track all changes and user actions
+
+### 🚀 Developer Experience
+- [x] **Comprehensive Makefile** - 40+ automation commands
+- [x] **Hot Reloading** - Automatic server restart during development
+- [x] **Code Formatting** - Black and isort integration
+- [x] **Testing Framework** - pytest with coverage reporting
+- [x] **Development Tools** - Debugging and profiling support
+- [x] **Documentation** - Inline documentation and examples
 
 ## 🛠️ Development
 
@@ -124,75 +180,309 @@ bigcapitalpy/
 2. **Install dependencies**
    ```bash
    pip install -r requirements-python.txt
+   pip install -r requirements-dev.txt  # For development tools
    ```
 
 3. **Set environment variables**
    ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
    export FLASK_APP=app.py
    export FLASK_ENV=development
    ```
 
-4. **Run the application**
+4. **Initialize database**
+   ```bash
+   flask db upgrade
+   ```
+
+5. **Run the application**
    ```bash
    python app.py
    ```
 
 ### Database Management
 
-The application uses SQLite by default for development. Database migrations are handled by Flask-Migrate:
+BigCapitalPy uses PostgreSQL for production and SQLite for development. Database migrations are handled by Flask-Migrate:
 
 ```bash
 # Initialize migrations (first time only)
-flask db init
+make db-init
 
 # Create a new migration
-flask db migrate -m "Description of changes"
+make db-migrate MSG="Add new table"
 
 # Apply migrations
-flask db upgrade
+make db-upgrade
+
+# Reset database (destroys all data)
+make db-reset
+```
+
+### Docker Development
+
+The Docker setup includes all necessary services:
+
+```bash
+# Start all services
+make up
+
+# Build and start services
+make up-build
+
+# View logs
+make logs
+
+# Stop services
+make down
+
+# Access database shell
+make shell-db
+
+# Backup database
+make backup-db
+```
+
+### Testing
+
+```bash
+# Run tests
+make test
+
+# Run tests with coverage
+make test-coverage
+
+# Run linting
+make lint
+
+# Format code
+make format
 ```
 
 ## 🎨 Frontend Development
 
-The frontend uses vanilla JavaScript with a modular approach:
+The frontend uses vanilla JavaScript with a modular approach for better maintainability:
 
-- **CSS**: Located in `packages/webapp/src/static/css/`
-- **JavaScript**: Located in `packages/webapp/src/static/js/`
-- **Templates**: Jinja2 templates in `packages/webapp/src/templates/`
+### File Structure
+- **CSS**: `packages/webapp/src/static/css/main.css`
+- **JavaScript**: `packages/webapp/src/static/js/main.js`
+- **Templates**: `packages/webapp/src/templates/`
+- **Images**: `packages/webapp/src/static/images/`
 
 ### Adding New Features
 
-1. **Backend**: Add routes in `packages/webapp/src/routes/`
-2. **Frontend**: Create templates and add JavaScript functionality
-3. **Database**: Update models in `packages/server/src/models/`
+1. **Backend Route**:
+   ```python
+   # packages/webapp/src/routes/your_module.py
+   from flask import Blueprint, render_template
+   
+   your_bp = Blueprint('your_module', __name__)
+   
+   @your_bp.route('/')
+   def index():
+       return render_template('your_module/index.html')
+   ```
 
-## 🔧 Configuration
+2. **Database Model**:
+   ```python
+   # packages/server/src/models/__init__.py
+   class YourModel(db.Model):
+       __tablename__ = 'your_table'
+       id = db.Column(db.Integer, primary_key=True)
+       # Add your fields
+   ```
 
-Key configuration options can be set via environment variables:
+3. **HTML Template**:
+   ```html
+   <!-- packages/webapp/src/templates/your_module/index.html -->
+   {% extends "base.html" %}
+   {% block content %}
+       <!-- Your content -->
+   {% endblock %}
+   ```
 
-- `SECRET_KEY` - Flask secret key for sessions
-- `DATABASE_URL` - Database connection string
-- `FLASK_ENV` - Environment (development/production)
+### JavaScript API
 
-## 📝 Why Python Instead of React?
+BigCapitalPy includes a custom JavaScript framework:
+
+```javascript
+// Making API calls
+BigCapitalPy.api.get('/api/customers')
+    .then(data => console.log(data))
+    .catch(error => console.error(error));
+
+// Show notifications
+BigCapitalPy.utils.showToast('Success!', 'success');
+
+// Format currency
+BigCapitalPy.utils.formatCurrency(1234.56); // Returns "$1,234.56"
+```
+
+## ⚙️ Configuration
+
+BigCapitalPy uses environment variables for configuration. Copy `.env.example` to `.env` and modify:
+
+### Core Settings
+```bash
+# Flask Configuration
+SECRET_KEY=your-secret-key-change-in-production
+FLASK_ENV=development
+FLASK_DEBUG=True
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/bigcapitalpy
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Email (for sending invoices)
+MAIL_SERVER=smtp.gmail.com
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+```
+
+### Docker Configuration
+
+The `docker-compose.yml` includes:
+- **PostgreSQL** database with persistent storage
+- **Redis** for caching and sessions
+- **Nginx** reverse proxy for production-like setup
+- **pgAdmin** for database management
+- **Gotenberg** for PDF generation
+
+### Environment Variables
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SECRET_KEY` | Flask secret key for sessions | `dev-secret-key` |
+| `DATABASE_URL` | Database connection string | SQLite for dev |
+| `REDIS_URL` | Redis connection string | `redis://localhost:6379/0` |
+| `FLASK_ENV` | Environment mode | `development` |
+| `MAIL_SERVER` | SMTP server for emails | None |
+
+## 🐳 Docker Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| bigcapitalpy | 5000 | Main Flask application |
+| postgres | 5432 | PostgreSQL database |
+| redis | 6379 | Redis cache |
+| nginx | 80/443 | Reverse proxy |
+| pgadmin | 8080 | Database admin interface |
+| gotenberg | 3000 | PDF generation service |
+
+## � Migration from Original BigCapital
+
+### Why Python Instead of React?
 
 This rewrite addresses several limitations of the original React-based BigCapital:
 
-1. **Simplicity** - Easier to understand and modify
-2. **Performance** - Server-side rendering for faster initial loads
-3. **SEO-Friendly** - Better search engine optimization
-4. **Lower Complexity** - No complex build processes or npm dependencies
-5. **Flexibility** - Full control over UI without framework constraints
+| Aspect | Original BigCapital | BigCapitalPy |
+|--------|-------------------|--------------|
+| **Complexity** | Heavy Node.js + React stack | Simple Python + HTML |
+| **Performance** | Client-side rendering overhead | Fast server-side rendering |
+| **SEO** | Poor search engine optimization | Excellent SEO with SSR |
+| **Dependencies** | 500+ npm packages | ~20 Python packages |
+| **Build Process** | Complex webpack/babel setup | No build process needed |
+| **Learning Curve** | Requires React/JS expertise | Standard web development |
+| **Deployment** | Complex multi-service setup | Simple Flask deployment |
+| **Customization** | Framework constraints | Full control over UI/UX |
+
+### Migration Benefits
+
+1. **🚀 Performance** - Faster initial page loads and better caching
+2. **🔧 Simplicity** - Easier to understand, modify, and extend
+3. **📈 SEO-Friendly** - Better search engine optimization
+4. **🛠️ Maintainability** - Standard Python patterns and practices
+5. **💰 Cost-Effective** - Lower hosting requirements
+6. **🎯 Flexibility** - Complete control without framework limitations
+
+### Data Migration
+
+BigCapitalPy provides tools to migrate data from the original BigCapital:
+
+```bash
+# Export data from original BigCapital
+# (Custom migration scripts to be provided)
+
+# Import into BigCapitalPy
+python manage.py import_bigcapital_data --file=export.json
+```
+
+## � Screenshots
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abouolia/blog/main/public/screenshot-2.png" width="270" alt="Dashboard">
+  <img src="https://raw.githubusercontent.com/abouolia/blog/main/public/screenshot-1.png" width="270" alt="Invoices">
+  <img src="https://raw.githubusercontent.com/abouolia/blog/main/public/screenshot-3.png" width="270" alt="Reports">
+</p>
 
 ## 🤝 Contributing
 
 We welcome contributions! Here's how you can help:
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+### Getting Started
+1. **Fork** the repository
+2. **Clone** your fork: `git clone https://github.com/yourusername/bigcapitalpy.git`
+3. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+4. **Install** dependencies: `make install-dev`
+5. **Make** your changes
+6. **Test** your changes: `make test`
+7. **Commit** your changes: `git commit -m 'Add amazing feature'`
+8. **Push** to your branch: `git push origin feature/amazing-feature`
+9. **Submit** a pull request
+
+### Development Guidelines
+- Follow PEP 8 coding standards
+- Write tests for new features
+- Update documentation as needed
+- Use meaningful commit messages
+- Ensure all tests pass before submitting
+
+### Areas We Need Help
+- 🧾 **Invoicing Module** - Invoice creation and management
+- 📊 **Financial Reports** - P&L, Balance Sheet, Cash Flow
+- 💳 **Payment Processing** - Integration with payment gateways
+- 📱 **Mobile Optimization** - Better mobile experience
+- 🌐 **Internationalization** - Multi-language support
+- 🔌 **API Development** - RESTful API endpoints
+- 📚 **Documentation** - User guides and API docs
+
+## 🏗️ Deployment
+
+### Production Deployment
+
+1. **Environment Setup**
+   ```bash
+   cp .env.example .env
+   # Configure production settings in .env
+   ```
+
+2. **Docker Production**
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+3. **Traditional Deployment**
+   ```bash
+   pip install -r requirements-python.txt
+   flask db upgrade
+   gunicorn --bind 0.0.0.0:5000 app:app
+   ```
+
+### Security Considerations
+- Change default passwords and secrets
+- Use HTTPS in production
+- Configure firewall rules
+- Regular security updates
+- Database backups
+
+## 📖 Documentation
+
+- **[API Reference](docs/api.md)** - REST API documentation
+- **[User Guide](docs/user-guide.md)** - How to use BigCapitalPy
+- **[Developer Guide](docs/developer-guide.md)** - Technical documentation
+- **[Deployment Guide](docs/deployment.md)** - Production deployment
+- **[Migration Guide](docs/migration.md)** - Migrating from original BigCapital
 
 ## 📄 License
 
@@ -200,134 +490,35 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Original BigCapital team for the inspiration and design
-- Flask and SQLAlchemy communities for excellent documentation
-- Bootstrap team for the UI framework
+- **Original BigCapital Team** - For the inspiration and excellent design
+- **Flask Community** - For the robust web framework
+- **SQLAlchemy Team** - For the powerful ORM
+- **Bootstrap Team** - For the responsive UI framework
+- **All Contributors** - For making this project better
 
-## 📞 Support
+## 📞 Support & Community
 
-For questions and support:
-- Open an issue on GitHub
-- Check the documentation
-- Join our community discussions
+### Get Help
+- 📚 **Documentation**: Check our comprehensive docs
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/bigcapitalhq/bigcapital/issues)
+- � **Discussions**: [GitHub Discussions](https://github.com/bigcapitalhq/bigcapital/discussions)
+- 💻 **Discord**: [Join our community](https://discord.com/invite/c8nPBJafeb)
+
+### Commercial Support
+For enterprise support, custom development, or consulting:
+
+<a target="_blank" href="https://cal.com/ahmed-bouhuolia-ekk3ph/30min">
+  <img src="https://cal.com/book-with-cal-dark.svg" alt="Book us with Cal.com" width="200"/>
+</a>
 
 ---
 
-**BigCapitalPy** - Simple, smart accounting software built with Python ❤️
-
-  <p align="center">
-    <a href="https://my.bigcapital.app">Bigcapital Cloud</a>
-  </p>
+<p align="center">
+  <strong>BigCapitalPy</strong> - Simple, smart accounting software built with Python ❤️
 </p>
-
-# What's Bigcapital?
-
-Bigcapital is a smart and open-source accounting and inventory software, Bigcapital keeps all business finances in right place and automates accounting processes to give the business powerful and intelligent financial statements and reports to help in making decisions.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/abouolia/blog/main/public/screenshot-2.png" width="270">
-  <img src="https://raw.githubusercontent.com/abouolia/blog/main/public/screenshot-1.png" width="270">
-  <img src="https://raw.githubusercontent.com/abouolia/blog/main/public/screenshot-3.png" width="270">
+  <a href="https://my.bigcapital.app">Try BigCapital Cloud</a> •
+  <a href="https://docs.bigcapital.app">Documentation</a> •
+  <a href="https://github.com/bigcapitalhq/bigcapital/discussions">Community</a>
 </p>
-
-# Getting Started
-
-We've got serveral options on dev and prod depending on your need to get started quickly with Bigcapital.
-
-## Self-hosted 
-
-Bigcapital is available open-source under AGPL license. You can host it on your own servers using Docker.
-
-### Docker
-
-To get started with self-hosted with Docker and Docker Compose, take a look at the [Docker guide](https://docs.bigcapital.app/deployment/docker).
-
-## Development
-
-### Local Setup
-
-To get started locally, we have a [guide to help you](https://github.com/bigcapitalhq/bigcapital/blob/develop/CONTRIBUTING.md).
-
-### Gitpod
-
-- Click the Gitpod button below to open this project in development mode.
-- This will open and configure the workspace in your browser with all the necessary dependencies.
-
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/new/#https://github.com/bigcapitalhq/bigcapital)
-
-## Headless Accounting
-
-You can integrate Bigcapital API with your system to organize your transactions in double-entry system to get the best financial reports.
-
-[![Run in Postman](https://run.pstmn.io/button.svg)](https://www.postman.com/bigcapital/workspace/bigcapital-api)
-
-# Resources
-
-- [Documentation](https://docs.bigcapital.app/) - Learn how to use.
-- [API Reference](https://docs.bigcapital.app/api-reference) - API reference docs
-- [Contribution](https://github.com/bigcapitalhq/bigcapital/blob/develop/CONTRIBUTING.md) - Welcome to any contributions.
-- [Discord](https://discord.com/invite/c8nPBJafeb) - Ask for help.
-- [Bug Tracker](https://github.com/bigcapitalhq/bigcapital/issues) - Notify us new bugs.
-
-# Changelog
-
-Please see [Releases](https://github.com/bigcapitalhq/bigcapital/releases) for more information what has changed recently.
-
-# Contact us
-
-Meet our sales team for any commercial inquiries.
-
-<a target="_blank" href="https://cal.com/ahmed-bouhuolia-ekk3ph/30min"><img src="https://cal.com/book-with-cal-dark.svg" alt="Book us with Cal.com"></a>
-
-# Recognition
-
-<a href="https://news.ycombinator.com/item?id=36118990">
-  <img
-    style="width: 250px; height: 54px;" width="250" height="54"
-    alt="Featured on Hacker News"
-    src="https://hackernews-badge.vercel.app/api?id=36118990"
-  />
-</a>
-
-# Contributors
-
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/abouolia"><img src="https://avatars.githubusercontent.com/u/2197422?v=4?s=100" width="100px;" alt="Ahmed Bouhuolia"/><br /><sub><b>Ahmed Bouhuolia</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/commits?author=abouolia" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://ameir.net"><img src="https://avatars.githubusercontent.com/u/374330?v=4?s=100" width="100px;" alt="Ameir Abdeldayem"/><br /><sub><b>Ameir Abdeldayem</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/issues?q=author%3Aameir" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/elforjani13"><img src="https://avatars.githubusercontent.com/u/39470382?v=4?s=100" width="100px;" alt="ElforJani13"/><br /><sub><b>ElforJani13</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/commits?author=elforjani13" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://scheibling.se"><img src="https://avatars.githubusercontent.com/u/24367830?v=4?s=100" width="100px;" alt="Lars Scheibling"/><br /><sub><b>Lars Scheibling</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/issues?q=author%3Ascheibling" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/suhaibaffan"><img src="https://avatars.githubusercontent.com/u/18115937?v=4?s=100" width="100px;" alt="Suhaib Affan"/><br /><sub><b>Suhaib Affan</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/commits?author=suhaibaffan" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/KalliopiPliogka"><img src="https://avatars.githubusercontent.com/u/81677549?v=4?s=100" width="100px;" alt="Kalliopi Pliogka"/><br /><sub><b>Kalliopi Pliogka</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/issues?q=author%3AKalliopiPliogka" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://me.kochie.io"><img src="https://avatars.githubusercontent.com/u/10809884?v=4?s=100" width="100px;" alt="Robert Koch"/><br /><sub><b>Robert Koch</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/commits?author=kochie" title="Code">💻</a></td>
-    </tr>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="http://cschuijt.nl"><img src="https://avatars.githubusercontent.com/u/5460015?v=4?s=100" width="100px;" alt="Casper Schuijt"/><br /><sub><b>Casper Schuijt</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/issues?q=author%3Acschuijt" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ANasouf"><img src="https://avatars.githubusercontent.com/u/19536487?v=4?s=100" width="100px;" alt="ANasouf"/><br /><sub><b>ANasouf</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/commits?author=ANasouf" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://ragnarlaud.dev"><img src="https://avatars.githubusercontent.com/u/3042904?v=4?s=100" width="100px;" alt="Ragnar Laud"/><br /><sub><b>Ragnar Laud</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/issues?q=author%3Axprnio" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/asenawritescode"><img src="https://avatars.githubusercontent.com/u/67445192?v=4?s=100" width="100px;" alt="Asena"/><br /><sub><b>Asena</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/issues?q=author%3Aasenawritescode" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://snyder.tech"><img src="https://avatars.githubusercontent.com/u/707567?v=4?s=100" width="100px;" alt="Ben Snyder"/><br /><sub><b>Ben Snyder</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/commits?author=benpsnyder" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://vederis.id"><img src="https://avatars.githubusercontent.com/u/13505006?v=4?s=100" width="100px;" alt="Vederis Leunardus"/><br /><sub><b>Vederis Leunardus</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/commits?author=cloudsbird" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://www.pivoten.com"><img src="https://avatars.githubusercontent.com/u/104120598?v=4?s=100" width="100px;" alt="Chris Cantrell"/><br /><sub><b>Chris Cantrell</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/issues?q=author%3Accantrell72" title="Bug reports">🐛</a></td>
-    </tr>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/oleynikd"><img src="https://avatars.githubusercontent.com/u/3976868?v=4?s=100" width="100px;" alt="Denis"/><br /><sub><b>Denis</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/issues?q=author%3Aoleynikd" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://myself.vercel.app/"><img src="https://avatars.githubusercontent.com/u/42431274?v=4?s=100" width="100px;" alt="Sachin Mittal"/><br /><sub><b>Sachin Mittal</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/issues?q=author%3Amittalsam98" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.camilooviedo.com/"><img src="https://avatars.githubusercontent.com/u/64604272?v=4?s=100" width="100px;" alt="Camilo Oviedo"/><br /><sub><b>Camilo Oviedo</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/commits?author=Champetaman" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://nklmantey.com/"><img src="https://avatars.githubusercontent.com/u/90279429?v=4?s=100" width="100px;" alt="Mantey"/><br /><sub><b>Mantey</b></sub></a><br /><a href="https://github.com/bigcapitalhq/bigcapital/issues?q=author%3Anklmantey" title="Bug reports">🐛</a></td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
