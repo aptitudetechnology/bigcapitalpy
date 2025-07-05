@@ -573,26 +573,467 @@ def export_profit_loss_csv(report_data, report_period):
     
     return response
 
-@reports_bp.route('/expense-summary')
+@reports_bp.route('/customer-aging')
 @login_required
-def expense_summary():
-    """Expense Summary Report - Coming Soon"""
-    return render_template('reports/expense_summary.html')
+def customer_aging():
+    """Customer Aging Report"""
+    as_of_date = request.args.get('as_of_date')
+    if as_of_date:
+        as_of_date = datetime.strptime(as_of_date, '%Y-%m-%d').date()
+    else:
+        as_of_date = date.today()
+    
+    # Get all customers with outstanding balances
+    customers_with_balances = db.session.query(Customer).join(Invoice).filter(
+        Customer.organization_id == current_user.organization_id,
+        Invoice.balance > 0,
+        Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PARTIAL, InvoiceStatus.OVERDUE])
+    ).distinct().all()
+    
+    aging_data = []
+    totals = {
+        'current': Decimal('0.00'),
+        '1_30': Decimal('0.00'),
+        '31_60': Decimal('0.00'),
+        '61_90': Decimal('0.00'),
+        'over_90': Decimal('0.00'),
+        'total': Decimal('0.00')
+    }
+    
+    for customer in customers_with_balances:
+        customer_aging = {
+            'customer_id': customer.id,
+            'customer_name': customer.display_name,
+            'current': Decimal('0.00'),
+            '1_30': Decimal('0.00'),
+            '31_60': Decimal('0.00'),
+            '61_90': Decimal('0.00'),
+            'over_90': Decimal('0.00'),
+            'total': Decimal('0.00')
+        }
+        
+        # Get outstanding invoices for this customer
+        outstanding_invoices = Invoice.query.filter(
+            Invoice.customer_id == customer.id,
+            Invoice.balance > 0,
+            Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PARTIAL, InvoiceStatus.OVERDUE])
+        ).all()
+        
+        for invoice in outstanding_invoices:
+            days_old = (as_of_date - invoice.invoice_date).days
+            balance = invoice.balance
+            
+            if days_old <= 0:
+                customer_aging['current'] += balance
+                totals['current'] += balance
+            elif days_old <= 30:
+                customer_aging['1_30'] += balance
+                totals['1_30'] += balance
+            elif days_old <= 60:
+                customer_aging['31_60'] += balance
+                totals['31_60'] += balance
+            elif days_old <= 90:
+                customer_aging['61_90'] += balance
+                totals['61_90'] += balance
+            else:
+                customer_aging['over_90'] += balance
+                totals['over_90'] += balance
+            
+            customer_aging['total'] += balance
+            totals['total'] += balance
+        
+        if customer_aging['total'] > 0:
+            aging_data.append(customer_aging)
+    
+    # Sort by total outstanding (descending)
+    aging_data.sort(key=lambda x: x['total'], reverse=True)
+    
+    report_data = {
+        'aging_data': aging_data,
+        'totals': totals,
+        'as_of_date': as_of_date
+    }
+    
+    return render_template('reports/customer_aging.html', report_data=report_data)
 
 @reports_bp.route('/vendor-aging')
 @login_required
 def vendor_aging():
-    """Vendor Aging Report - Coming Soon"""
-    return render_template('reports/vendor_aging.html')
+    """Vendor Aging Report"""
+    as_of_date = request.args.get('as_of_date')
+    if as_of_date:
+        as_of_date = datetime.strptime(as_of_date, '%Y-%m-%d').date()
+    else:
+        as_of_date = date.today()
+    
+    # Get all vendors (for future purchase orders/bills implementation)
+    vendors = Vendor.query.filter(
+        Vendor.organization_id == current_user.organization_id,
+        Vendor.is_active == True
+    ).all()
+    
+    aging_data = []
+    totals = {
+        'current': Decimal('0.00'),
+        '1_30': Decimal('0.00'),
+        '31_60': Decimal('0.00'),
+        '61_90': Decimal('0.00'),
+        'over_90': Decimal('0.00'),
+        'total': Decimal('0.00')
+    }
+    
+    # For now, this is a placeholder since we don't have bills/purchase orders yet
+    # In a full implementation, you'd calculate aging based on unpaid bills
+    
+    report_data = {
+        'aging_data': aging_data,
+        'totals': totals,
+        'as_of_date': as_of_date,
+        'vendors': vendors
+    }
+    
+    return render_template('reports/vendor_aging.html', report_data=report_data)
+
+@reports_bp.route('/expense-summary')
+@login_required
+def expense_summary():
+    """Expense Summary Report"""
+    period = request.args.get('period', 'this_month')
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    
+    start_date, end_date = get_date_range(period, start_date_str, end_date_str)
+    
+    # Get expense accounts
+    expense_accounts = Account.query.filter(
+        Account.organization_id == current_user.organization_id,
+        Account.type == AccountType.EXPENSE,
+        Account.is_active == True
+    ).order_by(Account.code).all()
+    
+    expense_data = []
+    total_expenses = Decimal('0.00')
+    
+    for account in expense_accounts:
+        current_period = calculate_account_balance(account.id, start_date, end_date)
+        
+        # Calculate year-to-date
+        ytd_start = date(end_date.year, 1, 1)
+        ytd_balance = calculate_account_balance(account.id, ytd_start, end_date)
+        
+        # Calculate previous period for comparison
+        period_length = (end_date - start_date).days
+        prev_start = start_date - timedelta(days=period_length + 1)
+        prev_end = start_date - timedelta(days=1)
+        previous_period = calculate_account_balance(account.id, prev_start, prev_end)
+        
+        # Calculate percentage change
+        if previous_period != 0:
+            percent_change = ((current_period - previous_period) / abs(previous_period)) * 100
+        else:
+            percent_change = 100 if current_period > 0 else 0
+        
+        expense_data.append({
+            'id': account.id,
+            'name': account.name,
+            'code': account.code,
+            'current_period': current_period,
+            'previous_period': previous_period,
+            'ytd_balance': ytd_balance,
+            'percent_change': percent_change
+        })
+        
+        total_expenses += current_period
+    
+    # Sort by current period amount (descending)
+    expense_data.sort(key=lambda x: x['current_period'], reverse=True)
+    
+    report_data = {
+        'expense_accounts': expense_data,
+        'total_expenses': total_expenses,
+        'period_comparison': {
+            'current_start': start_date,
+            'current_end': end_date,
+            'previous_start': prev_start,
+            'previous_end': prev_end
+        }
+    }
+    
+    report_period = {
+        'start_date': start_date,
+        'end_date': end_date
+    }
+    
+    return render_template('reports/expense_summary.html', 
+                         report_data=report_data, 
+                         report_period=report_period)
 
 @reports_bp.route('/invoice-summary')
 @login_required
 def invoice_summary():
-    """Invoice Summary Report - Coming Soon"""
-    return render_template('reports/invoice_summary.html')
+    """Invoice Summary Report"""
+    period = request.args.get('period', 'this_month')
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    status_filter = request.args.get('status', 'all')
+    
+    start_date, end_date = get_date_range(period, start_date_str, end_date_str)
+    
+    # Build query
+    query = Invoice.query.filter(
+        Invoice.organization_id == current_user.organization_id,
+        Invoice.invoice_date >= start_date,
+        Invoice.invoice_date <= end_date
+    )
+    
+    if status_filter != 'all':
+        query = query.filter(Invoice.status == InvoiceStatus(status_filter))
+    
+    invoices = query.order_by(Invoice.invoice_date.desc()).all()
+    
+    # Calculate summary statistics
+    total_invoiced = sum(invoice.total for invoice in invoices)
+    total_paid = sum(invoice.paid_amount for invoice in invoices)
+    total_outstanding = sum(invoice.balance for invoice in invoices)
+    
+    # Group by status
+    status_summary = {}
+    for status in InvoiceStatus:
+        status_invoices = [inv for inv in invoices if inv.status == status]
+        status_summary[status.value] = {
+            'count': len(status_invoices),
+            'total_amount': sum(inv.total for inv in status_invoices),
+            'percentage': (len(status_invoices) / len(invoices) * 100) if invoices else 0
+        }
+    
+    # Group by customer
+    customer_summary = {}
+    for invoice in invoices:
+        customer_name = invoice.customer.display_name
+        if customer_name not in customer_summary:
+            customer_summary[customer_name] = {
+                'customer_id': invoice.customer.id,
+                'invoice_count': 0,
+                'total_amount': Decimal('0.00'),
+                'paid_amount': Decimal('0.00'),
+                'outstanding': Decimal('0.00')
+            }
+        
+        customer_summary[customer_name]['invoice_count'] += 1
+        customer_summary[customer_name]['total_amount'] += invoice.total
+        customer_summary[customer_name]['paid_amount'] += invoice.paid_amount
+        customer_summary[customer_name]['outstanding'] += invoice.balance
+    
+    # Convert to sorted list
+    customer_data = []
+    for customer_name, data in customer_summary.items():
+        customer_data.append({
+            'customer_name': customer_name,
+            **data
+        })
+    customer_data.sort(key=lambda x: x['total_amount'], reverse=True)
+    
+    report_data = {
+        'invoices': invoices,
+        'total_invoiced': total_invoiced,
+        'total_paid': total_paid,
+        'total_outstanding': total_outstanding,
+        'status_summary': status_summary,
+        'customer_summary': customer_data,
+        'invoice_count': len(invoices)
+    }
+    
+    report_period = {
+        'start_date': start_date,
+        'end_date': end_date
+    }
+    
+    return render_template('reports/invoice_summary.html', 
+                         report_data=report_data, 
+                         report_period=report_period)
 
 @reports_bp.route('/purchase-summary')
 @login_required
 def purchase_summary():
-    """Purchase Summary Report - Coming Soon"""
-    return render_template('reports/purchase_summary.html')
+    """Purchase Summary Report - Placeholder for future purchase orders"""
+    period = request.args.get('period', 'this_month')
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    
+    start_date, end_date = get_date_range(period, start_date_str, end_date_str)
+    
+    # For now, show expense account activity as a proxy for purchases
+    expense_accounts = Account.query.filter(
+        Account.organization_id == current_user.organization_id,
+        Account.type == AccountType.EXPENSE,
+        Account.is_active == True
+    ).order_by(Account.code).all()
+    
+    purchase_data = []
+    total_purchases = Decimal('0.00')
+    
+    for account in expense_accounts:
+        balance = calculate_account_balance(account.id, start_date, end_date)
+        if balance > 0:
+            purchase_data.append({
+                'account_name': account.name,
+                'account_code': account.code,
+                'amount': balance
+            })
+            total_purchases += balance
+    
+    # Sort by amount
+    purchase_data.sort(key=lambda x: x['amount'], reverse=True)
+    
+    report_data = {
+        'purchase_data': purchase_data,
+        'total_purchases': total_purchases
+    }
+    
+    report_period = {
+        'start_date': start_date,
+        'end_date': end_date
+    }
+    
+    return render_template('reports/purchase_summary.html', 
+                         report_data=report_data, 
+                         report_period=report_period)
+
+# Add new comprehensive reports
+
+@reports_bp.route('/trial-balance')
+@login_required
+def trial_balance():
+    """Trial Balance Report"""
+    as_of_date = request.args.get('as_of_date')
+    if as_of_date:
+        as_of_date = datetime.strptime(as_of_date, '%Y-%m-%d').date()
+    else:
+        as_of_date = date.today()
+    
+    # Get all accounts
+    accounts = Account.query.filter(
+        Account.organization_id == current_user.organization_id,
+        Account.is_active == True
+    ).order_by(Account.code).all()
+    
+    trial_balance_data = []
+    total_debits = Decimal('0.00')
+    total_credits = Decimal('0.00')
+    
+    for account in accounts:
+        balance = calculate_account_balance(account.id, None, as_of_date)
+        
+        # Determine if balance should be shown as debit or credit
+        if account.type in [AccountType.ASSET, AccountType.EXPENSE]:
+            # Normal debit balance accounts
+            if balance >= 0:
+                debit_balance = balance
+                credit_balance = Decimal('0.00')
+            else:
+                debit_balance = Decimal('0.00')
+                credit_balance = abs(balance)
+        else:
+            # Normal credit balance accounts (LIABILITY, EQUITY, INCOME)
+            if balance <= 0:
+                debit_balance = Decimal('0.00')
+                credit_balance = abs(balance)
+            else:
+                debit_balance = balance
+                credit_balance = Decimal('0.00')
+        
+        trial_balance_data.append({
+            'account_code': account.code,
+            'account_name': account.name,
+            'account_type': account.type.value,
+            'debit_balance': debit_balance,
+            'credit_balance': credit_balance
+        })
+        
+        total_debits += debit_balance
+        total_credits += credit_balance
+    
+    report_data = {
+        'trial_balance_data': trial_balance_data,
+        'total_debits': total_debits,
+        'total_credits': total_credits,
+        'is_balanced': total_debits == total_credits,
+        'as_of_date': as_of_date
+    }
+    
+    return render_template('reports/trial_balance.html', report_data=report_data)
+
+@reports_bp.route('/general-ledger')
+@login_required
+def general_ledger():
+    """General Ledger Report"""
+    account_id = request.args.get('account_id')
+    period = request.args.get('period', 'this_month')
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    
+    start_date, end_date = get_date_range(period, start_date_str, end_date_str)
+    
+    if account_id:
+        account = Account.query.filter(
+            Account.id == account_id,
+            Account.organization_id == current_user.organization_id
+        ).first_or_404()
+        
+        # Get journal line items for this account
+        line_items = db.session.query(JournalLineItem).join(JournalEntry).filter(
+            JournalLineItem.account_id == account_id,
+            JournalEntry.organization_id == current_user.organization_id,
+            JournalEntry.date >= start_date,
+            JournalEntry.date <= end_date
+        ).order_by(JournalEntry.date, JournalEntry.id).all()
+        
+        # Calculate running balance
+        opening_balance = calculate_account_balance(account_id, None, start_date - timedelta(days=1))
+        running_balance = opening_balance
+        
+        ledger_entries = []
+        for item in line_items:
+            if account.type in [AccountType.ASSET, AccountType.EXPENSE]:
+                # Normal debit balance accounts
+                running_balance += (item.debit or 0) - (item.credit or 0)
+            else:
+                # Normal credit balance accounts
+                running_balance += (item.credit or 0) - (item.debit or 0)
+            
+            ledger_entries.append({
+                'date': item.journal_entry.date,
+                'entry_number': item.journal_entry.entry_number,
+                'description': item.description or item.journal_entry.description,
+                'reference': item.journal_entry.reference,
+                'debit': item.debit,
+                'credit': item.credit,
+                'balance': running_balance
+            })
+        
+        report_data = {
+            'account': account,
+            'ledger_entries': ledger_entries,
+            'opening_balance': opening_balance,
+            'closing_balance': running_balance
+        }
+    else:
+        # Show account selection
+        accounts = Account.query.filter(
+            Account.organization_id == current_user.organization_id,
+            Account.is_active == True
+        ).order_by(Account.code).all()
+        
+        report_data = {
+            'accounts': accounts,
+            'account': None
+        }
+    
+    report_period = {
+        'start_date': start_date,
+        'end_date': end_date
+    }
+    
+    return render_template('reports/general_ledger.html', 
+                         report_data=report_data, 
+                         report_period=report_period)
