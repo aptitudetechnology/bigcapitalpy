@@ -438,141 +438,157 @@ class JournalLineItem(db.Model):
         amount = self.debit if self.debit > 0 else -self.credit
         return f'<JournalLineItem {self.account.code if self.account else "N/A"}: {amount}>'
 
-# Payment Models
-class Payment(db.Model):
-    __tablename__ = 'payments'
+# Australian BAS Report Model
+class BASReport(db.Model):
+    __tablename__ = 'bas_reports'
     
     id = db.Column(db.Integer, primary_key=True)
-    payment_number = db.Column(db.String(50), nullable=False, unique=True)
-    reference = db.Column(db.String(100))
+    report_number = db.Column(db.String(50), nullable=False)
     
-    # Dates
-    payment_date = db.Column(db.Date, nullable=False, default=date.today)
+    # Report Period
+    period_start = db.Column(db.Date, nullable=False)
+    period_end = db.Column(db.Date, nullable=False)
+    reporting_period = db.Column(db.String(20), nullable=False)  # quarterly, monthly
     
-    # Customer and Account Info
-    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
-    deposit_account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    # GST Calculations
+    g1_total_sales = db.Column(db.Numeric(15, 2), default=0)  # Total sales (including GST)
+    g2_export_sales = db.Column(db.Numeric(15, 2), default=0)  # Export sales
+    g3_other_gst_free_sales = db.Column(db.Numeric(15, 2), default=0)  # Other GST-free sales
+    g4_input_taxed_sales = db.Column(db.Numeric(15, 2), default=0)  # Input taxed sales
+    g10_capital_sales = db.Column(db.Numeric(15, 2), default=0)  # Capital sales
+    g11_non_capital_sales = db.Column(db.Numeric(15, 2), default=0)  # Non-capital sales
     
-    # Payment Details
-    payment_method = db.Column(db.Enum(PaymentMethod), default=PaymentMethod.CASH)
-    amount = db.Column(db.Numeric(15, 2), nullable=False)
-    currency = db.Column(db.String(3), default='USD')
-    exchange_rate = db.Column(db.Numeric(10, 4), default=1.0000)
+    # GST on Sales
+    g1a_gst_on_sales = db.Column(db.Numeric(15, 2), default=0)  # GST on sales
+    g10a_gst_on_capital_sales = db.Column(db.Numeric(15, 2), default=0)  # GST on capital sales
+    g11a_gst_on_non_capital_sales = db.Column(db.Numeric(15, 2), default=0)  # GST on non-capital sales
     
-    # Bank/Check Details
-    bank_charges = db.Column(db.Numeric(15, 2), default=0)
-    check_number = db.Column(db.String(50))
+    # GST on Purchases
+    g7_total_purchases = db.Column(db.Numeric(15, 2), default=0)  # Total purchases (including GST)
+    g18_capital_purchases = db.Column(db.Numeric(15, 2), default=0)  # Capital purchases
+    g19_non_capital_purchases = db.Column(db.Numeric(15, 2), default=0)  # Non-capital purchases
+    g7a_gst_on_purchases = db.Column(db.Numeric(15, 2), default=0)  # GST on purchases
+    g18a_gst_on_capital_purchases = db.Column(db.Numeric(15, 2), default=0)  # GST on capital purchases
+    g19a_gst_on_non_capital_purchases = db.Column(db.Numeric(15, 2), default=0)  # GST on non-capital purchases
     
-    # Notes and Description
-    description = db.Column(db.Text)
+    # Calculation Fields
+    g1b_total_gst_on_sales = db.Column(db.Numeric(15, 2), default=0)  # Total GST on sales (1A + 10A + 11A)
+    g7b_total_gst_on_purchases = db.Column(db.Numeric(15, 2), default=0)  # Total GST on purchases (7A + 18A + 19A)
+    g9_gst_payable_refund = db.Column(db.Numeric(15, 2), default=0)  # Net GST (1B - 7B)
+    
+    # Wine Equalisation Tax (if applicable)
+    g5a_wine_sales_liable = db.Column(db.Numeric(15, 2), default=0)
+    g5b_wine_tax_payable = db.Column(db.Numeric(15, 2), default=0)
+    g6a_wine_purchases_liable = db.Column(db.Numeric(15, 2), default=0)
+    g6b_wine_tax_credits = db.Column(db.Numeric(15, 2), default=0)
+    
+    # Luxury Car Tax (if applicable)
+    g12_luxury_car_sales = db.Column(db.Numeric(15, 2), default=0)
+    g12a_luxury_car_tax = db.Column(db.Numeric(15, 2), default=0)
+    g13_luxury_car_purchases = db.Column(db.Numeric(15, 2), default=0)
+    g13a_luxury_car_tax_credits = db.Column(db.Numeric(15, 2), default=0)
+    
+    # Fuel Tax Credits (if applicable)
+    g14_fuel_tax_credits = db.Column(db.Numeric(15, 2), default=0)
+    
+    # PAYG Withholding
+    g20_total_salary_wages = db.Column(db.Numeric(15, 2), default=0)
+    g21_payg_withholding = db.Column(db.Numeric(15, 2), default=0)
+    
+    # PAYG Instalments
+    g22_payg_instalment_income = db.Column(db.Numeric(15, 2), default=0)
+    g23_payg_instalment_amount = db.Column(db.Numeric(15, 2), default=0)
+    g24_payg_instalment_credit = db.Column(db.Numeric(15, 2), default=0)
+    
+    # Final Calculations
+    g25_total_tax_payable = db.Column(db.Numeric(15, 2), default=0)  # Total tax payable
+    g26_total_credits = db.Column(db.Numeric(15, 2), default=0)  # Total credits
+    g27_net_amount = db.Column(db.Numeric(15, 2), default=0)  # Net amount (payable/refund)
+    
+    # Report Status and Metadata
+    status = db.Column(db.String(20), default='draft')  # draft, lodged, amended
+    lodged_date = db.Column(db.Date)
+    due_date = db.Column(db.Date)
+    abn = db.Column(db.String(20))  # Australian Business Number
+    
+    # Additional Information
     notes = db.Column(db.Text)
-    
-    # Status and Metadata
-    is_published = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Foreign Keys
-    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    
-    # Relationships
-    customer = db.relationship('Customer', backref='payments')
-    deposit_account = db.relationship('Account')
-    creator = db.relationship('User')
-    allocations = db.relationship('PaymentAllocation', backref='payment', cascade='all, delete-orphan')
-    
-    @property
-    def allocated_amount(self):
-        """Calculate total allocated amount"""
-        return sum(allocation.amount for allocation in self.allocations)
-    
-    @property
-    def unallocated_amount(self):
-        """Calculate unallocated amount"""
-        return self.amount - self.allocated_amount
-    
-    def __repr__(self):
-        return f'<Payment {self.payment_number}>'
-
-class PaymentAllocation(db.Model):
-    __tablename__ = 'payment_allocations'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    payment_id = db.Column(db.Integer, db.ForeignKey('payments.id'), nullable=False)
-    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), nullable=False)
-    
-    # Allocation Details
-    amount = db.Column(db.Numeric(15, 2), nullable=False)
-    notes = db.Column(db.Text)
+    prepared_by = db.Column(db.String(255))
+    reviewed_by = db.Column(db.String(255))
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    invoice = db.relationship('Invoice', backref='payment_allocations')
-    
-    def __repr__(self):
-        return f'<PaymentAllocation {self.payment_id} -> {self.invoice_id}: {self.amount}>'
-
-# Bank Reconciliation Models
-class BankReconciliation(db.Model):
-    __tablename__ = 'bank_reconciliations'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
-    reconciliation_date = db.Column(db.Date, nullable=False)
-    statement_date = db.Column(db.Date, nullable=False)
-    
-    # Balances
-    opening_balance = db.Column(db.Numeric(15, 2), default=0)
-    closing_balance = db.Column(db.Numeric(15, 2), default=0)
-    statement_balance = db.Column(db.Numeric(15, 2), default=0)
-    
-    # Status
-    status = db.Column(db.String(20), default='draft')  # draft, completed
-    notes = db.Column(db.Text)
-    
-    # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    completed_at = db.Column(db.DateTime)
+    lodged_at = db.Column(db.DateTime)
     
     # Foreign Keys
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    lodged_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
-    account = db.relationship('Account')
-    creator = db.relationship('User')
-    transactions = db.relationship('BankTransaction', backref='reconciliation', cascade='all, delete-orphan')
+    organization = db.relationship('Organization')
+    creator = db.relationship('User', foreign_keys=[created_by])
+    lodger = db.relationship('User', foreign_keys=[lodged_by])
+    
+    @property
+    def is_quarterly(self):
+        """Check if this is a quarterly BAS report"""
+        return self.reporting_period == 'quarterly'
+    
+    @property
+    def is_monthly(self):
+        """Check if this is a monthly BAS report"""
+        return self.reporting_period == 'monthly'
+    
+    @property
+    def period_description(self):
+        """Get a human-readable description of the reporting period"""
+        if self.is_quarterly:
+            quarter = ((self.period_start.month - 1) // 3) + 1
+            return f"Q{quarter} {self.period_start.year}"
+        else:
+            return f"{self.period_start.strftime('%B %Y')}"
+    
+    def calculate_totals(self):
+        """Calculate derived fields from the individual components"""
+        # Total GST on sales (1B = 1A + 10A + 11A)
+        self.g1b_total_gst_on_sales = (
+            (self.g1a_gst_on_sales or 0) + 
+            (self.g10a_gst_on_capital_sales or 0) + 
+            (self.g11a_gst_on_non_capital_sales or 0)
+        )
+        
+        # Total GST on purchases (7B = 7A + 18A + 19A)
+        self.g7b_total_gst_on_purchases = (
+            (self.g7a_gst_on_purchases or 0) + 
+            (self.g18a_gst_on_capital_purchases or 0) + 
+            (self.g19a_gst_on_non_capital_purchases or 0)
+        )
+        
+        # Net GST (G9 = 1B - 7B)
+        self.g9_gst_payable_refund = self.g1b_total_gst_on_sales - self.g7b_total_gst_on_purchases
+        
+        # Calculate total tax payable (G25)
+        wine_tax = (self.g5b_wine_tax_payable or 0) - (self.g6b_wine_tax_credits or 0)
+        luxury_car_tax = (self.g12a_luxury_car_tax or 0) - (self.g13a_luxury_car_tax_credits or 0)
+        
+        self.g25_total_tax_payable = (
+            self.g9_gst_payable_refund + 
+            wine_tax + 
+            luxury_car_tax + 
+            (self.g21_payg_withholding or 0) + 
+            (self.g23_payg_instalment_amount or 0)
+        )
+        
+        # Calculate total credits (G26)
+        self.g26_total_credits = (
+            (self.g14_fuel_tax_credits or 0) + 
+            (self.g24_payg_instalment_credit or 0)
+        )
+        
+        # Net amount (G27 = G25 - G26)
+        self.g27_net_amount = self.g25_total_tax_payable - self.g26_total_credits
     
     def __repr__(self):
-        return f'<BankReconciliation {self.account.name} - {self.statement_date}>'
-
-class BankTransaction(db.Model):
-    __tablename__ = 'bank_transactions'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    reconciliation_id = db.Column(db.Integer, db.ForeignKey('bank_reconciliations.id'), nullable=False)
-    
-    # Transaction Details
-    transaction_date = db.Column(db.Date, nullable=False)
-    description = db.Column(db.String(500), nullable=False)
-    reference = db.Column(db.String(100))
-    amount = db.Column(db.Numeric(15, 2), nullable=False)
-    transaction_type = db.Column(db.String(20), nullable=False)  # debit, credit
-    
-    # Matching
-    matched_journal_entry_id = db.Column(db.Integer, db.ForeignKey('journal_entries.id'))
-    is_matched = db.Column(db.Boolean, default=False)
-    match_confidence = db.Column(db.String(20))  # high, medium, low
-    
-    # Import metadata
-    import_reference = db.Column(db.String(100))  # Original reference from CSV
-    
-    # Relationships
-    matched_journal_entry = db.relationship('JournalEntry')
-    
-    def __repr__(self):
-        return f'<BankTransaction {self.description}: {self.amount}>'
+        return f'<BASReport {self.report_number}: {self.period_description}>'
