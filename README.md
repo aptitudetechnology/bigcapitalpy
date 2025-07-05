@@ -1,33 +1,219 @@
 <p align="center">
+# BigCapitalPy
+
+**A complete Python rewrite of BigCapital accounting software using Flask, HTML, CSS, and vanilla JavaScript.**
+
+<p align="center">
   <p align="center">
-    <a href="https://bigcapital.app" target="_blank">
-      <img src="https://raw.githubusercontent.com/abouolia/blog/main/public/bigcapital.svg" alt="Bigcapital" width="280" height="75">
+    <a href="https://github.com/bigcapitalhq/bigcapital" target="_blank">
+      <img src="https://raw.githubusercontent.com/abouolia/blog/main/public/bigcapital.svg" alt="BigCapitalPy" width="280" height="75">
     </a>
   </p>
   <p align="center">
-    Simple, smart online accounting software for small and medium businesses.
+    BigCapitalPy - Python-based accounting software with HTML, CSS, and vanilla JavaScript frontend.
+  </p>
+  <p align="center">
+    A complete rewrite of BigCapital using Flask, SQLAlchemy, and modern web technologies.
   </p>
 
   <p align="center">
-    <a href="https://github.com/bigcapitalhq/bigcapital/commits/develop">
-      <img src="https://img.shields.io/github/commit-activity/m/bigcapitalhq/bigcapital/develop" />
-    </a>
-    <a href="https://hub.docker.com/u/bigcapitalhq">
-      <img src="https://img.shields.io/docker/pulls/bigcapitalhq/webapp" />
-    </a>
-    <a href="https://discord.com/invite/c8nPBJafeb">
-      <img src="https://img.shields.io/discord/1066514716752625725?label=Discord" alt="" />
-    </a>
-    <a href="https://github.com/bigcapitalhq/bigcapital/graphs/contributors">
-      <img src="https://img.shields.io/github/contributors/bigcapitalhq/bigcapital" alt="" />
-    </a>
-    <a href="https://github.com/bigcapitalhq/bigcapital/blob/develop/LICENSE">
-      <img src="https://img.shields.io/github/license/bigcapitalhq/bigcapital" alt="" />
-    </a>
-    <a href="https://twitter.com/bigcapitalhq"> 
-      <img src="https://img.shields.io/twitter/follow/bigcapitalhq?style=social" alt="twitter" />
-    </a>
+    <img src="https://img.shields.io/badge/python-3.8+-blue.svg" />
+    <img src="https://img.shields.io/badge/flask-2.3+-green.svg" />
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" />
   </p>
+</p>
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.8 or higher
+- pip (Python package manager)
+
+### Installation & Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/bigcapitalhq/bigcapital.git bigcapitalpy
+   cd bigcapitalpy
+   ```
+
+2. **Run the quick start script**
+   ```bash
+   python run_bigcapitalpy.py
+   ```
+
+   This script will:
+   - Create a Python virtual environment
+   - Install all required dependencies
+   - Set up the database with sample data
+   - Start the development server
+
+3. **Access the application**
+   - Open your browser and go to `http://localhost:5000`
+   - Login with demo credentials:
+     - **Email:** `admin@bigcapitalpy.com`
+     - **Password:** `admin123`
+
+## 🏗️ Architecture
+
+BigCapitalPy follows a modern, modular architecture:
+
+### Backend (Python/Flask)
+- **Flask** - Web framework
+- **SQLAlchemy** - Database ORM
+- **Flask-Login** - User authentication
+- **Flask-WTF** - Form handling and CSRF protection
+- **Flask-Migrate** - Database migrations
+
+### Frontend (HTML/CSS/JS)
+- **Bootstrap 5** - UI framework
+- **Vanilla JavaScript** - No heavy frontend frameworks
+- **Chart.js** - Data visualization
+- **Bootstrap Icons** - Icon library
+
+### Project Structure
+```
+bigcapitalpy/
+├── packages/
+│   ├── server/src/           # Backend Python code
+│   │   ├── database/         # Database configuration
+│   │   └── models/           # SQLAlchemy models
+│   └── webapp/src/           # Frontend code
+│       ├── routes/           # Flask routes/blueprints
+│       ├── templates/        # Jinja2 HTML templates
+│       └── static/           # CSS, JS, images
+├── app.py                    # Main Flask application
+├── run_bigcapitalpy.py      # Quick start script
+└── requirements-python.txt  # Python dependencies
+```
+
+## 🎯 Features
+
+### Core Accounting Features
+- [x] **Dashboard** - Overview of key metrics and recent activity
+- [x] **Customer Management** - Add, edit, and manage customers
+- [x] **User Authentication** - Secure login system
+- [ ] **Invoicing** - Create and manage invoices
+- [ ] **Vendor Management** - Track vendors and expenses
+- [ ] **Item/Inventory Management** - Product catalog
+- [ ] **Chart of Accounts** - Customizable accounting structure
+- [ ] **Financial Reports** - P&L, Balance Sheet, etc.
+- [ ] **Payment Tracking** - Record payments and receipts
+- [ ] **Journal Entries** - Manual accounting entries
+
+### Technical Features
+- [x] **Multi-tenancy** - Support for multiple organizations
+- [x] **Responsive Design** - Works on desktop and mobile
+- [x] **CSRF Protection** - Security against cross-site attacks
+- [x] **Database Migrations** - Schema versioning
+- [ ] **API Endpoints** - RESTful API for integrations
+- [ ] **PDF Generation** - Export invoices and reports
+- [ ] **Excel Export** - Data export capabilities
+- [ ] **Email Integration** - Send invoices via email
+
+## 🛠️ Development
+
+### Manual Setup (Alternative to quick start)
+
+1. **Create virtual environment**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements-python.txt
+   ```
+
+3. **Set environment variables**
+   ```bash
+   export FLASK_APP=app.py
+   export FLASK_ENV=development
+   ```
+
+4. **Run the application**
+   ```bash
+   python app.py
+   ```
+
+### Database Management
+
+The application uses SQLite by default for development. Database migrations are handled by Flask-Migrate:
+
+```bash
+# Initialize migrations (first time only)
+flask db init
+
+# Create a new migration
+flask db migrate -m "Description of changes"
+
+# Apply migrations
+flask db upgrade
+```
+
+## 🎨 Frontend Development
+
+The frontend uses vanilla JavaScript with a modular approach:
+
+- **CSS**: Located in `packages/webapp/src/static/css/`
+- **JavaScript**: Located in `packages/webapp/src/static/js/`
+- **Templates**: Jinja2 templates in `packages/webapp/src/templates/`
+
+### Adding New Features
+
+1. **Backend**: Add routes in `packages/webapp/src/routes/`
+2. **Frontend**: Create templates and add JavaScript functionality
+3. **Database**: Update models in `packages/server/src/models/`
+
+## 🔧 Configuration
+
+Key configuration options can be set via environment variables:
+
+- `SECRET_KEY` - Flask secret key for sessions
+- `DATABASE_URL` - Database connection string
+- `FLASK_ENV` - Environment (development/production)
+
+## 📝 Why Python Instead of React?
+
+This rewrite addresses several limitations of the original React-based BigCapital:
+
+1. **Simplicity** - Easier to understand and modify
+2. **Performance** - Server-side rendering for faster initial loads
+3. **SEO-Friendly** - Better search engine optimization
+4. **Lower Complexity** - No complex build processes or npm dependencies
+5. **Flexibility** - Full control over UI without framework constraints
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how you can help:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Original BigCapital team for the inspiration and design
+- Flask and SQLAlchemy communities for excellent documentation
+- Bootstrap team for the UI framework
+
+## 📞 Support
+
+For questions and support:
+- Open an issue on GitHub
+- Check the documentation
+- Join our community discussions
+
+---
+
+**BigCapitalPy** - Simple, smart accounting software built with Python ❤️
 
   <p align="center">
     <a href="https://my.bigcapital.app">Bigcapital Cloud</a>

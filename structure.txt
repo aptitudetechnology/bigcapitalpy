@@ -1,0 +1,971 @@
+--- Directory Structure ---
+.:
+api/
+config/
+core/
+database/
+dev-setup.sh*
+docker/
+docker-compose.yml
+Dockerfile
+info.sh*
+LICENSE
+main.py
+Makefile
+plugins/
+processing/
+pyproject.toml
+quick_start.py*
+README.md
+README_PLUGIN_ARCHITECTURE.md
+replit.nix
+REPLIT_SETUP.md
+requirements-dev.txt
+requirements.txt
+run.py
+scripts/
+services/
+setup-paperless.md
+start-services.sh*
+start.sh*
+structure.txt
+test_plugin_architecture.py
+tests/
+utils/
+web/
+
+./api:
+__init__.py
+v1/
+
+./api/v1:
+documents.py
+__init__.py
+invoices.py
+plugins.py
+sync.py
+
+./config:
+config.ini
+config.ini.example
+__init__.py
+plugins.json
+settings.py
+
+./core:
+base_plugin.py
+exceptions.py
+__init__.py
+interfaces/
+ocr_processor.py
+plugin_manager.py
+processor.py
+__pycache__/
+
+./core/interfaces:
+accounting_system.py
+document_source.py
+__init__.py
+
+./core/__pycache__:
+base_plugin.cpython-312.pyc
+__init__.cpython-312.pyc
+
+./database:
+connection.py
+__init__.py
+models.py
+
+./docker:
+docker-compose.yml
+Dockerfile
+
+./plugins:
+bigcapital/
+__init__.py
+invoice_ninja/
+invoiceplane/
+ocr_processor/
+paperless_ngx/
+__pycache__/
+
+./plugins/bigcapital:
+client.py
+__init__.py
+mappers.py
+models.py
+plugin.py
+
+./plugins/invoice_ninja:
+client.py
+__init__.py
+plugin.py
+
+./plugins/invoiceplane:
+client.py
+__init__.py
+plugin.py
+
+./plugins/ocr_processor:
+__init__.py
+plugin.py
+
+./plugins/paperless_ngx:
+client.py
+__init__.py
+plugin.py
+__pycache__/
+README.md
+
+./plugins/paperless_ngx/__pycache__:
+__init__.cpython-312.pyc
+plugin.cpython-312.pyc
+
+./plugins/__pycache__:
+__init__.cpython-312.pyc
+__init__.py
+
+./processing:
+document_processor.py
+__init__.py
+
+./scripts:
+init.sh
+run.sh
+
+./services:
+document_service.py
+__init__.py
+invoice_service.py
+sync_service.py
+
+./tests:
+__init__.py
+test_clients.py
+test_database.py
+test_plugins.py
+test_web.py
+
+./utils:
+helpers.py
+__init__.py
+logger.py
+validators.py
+
+./web:
+app.py
+__init__.py
+__pycache__/
+routes.py
+static/
+templates/
+
+./web/__pycache__:
+routes.cpython-312.pyc
+
+./web/static:
+css/
+js/
+
+./web/static/css:
+style.css
+
+./web/static/js:
+main.js
+
+./web/templates:
+base.html
+config.html
+dashboard.html
+documents.html
+errors/
+paperless_ngx_document_content.html
+paperless_ngx_documents.html
+plugins.html
+plugins.html.bak
+system.html
+upload.html
+
+./web/templates/errors:
+404.html
+413.html
+500.html
+generic.html
+plugin_error.html
+
+--- Relevant File Contents (First 5 Lines) ---
+==========================================
+FILE: ./processing/__init__.py
+==========================================
+# Processing module
+
+==========================================
+FILE: ./processing/document_processor.py
+==========================================
+"""
+Document Processor with Plugin Support
+"""
+import os
+import logging
+
+==========================================
+FILE: ./requirements.txt
+==========================================
+# Core Flask Dependencies
+Flask==2.3.3
+Werkzeug==2.3.7
+Jinja2==3.1.2
+MarkupSafe==2.1.3
+
+==========================================
+FILE: ./start-services.sh
+==========================================
+#!/bin/bash
+
+echo "🚀 Business Plugin Middleware - Updated Setup"
+echo "============================================="
+echo ""
+
+==========================================
+FILE: ./pyproject.toml
+==========================================
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+
+==========================================
+FILE: ./dev-setup.sh
+==========================================
+#!/bin/bash
+
+echo "🧪 Business Plugin Middleware - Development Setup"
+
+# Function to check if command exists
+
+==========================================
+FILE: ./utils/__init__.py
+==========================================
+
+==========================================
+FILE: ./utils/logger.py
+==========================================
+
+==========================================
+FILE: ./utils/helpers.py
+==========================================
+
+==========================================
+FILE: ./utils/validators.py
+==========================================
+
+==========================================
+FILE: ./docker/Dockerfile
+==========================================
+# Use official Python image with system dependencies
+FROM python:3.11-slim
+
+# Install bash
+RUN apt-get update && apt-get install -y bash
+
+==========================================
+FILE: ./docker/docker-compose.yml
+==========================================
+version: '3.8'
+
+networks:
+  paperless_network:
+    driver: bridge
+
+==========================================
+FILE: ./services/document_service.py
+==========================================
+
+==========================================
+FILE: ./services/invoice_service.py
+==========================================
+
+==========================================
+FILE: ./services/sync_service.py
+==========================================
+
+==========================================
+FILE: ./services/__init__.py
+==========================================
+
+==========================================
+FILE: ./api/__init__.py
+==========================================
+
+==========================================
+FILE: ./api/v1/documents.py
+==========================================
+
+==========================================
+FILE: ./api/v1/__init__.py
+==========================================
+
+==========================================
+FILE: ./api/v1/plugins.py
+==========================================
+
+==========================================
+FILE: ./api/v1/sync.py
+==========================================
+
+==========================================
+FILE: ./api/v1/invoices.py
+==========================================
+
+==========================================
+FILE: ./database/__init__.py
+==========================================
+
+==========================================
+FILE: ./database/connection.py
+==========================================
+"""
+Database Connection and Management
+"""
+import sqlite3
+import logging
+
+==========================================
+FILE: ./database/models.py
+==========================================
+"""
+Database Models for Plugin Architecture
+"""
+from datetime import datetime
+from typing import Dict, Any, Optional
+
+==========================================
+FILE: ./web/routes.py
+==========================================
+from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for
+from loguru import logger
+from typing import Any, Dict
+from datetime import datetime # Moved this import to the top as suggestedlogger
+
+
+==========================================
+FILE: ./web/__init__.py
+==========================================
+"""
+Web routes initialization with dependency injection and logging support
+"""
+
+from loguru import logger
+
+==========================================
+FILE: ./web/static/js/main.js
+==========================================
+
+==========================================
+FILE: ./web/static/css/style.css
+==========================================
+
+==========================================
+FILE: ./web/templates/documents.html
+==========================================
+{% extends "base.html" %}
+
+{% block title %}Documents - {{ super() }}{% endblock %}
+
+{% block content %}
+
+==========================================
+FILE: ./web/templates/plugins.html.bak
+==========================================
+{% extends "base.html" %}
+
+{% block title %}Plugins - {{ super() }}{% endblock %}
+
+{% block content %}
+
+==========================================
+FILE: ./web/templates/base.html
+==========================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+==========================================
+FILE: ./web/templates/dashboard.html
+==========================================
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ super() }}{% endblock %}
+
+{% block content %}
+
+==========================================
+FILE: ./web/templates/paperless_ngx_document_content.html
+==========================================
+{% extends "base.html" %}
+
+{% block title %}OCR Content: {{ document.title }} - {{ super() }}{% endblock %}
+
+{% block content %}
+
+==========================================
+FILE: ./web/templates/paperless_ngx_documents.html
+==========================================
+{% extends "base.html" %}
+
+{% block title %}Paperless-ngx Documents - {{ super() }}{% endblock %}
+
+{% block content %}
+
+==========================================
+FILE: ./web/templates/upload.html
+==========================================
+{% extends "base.html" %}
+
+{% block title %}Upload Document - {{ super() }}{% endblock %}
+
+{% block content %}
+
+==========================================
+FILE: ./web/templates/system.html
+==========================================
+{% extends "base.html" %}
+
+{% block title %}System Diagnostics{% endblock %}
+
+{% block content %}
+
+==========================================
+FILE: ./web/templates/plugins.html
+==========================================
+{% extends "base.html" %}
+
+{% block title %}Plugins - {{ super() }}{% endblock %}
+
+{% block content %}
+
+==========================================
+FILE: ./web/templates/errors/404.html
+==========================================
+{% extends 'base.html' %}
+{% block title %}Page Not Found{% endblock %}
+{% block content %}
+<div class="text-center">
+    <h1 class="display-1">404</h1>
+
+==========================================
+FILE: ./web/templates/errors/413.html
+==========================================
+{% extends 'base.html' %}
+{% block title %}File Too Large{% endblock %}
+{% block content %}
+<div class="text-center">
+    <h1 class="display-1 fw-bold text-warning">413</h1>
+
+==========================================
+FILE: ./web/templates/errors/500.html
+==========================================
+{% extends 'base.html' %}
+{% block title %}Server Error{% endblock %}
+{% block content %}
+<div class="text-center">
+    <h1 class="display-1 fw-bold text-danger">500</h1>
+
+==========================================
+FILE: ./web/templates/errors/generic.html
+==========================================
+{% extends 'base.html' %}
+{% block title %}{{ error_code }} - {{ error_title }}{% endblock %}
+{% block content %}
+<div class="text-center">
+    <h1 class="display-1 fw-bold text-danger">{{ error_code }}</h1>
+
+==========================================
+FILE: ./web/templates/errors/plugin_error.html
+==========================================
+{% extends 'base.html' %}
+{% block title %}Plugin Error{% endblock %}
+{% block content %}
+<div class="text-center">
+    <h1 class="display-1 fw-bold text-warning">
+
+==========================================
+FILE: ./web/templates/config.html
+==========================================
+{% extends "base.html" %}
+
+{% block title %}Configuration - Business Plugin Middleware{% endblock %}
+
+{% block content %}
+
+==========================================
+FILE: ./web/app.py
+==========================================
+# web/app.py
+
+"""
+Main Flask Application with Modular Plugin Architecture
+"""
+
+==========================================
+FILE: ./main.py
+==========================================
+#!/usr/bin/env python3
+
+"""
+Main entry point for the Business Plugin Middleware application.
+This script can be run directly or imported as a module.
+
+==========================================
+FILE: ./Makefile
+==========================================
+# Business Plugin Middleware - Makefile
+# Updated for new plugin-based architecture
+
+# Variables
+IMAGE_NAME = business-plugin-middleware
+
+==========================================
+FILE: ./.replit
+==========================================
+language = "python3"
+run = "python3 main.py"
+entrypoint = "main.py"
+hidden = [".venv", ".git", "venv", "logs", "uploads"]
+
+
+==========================================
+FILE: ./Dockerfile
+==========================================
+# Use Python 3.11 slim image
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+==========================================
+FILE: ./REPLIT_SETUP.md
+==========================================
+# Running Business Plugin Middleware in Replit
+
+## Quick Start
+
+1. **Install Dependencies**
+
+==========================================
+FILE: ./plugins/paperless_ngx/plugin.py
+==========================================
+"""
+Paperless-NGX Plugin for Business Plugin Middleware
+Provides integration with Paperless-NGX document management system
+"""
+
+
+==========================================
+FILE: ./plugins/paperless_ngx/__init__.py
+==========================================
+"""
+Paperless-NGX Plugin Package
+Integration with Paperless-NGX document management system
+"""
+
+
+==========================================
+FILE: ./plugins/paperless_ngx/client.py
+==========================================
+"""
+Paperless-NGX API Client
+Helper classes for interacting with Paperless-NGX API
+"""
+
+
+==========================================
+FILE: ./plugins/paperless_ngx/README.md
+==========================================
+# ⚠️ **CRITICAL WARNING - READ BEFORE PROCEEDING** ⚠️
+
+> ## 🚨 PRE-ALPHA SOFTWARE - NOT FUNCTIONAL 🚨
+> 
+> **THIS PROJECT IS CURRENTLY IN PRE-ALPHA DEVELOPMENT AND IS NOT YET FUNCTIONAL.**
+
+==========================================
+FILE: ./plugins/__init__.py
+==========================================
+
+==========================================
+FILE: ./plugins/__pycache__/__init__.py
+==========================================
+
+
+==========================================
+FILE: ./plugins/invoice_ninja/plugin.py
+==========================================
+"""
+Invoice Ninja Integration Plugin
+"""
+from loguru import logger
+from typing import Dict, Any, List
+
+==========================================
+FILE: ./plugins/invoice_ninja/__init__.py
+==========================================
+
+==========================================
+FILE: ./plugins/invoice_ninja/client.py
+==========================================
+"""
+Invoice Ninja API Client
+"""
+import requests
+from typing import Dict, Any, List, Optional
+
+==========================================
+FILE: ./plugins/bigcapital/mappers.py
+==========================================
+
+==========================================
+FILE: ./plugins/bigcapital/plugin.py
+==========================================
+"""
+BigCapital Integration Plugin
+"""
+from loguru import logger
+from typing import Dict, Any, List
+
+==========================================
+FILE: ./plugins/bigcapital/__init__.py
+==========================================
+
+==========================================
+FILE: ./plugins/bigcapital/client.py
+==========================================
+"""
+BigCapital API Client
+"""
+import requests
+from loguru import logger
+
+==========================================
+FILE: ./plugins/bigcapital/models.py
+==========================================
+
+==========================================
+FILE: ./plugins/invoiceplane/plugin.py
+==========================================
+"""
+InvoicePlane Integration Plugin
+"""
+from loguru import logger
+from typing import Dict, Any, List
+
+==========================================
+FILE: ./plugins/invoiceplane/__init__.py
+==========================================
+
+==========================================
+FILE: ./plugins/invoiceplane/client.py
+==========================================
+"""
+InvoicePlane API Client
+"""
+import requests
+from typing import Dict, Any, List, Optional
+
+==========================================
+FILE: ./plugins/ocr_processor/plugin.py
+==========================================
+"""
+Example OCR Processing Plugin
+"""
+import os
+from loguru import logger
+
+==========================================
+FILE: ./plugins/ocr_processor/__init__.py
+==========================================
+# OCR Processor Plugin
+
+==========================================
+FILE: ./quick_start.py
+==========================================
+#!/usr/bin/env python3
+"""
+Quick Flask test and startup script for Replit
+"""
+import os
+
+==========================================
+FILE: ./start.sh
+==========================================
+#!/bin/bash
+
+echo "🚀 Starting Business Plugin Middleware..."
+
+# Function to check if command exists
+
+==========================================
+FILE: ./structure.txt
+==========================================
+--- Directory Structure ---
+.:
+api/
+config/
+core/
+
+==========================================
+FILE: ./replit.nix
+==========================================
+{ pkgs }: {
+  deps = [
+    pkgs.python3
+    pkgs.python3Packages.pip
+    pkgs.python3Packages.flask
+
+==========================================
+FILE: ./.github/workflows/ci.yml
+==========================================
+name: CI Pipeline - Business Plugin Middleware
+
+on:
+  push:
+    branches:
+
+==========================================
+FILE: ./.env.example
+==========================================
+# Flask Configuration
+SECRET_KEY=your-secret-key-change-this-in-production
+DEBUG=False
+FLASK_ENV=production
+
+
+==========================================
+FILE: ./run.py
+==========================================
+#!/usr/bin/env python3
+
+"""
+Simple run script for environments like Replit.
+This is a minimal entry point that imports and runs the main application.
+
+==========================================
+FILE: ./info.sh
+==========================================
+echo "--- Directory Structure ---"
+ls -RF .
+
+echo ""
+echo "--- Relevant File Contents (First 5 Lines) ---"
+
+==========================================
+FILE: ./config/config.ini
+==========================================
+[web_interface]
+host = 0.0.0.0
+port = 5000
+debug = False
+secret_key = your-secret-key-here
+
+==========================================
+FILE: ./config/__init__.py
+==========================================
+
+==========================================
+FILE: ./config/plugins.json
+==========================================
+{
+  "bigcapital": {
+    "enabled": true,
+    "api_key": "your-bigcapital-api-key-here",
+    "base_url": "https://api.bigcapital.ly",
+
+==========================================
+FILE: ./config/config.ini.example
+==========================================
+# Business Plugin Middleware Configuration
+# Copy this file to config.ini and modify as needed
+
+[web_interface]
+host = 0.0.0.0
+
+==========================================
+FILE: ./config/settings.py
+==========================================
+"""
+Configuration Management with Plugin Support
+"""
+import os
+import configparser
+
+==========================================
+FILE: ./docker-compose.yml
+==========================================
+version: '3.8'
+
+services:
+  # Main application
+  middleware:
+
+==========================================
+FILE: ./test_plugin_architecture.py
+==========================================
+#!/usr/bin/env python3
+"""
+Test script for the plugin architecture
+"""
+import os
+
+==========================================
+FILE: ./LICENSE
+==========================================
+MIT License
+
+Copyright (c) 2025 Aptitude Technology (Western Australia)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+
+==========================================
+FILE: ./requirements-dev.txt
+==========================================
+# Development Dependencies
+# Install with: pip install -r requirements-dev.txt
+
+# Testing
+pytest==7.4.3
+
+==========================================
+FILE: ./core/ocr_processor.py
+==========================================
+# core/ocr_processor.py
+"""
+OCR Processor for simplified-paperless-bigcapital-middleware
+Handles Optical Character Recognition for document processing
+"""
+
+==========================================
+FILE: ./core/__init__.py
+==========================================
+
+==========================================
+FILE: ./core/processor.py
+==========================================
+
+==========================================
+FILE: ./core/exceptions.py
+==========================================
+"""
+Custom exceptions for the Business Plugin Middleware
+"""
+
+
+
+==========================================
+FILE: ./core/base_plugin.py
+==========================================
+"""
+Base Plugin Architecture for Business Plugin Middleware
+"""
+from abc import ABC, abstractmethod
+from typing import Dict, Any, List, Optional
+
+==========================================
+FILE: ./core/plugin_manager.py
+==========================================
+"""
+Plugin Manager for Business Plugin Middleware
+"""
+import os
+import sys
+
+==========================================
+FILE: ./core/interfaces/__init__.py
+==========================================
+
+==========================================
+FILE: ./core/interfaces/document_source.py
+==========================================
+
+==========================================
+FILE: ./core/interfaces/accounting_system.py
+==========================================
+
+==========================================
+FILE: ./setup-paperless.md
+==========================================
+# Setting up Paperless-NGX Integration
+
+## Quick Start
+
+1. **Start all services:**
+
+==========================================
+FILE: ./tests/test_web.py
+==========================================
+# tests/test_web.py
+"""
+Test suite for web interface components.
+Tests modular routes, template rendering, form handling, and API endpoints.
+"""
+
+==========================================
+FILE: ./tests/__init__.py
+==========================================
+
+==========================================
+FILE: ./tests/test_database.py
+==========================================
+import sqlite3
+from datetime import datetime
+import os
+import tempfile
+import pytest # Import pytest for the fixture decorator
+
+==========================================
+FILE: ./tests/test_plugins.py
+==========================================
+
+==========================================
+FILE: ./tests/test_clients.py
+==========================================
+# tests/test_clients.py
+def test_web_placeholder():
+    assert True
+
+==========================================
+FILE: ./scripts/init.sh
+==========================================
+#!/bin/bash
+echo "Init script is running..."
+# You can add real initialization commands here later
+#export PYTHONPATH=/home/runner/workspace:$PYTHONPATH
+echo "✅ Initialization script ran successfully!"
+==========================================
+FILE: ./scripts/run.sh
+==========================================
+#!/usr/bin/env bash
+set -e
+
+echo "🚀 Starting Business Plugin Middleware..."
+
+
+==========================================
+FILE: ./README_PLUGIN_ARCHITECTURE.md
+==========================================
+# Business Plugin Middleware - Modular Architecture
+
+A modular plugin-based middleware system for document processing and business system integration.
+
+## Architecture Overview
+
+==========================================
+FILE: ./README.md
+==========================================
+# Business Plugin Middleware
+
+**A modular document processing middleware with plugin architecture for business document management systems.**
+
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+
