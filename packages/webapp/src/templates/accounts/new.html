@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+
+{% block title %}New Account - Chart of Accounts - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('accounts.index') }}">Chart of Accounts</a></li>
+                <li class="breadcrumb-item active" aria-current="page">New Account</li>
+            </ol>
+        </nav>
+        <h1 class="h3 mb-0 text-gray-800">Add New Account</h1>
+    </div>
+    <div>
+        <a href="{{ url_for('accounts.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Chart of Accounts
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-plus-circle"></i> Account Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <!-- Account Code -->
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.code.id }}" class="form-label fw-bold">
+                                {{ form.code.label.text }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.code(class="form-control" + (" is-invalid" if form.code.errors else ""), placeholder="e.g., 1000") }}
+                            {% if form.code.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.code.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Unique identifier for this account</div>
+                        </div>
+                        
+                        <!-- Account Name -->
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.name.id }}" class="form-label fw-bold">
+                                {{ form.name.label.text }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="e.g., Cash in Bank") }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Descriptive name for this account</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Account Type -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.type.id }}" class="form-label fw-bold">
+                                {{ form.type.label.text }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.type(class="form-select" + (" is-invalid" if form.type.errors else "")) }}
+                            {% if form.type.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Financial classification of this account</div>
+                        </div>
+                        
+                        <!-- Parent Account -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.parent_id.id }}" class="form-label fw-bold">
+                                {{ form.parent_id.label.text }}
+                            </label>
+                            {{ form.parent_id(class="form-select" + (" is-invalid" if form.parent_id.errors else "")) }}
+                            {% if form.parent_id.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.parent_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Optional parent account for hierarchical organization</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label for="{{ form.description.id }}" class="form-label fw-bold">
+                            {{ form.description.label.text }}
+                        </label>
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3", placeholder="Optional description or notes about this account") }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Optional description or notes about this account</div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Opening Balance -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.opening_balance.id }}" class="form-label fw-bold">
+                                {{ form.opening_balance.label.text }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.opening_balance(class="form-control" + (" is-invalid" if form.opening_balance.errors else ""), step="0.01") }}
+                                {% if form.opening_balance.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.opening_balance.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="form-text">Starting balance for this account</div>
+                        </div>
+                        
+                        <!-- Status -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Account Status</label>
+                            <div class="form-check form-switch">
+                                {{ form.is_active(class="form-check-input" + (" is-invalid" if form.is_active.errors else ""), checked=True) }}
+                                <label class="form-check-label" for="{{ form.is_active.id }}">
+                                    {{ form.is_active.label.text }}
+                                </label>
+                                {% if form.is_active.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.is_active.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="form-text">Inactive accounts are hidden from most views</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <hr class="my-4">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <a href="{{ url_for('accounts.index') }}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle"></i> Cancel
+                                    </a>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Create Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Account Type Guide -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="bi bi-info-circle"></i> Account Types Guide
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-primary me-2">Assets</span>
+                        <small class="text-muted">Resources Owned</small>
+                    </div>
+                    <small class="text-muted d-block">Cash, Bank Accounts, Inventory, Equipment</small>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-danger me-2">Liabilities</span>
+                        <small class="text-muted">Debts Owed</small>
+                    </div>
+                    <small class="text-muted d-block">Loans, Credit Cards, Accounts Payable</small>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-info me-2">Equity</span>
+                        <small class="text-muted">Owner's Interest</small>
+                    </div>
+                    <small class="text-muted d-block">Owner's Equity, Retained Earnings</small>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-success me-2">Income</span>
+                        <small class="text-muted">Revenue Sources</small>
+                    </div>
+                    <small class="text-muted d-block">Sales Revenue, Service Income, Interest</small>
+                </div>
+                
+                <div class="mb-0">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-warning me-2">Expenses</span>
+                        <small class="text-muted">Costs Incurred</small>
+                    </div>
+                    <small class="text-muted d-block">Office Supplies, Rent, Utilities, Travel</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Examples -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-lightbulb"></i> Quick Examples
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong class="text-primary">Common Asset Accounts:</strong>
+                    <ul class="list-unstyled mt-2 ms-3">
+                        <li><code>1000</code> - Cash</li>
+                        <li><code>1100</code> - Checking Account</li>
+                        <li><code>1200</code> - Accounts Receivable</li>
+                        <li><code>1500</code> - Inventory</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-3">
+                    <strong class="text-success">Common Income Accounts:</strong>
+                    <ul class="list-unstyled mt-2 ms-3">
+                        <li><code>4000</code> - Sales Revenue</li>
+                        <li><code>4100</code> - Service Revenue</li>
+                        <li><code>4200</code> - Interest Income</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-0">
+                    <strong class="text-warning">Common Expense Accounts:</strong>
+                    <ul class="list-unstyled mt-2 ms-3">
+                        <li><code>5000</code> - Office Supplies</li>
+                        <li><code>5100</code> - Rent Expense</li>
+                        <li><code>5200</code> - Utilities</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tips -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-warning">
+                    <i class="bi bi-question-circle"></i> Tips & Best Practices
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <small>
+                        <i class="bi bi-check-circle"></i>
+                        <strong>Tip:</strong> Use a numbering system: 1000s for Assets, 2000s for Liabilities, 3000s for Equity, 4000s for Income, 5000s for Expenses.
+                    </small>
+                </div>
+                
+                <div class="alert alert-success">
+                    <small>
+                        <i class="bi bi-lightbulb"></i>
+                        <strong>Best Practice:</strong> Create parent accounts first, then add child accounts for better organization.
+                    </small>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <small>
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Important:</strong> Choose account codes carefully - they should be unique and follow your organization's numbering convention.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add dynamic validation feedback
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.checkValidity()) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+    });
+    
+    // Account code formatting
+    const codeInput = document.getElementById('{{ form.code.id }}');
+    if (codeInput) {
+        codeInput.addEventListener('input', function() {
+            // Convert to uppercase for consistency
+            this.value = this.value.toUpperCase();
+        });
+    }
+    
+    // Auto-suggest account codes based on type
+    const typeSelect = document.getElementById('{{ form.type.id }}');
+    if (typeSelect) {
+        typeSelect.addEventListener('change', function() {
+            const codeInput = document.getElementById('{{ form.code.id }}');
+            if (!codeInput.value) {
+                let suggestedCode = '';
+                switch(this.value) {
+                    case 'asset':
+                        suggestedCode = '1000';
+                        break;
+                    case 'liability':
+                        suggestedCode = '2000';
+                        break;
+                    case 'equity':
+                        suggestedCode = '3000';
+                        break;
+                    case 'income':
+                        suggestedCode = '4000';
+                        break;
+                    case 'expense':
+                        suggestedCode = '5000';
+                        break;
+                }
+                if (suggestedCode) {
+                    codeInput.placeholder = `e.g., ${suggestedCode}`;
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+                    <!-- Account Type -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="type" class="form-label">Account Type *</label>
+                                <select class="form-select" id="type" name="type" required onchange="updateAccountCodeSuggestion()">
+                                    <option value="">Select Account Type</option>
+                                    <option value="asset" {% if request.form.get('type') == 'asset' %}selected{% endif %}>Asset</option>
+                                    <option value="liability" {% if request.form.get('type') == 'liability' %}selected{% endif %}>Liability</option>
+                                    <option value="equity" {% if request.form.get('type') == 'equity' %}selected{% endif %}>Equity</option>
+                                    <option value="income" {% if request.form.get('type') == 'income' %}selected{% endif %}>Income</option>
+                                    <option value="expense" {% if request.form.get('type') == 'expense' %}selected{% endif %}>Expense</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="parent_id" class="form-label">Parent Account</label>
+                                <select class="form-select" id="parent_id" name="parent_id">
+                                    <option value="">No Parent (Top Level)</option>
+                                    {% for account in parent_accounts %}
+                                    <option value="{{ account.id }}" 
+                                            data-type="{{ account.type.value }}"
+                                            {% if request.form.get('parent_id')|int == account.id %}selected{% endif %}>
+                                        {{ account.code }} - {{ account.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Optional: Create as sub-account</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" 
+                                          id="description" 
+                                          name="description" 
+                                          rows="3" 
+                                          placeholder="Optional description of what this account tracks...">{{ request.form.get('description', '') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Opening Balance -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="opening_balance" class="form-label">Opening Balance</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="opening_balance" 
+                                           name="opening_balance" 
+                                           value="{{ request.form.get('opening_balance', '0.00') }}"
+                                           step="0.01">
+                                </div>
+                                <div class="form-text">Starting balance for this account</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           value="1" 
+                                           id="is_active" 
+                                           name="is_active"
+                                           {% if not request.form or request.form.get('is_active') %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Active Account
+                                    </label>
+                                </div>
+                                <div class="form-text">Inactive accounts won't appear in dropdowns</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <hr>
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ url_for('accounts.index') }}" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i> Create Account
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Type Guide Sidebar -->
+    <div class="col-lg-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Account Types Guide</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6><i class="bi bi-bank text-primary"></i> Assets</h6>
+                    <small class="text-muted">Things your business owns (Cash, Accounts Receivable, Inventory, Equipment)</small>
+                    <div class="text-muted mt-1"><strong>Code Range:</strong> 1000-1999</div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-credit-card text-danger"></i> Liabilities</h6>
+                    <small class="text-muted">What your business owes (Accounts Payable, Loans, Credit Cards)</small>
+                    <div class="text-muted mt-1"><strong>Code Range:</strong> 2000-2999</div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-person-circle text-info"></i> Equity</h6>
+                    <small class="text-muted">Owner's investment and retained earnings</small>
+                    <div class="text-muted mt-1"><strong>Code Range:</strong> 3000-3999</div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-arrow-up-circle text-success"></i> Income</h6>
+                    <small class="text-muted">Revenue from sales and other sources</small>
+                    <div class="text-muted mt-1"><strong>Code Range:</strong> 4000-4999</div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-arrow-down-circle text-warning"></i> Expenses</h6>
+                    <small class="text-muted">Costs of running your business</small>
+                    <div class="text-muted mt-1"><strong>Code Range:</strong> 5000-9999</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mt-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Common Accounts</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Assets:</strong><br>
+                    <small class="text-muted">
+                        1000 - Cash in Bank<br>
+                        1200 - Accounts Receivable<br>
+                        1300 - Inventory<br>
+                        1500 - Equipment
+                    </small>
+                </div>
+                <div class="mb-2">
+                    <strong>Liabilities:</strong><br>
+                    <small class="text-muted">
+                        2000 - Accounts Payable<br>
+                        2100 - Credit Card<br>
+                        2500 - Loan Payable
+                    </small>
+                </div>
+                <div class="mb-2">
+                    <strong>Income:</strong><br>
+                    <small class="text-muted">
+                        4000 - Sales Revenue<br>
+                        4100 - Service Revenue<br>
+                        4900 - Other Income
+                    </small>
+                </div>
+                <div class="mb-2">
+                    <strong>Expenses:</strong><br>
+                    <small class="text-muted">
+                        5000 - Cost of Goods Sold<br>
+                        6000 - Office Expenses<br>
+                        7000 - Marketing
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Account code suggestions based on type
+const codeRanges = {
+    'asset': { start: 1000, example: '1000' },
+    'liability': { start: 2000, example: '2000' },
+    'equity': { start: 3000, example: '3000' },
+    'income': { start: 4000, example: '4000' },
+    'expense': { start: 5000, example: '5000' }
+};
+
+function updateAccountCodeSuggestion() {
+    const typeSelect = document.getElementById('type');
+    const codeInput = document.getElementById('code');
+    const parentSelect = document.getElementById('parent_id');
+    
+    const selectedType = typeSelect.value;
+    
+    // Filter parent accounts by type
+    const parentOptions = parentSelect.querySelectorAll('option[data-type]');
+    parentOptions.forEach(option => {
+        if (option.dataset.type === selectedType || selectedType === '') {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    // Reset parent selection if it doesn't match type
+    if (parentSelect.value && selectedType) {
+        const selectedParent = parentSelect.querySelector(`option[value="${parentSelect.value}"]`);
+        if (selectedParent && selectedParent.dataset.type !== selectedType) {
+            parentSelect.value = '';
+        }
+    }
+    
+    // Suggest account code if empty
+    if (!codeInput.value && selectedType && codeRanges[selectedType]) {
+        codeInput.placeholder = `e.g., ${codeRanges[selectedType].example}`;
+    }
+}
+
+// Auto-suggest account code based on name
+document.getElementById('name').addEventListener('blur', function() {
+    const codeInput = document.getElementById('code');
+    const typeSelect = document.getElementById('type');
+    
+    if (!codeInput.value && this.value && typeSelect.value) {
+        // Simple code generation: type prefix + last 2 digits incremented
+        const range = codeRanges[typeSelect.value];
+        if (range) {
+            // In a real app, you'd check what codes are already taken
+            codeInput.value = range.start;
+        }
+    }
+});
+
+// Initialize parent filter on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateAccountCodeSuggestion();
+});
+</script>
+{% endblock %}

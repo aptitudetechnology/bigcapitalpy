@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ account.name }} - Chart of Accounts - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('accounts.index') }}">Chart of Accounts</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('accounts.show', account_id=account.id) }}">{{ account.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Edit</li>
+            </ol>
+        </nav>
+        <h1 class="h3 mb-0 text-gray-800">Edit Account</h1>
+    </div>
+    <div>
+        <a href="{{ url_for('accounts.show', account_id=account.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Account
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-pencil"></i> Edit Account Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <!-- Account Code -->
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.code.id }}" class="form-label fw-bold">
+                                {{ form.code.label.text }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.code(class="form-control" + (" is-invalid" if form.code.errors else "")) }}
+                            {% if form.code.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.code.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Unique identifier for this account</div>
+                        </div>
+                        
+                        <!-- Account Name -->
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.name.id }}" class="form-label fw-bold">
+                                {{ form.name.label.text }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Descriptive name for this account</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Account Type -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.type.id }}" class="form-label fw-bold">
+                                {{ form.type.label.text }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.type(class="form-select" + (" is-invalid" if form.type.errors else "")) }}
+                            {% if form.type.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Financial classification of this account</div>
+                        </div>
+                        
+                        <!-- Parent Account -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.parent_id.id }}" class="form-label fw-bold">
+                                {{ form.parent_id.label.text }}
+                            </label>
+                            {{ form.parent_id(class="form-select" + (" is-invalid" if form.parent_id.errors else "")) }}
+                            {% if form.parent_id.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.parent_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Optional parent account for hierarchical organization</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label for="{{ form.description.id }}" class="form-label fw-bold">
+                            {{ form.description.label.text }}
+                        </label>
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3") }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Optional description or notes about this account</div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Opening Balance -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.opening_balance.id }}" class="form-label fw-bold">
+                                {{ form.opening_balance.label.text }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.opening_balance(class="form-control" + (" is-invalid" if form.opening_balance.errors else ""), step="0.01") }}
+                                {% if form.opening_balance.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.opening_balance.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle text-warning"></i>
+                                Changing this will affect the current balance
+                            </div>
+                        </div>
+                        
+                        <!-- Status -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Account Status</label>
+                            <div class="form-check form-switch">
+                                {{ form.is_active(class="form-check-input" + (" is-invalid" if form.is_active.errors else "")) }}
+                                <label class="form-check-label" for="{{ form.is_active.id }}">
+                                    {{ form.is_active.label.text }}
+                                </label>
+                                {% if form.is_active.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.is_active.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="form-text">Inactive accounts are hidden from most views</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <hr class="my-4">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <a href="{{ url_for('accounts.show', account_id=account.id) }}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle"></i> Cancel
+                                    </a>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Update Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Current Account Info -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Current Account Details</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless table-sm">
+                    <tr>
+                        <td class="fw-bold text-muted">Code:</td>
+                        <td><code>{{ account.code }}</code></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-muted">Name:</td>
+                        <td>{{ account.name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-muted">Type:</td>
+                        <td>
+                            <span class="badge bg-{% if account.type.value == 'asset' %}primary{% elif account.type.value == 'liability' %}danger{% elif account.type.value == 'equity' %}info{% elif account.type.value == 'income' %}success{% else %}warning{% endif %}">
+                                {{ account.type.value.title() }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-muted">Current Balance:</td>
+                        <td class="{% if account.current_balance > 0 %}text-success{% elif account.current_balance < 0 %}text-danger{% else %}text-muted{% endif %}">
+                            {{ account.current_balance | currency }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-muted">Status:</td>
+                        <td>
+                            <span class="badge bg-{% if account.is_active %}success{% else %}secondary{% endif %}">
+                                {% if account.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Help Card -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="bi bi-question-circle"></i> Help & Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <small>
+                        <strong>Account Types:</strong><br>
+                        • <strong>Assets:</strong> Resources owned (Cash, Inventory)<br>
+                        • <strong>Liabilities:</strong> Debts owed (Loans, Payables)<br>
+                        • <strong>Equity:</strong> Owner's interest<br>
+                        • <strong>Income:</strong> Revenue sources<br>
+                        • <strong>Expenses:</strong> Costs incurred
+                    </small>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <small>
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Important:</strong> Changing the opening balance will adjust the current balance accordingly. Ensure this is intended if transactions exist.
+                    </small>
+                </div>
+                
+                <div class="alert alert-secondary">
+                    <small>
+                        <i class="bi bi-lightbulb"></i>
+                        <strong>Tip:</strong> Use parent accounts to create a hierarchical structure for better organization and reporting.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add dynamic validation feedback
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.checkValidity()) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+    });
+    
+    // Account code formatting
+    const codeInput = document.getElementById('{{ form.code.id }}');
+    if (codeInput) {
+        codeInput.addEventListener('input', function() {
+            // Convert to uppercase for consistency
+            this.value = this.value.toUpperCase();
+        });
+    }
+});
+</script>
+{% endblock %}

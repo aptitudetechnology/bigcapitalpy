@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+
+{% block title %}Chart of Accounts - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Chart of Accounts</h1>
+    <div class="btn-group">
+        <a href="{{ url_for('accounts.new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Account
+        </a>
+        <button class="btn btn-outline-secondary" onclick="toggleView()">
+            <i class="bi bi-list-ul" id="viewIcon"></i> <span id="viewText">Tree View</span>
+        </button>
+    </div>
+</div>
+
+<!-- Account Type Summary -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card text-center border-left-primary">
+            <div class="card-body">
+                <h5 class="text-primary">{{ account_summary.assets.count }}</h5>
+                <small class="text-muted">Assets</small>
+                <div class="mt-2">
+                    <small class="text-success">{{ account_summary.assets.balance | currency }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-left-danger">
+            <div class="card-body">
+                <h5 class="text-danger">{{ account_summary.liabilities.count }}</h5>
+                <small class="text-muted">Liabilities</small>
+                <div class="mt-2">
+                    <small class="text-danger">{{ account_summary.liabilities.balance | currency }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center border-left-info">
+            <div class="card-body">
+                <h5 class="text-info">{{ account_summary.equity.count }}</h5>
+                <small class="text-muted">Equity</small>
+                <div class="mt-2">
+                    <small class="text-info">{{ account_summary.equity.balance | currency }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-left-success">
+            <div class="card-body">
+                <h5 class="text-success">{{ account_summary.income.count }}</h5>
+                <small class="text-muted">Income</small>
+                <div class="mt-2">
+                    <small class="text-success">{{ account_summary.income.balance | currency }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-left-warning">
+            <div class="card-body">
+                <h5 class="text-warning">{{ account_summary.expense.count }}</h5>
+                <small class="text-muted">Expenses</small>
+                <div class="mt-2">
+                    <small class="text-warning">{{ account_summary.expense.balance | currency }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" 
+                       class="form-control" 
+                       name="search" 
+                       placeholder="Search accounts..." 
+                       value="{{ request.args.get('search', '') }}">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="type">
+                    <option value="">All Types</option>
+                    <option value="asset" {% if request.args.get('type') == 'asset' %}selected{% endif %}>Assets</option>
+                    <option value="liability" {% if request.args.get('type') == 'liability' %}selected{% endif %}>Liabilities</option>
+                    <option value="equity" {% if request.args.get('type') == 'equity' %}selected{% endif %}>Equity</option>
+                    <option value="income" {% if request.args.get('type') == 'income' %}selected{% endif %}>Income</option>
+                    <option value="expense" {% if request.args.get('type') == 'expense' %}selected{% endif %}>Expenses</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">All Status</option>
+                    <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if request.args.get('status') == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Chart of Accounts Table -->
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Chart of Accounts</h6>
+    </div>
+    <div class="card-body">
+        {% if accounts %}
+        <!-- Tree View -->
+        <div id="treeView">
+            {% for account_type, type_accounts in accounts_by_type.items() %}
+            <div class="account-type-section mb-4">
+                <h5 class="account-type-header" data-type="{{ account_type }}">
+                    <i class="bi bi-chevron-down toggle-icon"></i>
+                    <span class="badge bg-{% if account_type == 'asset' %}primary{% elif account_type == 'liability' %}danger{% elif account_type == 'equity' %}info{% elif account_type == 'income' %}success{% else %}warning{% endif %} me-2">
+                        {{ account_type.title() }}
+                    </span>
+                    <span class="text-muted">({{ type_accounts|length }} accounts)</span>
+                </h5>
+                <div class="account-type-content" id="content-{{ account_type }}">
+                    {% for account in type_accounts %}
+                        {% if not account.parent_id %}
+                            {{ render_account_tree(account, type_accounts, 0) }}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Table View (hidden by default) -->
+        <div id="tableView" style="display: none;">
+            <div class="table-responsive">
+                <table class="table table-hover" id="accountsTable">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Account Name</th>
+                            <th>Type</th>
+                            <th>Parent</th>
+                            <th>Current Balance</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in accounts %}
+                        <tr>
+                            <td><code>{{ account.code }}</code></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <div class="bg-{% if account.type.value == 'asset' %}primary{% elif account.type.value == 'liability' %}danger{% elif account.type.value == 'equity' %}info{% elif account.type.value == 'income' %}success{% else %}warning{% endif %} text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                             style="width: 35px; height: 35px;">
+                                            <i class="bi bi-{% if account.type.value == 'asset' %}bank{% elif account.type.value == 'liability' %}credit-card{% elif account.type.value == 'equity' %}person-circle{% elif account.type.value == 'income' %}arrow-up-circle{% else %}arrow-down-circle{% endif %}"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ account.name }}</div>
+                                        {% if account.description %}
+                                        <small class="text-muted">{{ account.description[:50] }}{% if account.description|length > 50 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if account.type.value == 'asset' %}primary{% elif account.type.value == 'liability' %}danger{% elif account.type.value == 'equity' %}info{% elif account.type.value == 'income' %}success{% else %}warning{% endif %}">
+                                    {{ account.type.value.title() }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if account.parent %}
+                                    <small class="text-muted">{{ account.parent.name }}</small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="{% if account.current_balance > 0 %}text-success{% elif account.current_balance < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {{ account.current_balance | currency }}
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if account.is_active %}success{% else %}secondary{% endif %}">
+                                    {% if account.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('accounts.show', account_id=account.id) }}" 
+                                       class="btn btn-sm btn-outline-info" 
+                                       title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('accounts.edit', account_id=account.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmDelete({{ account.id }}, '{{ account.name }}')"
+                                            title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-diagram-3 fs-1 text-muted d-block mb-3"></i>
+            <h5 class="text-muted">No Accounts Found</h5>
+            <p class="text-muted">Start by setting up your chart of accounts.</p>
+            <a href="{{ url_for('accounts.new') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add First Account
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Macro for rendering account tree -->
+{% macro render_account_tree(account, all_accounts, level) %}
+<div class="account-item" style="margin-left: {{ level * 20 }}px;">
+    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+        <div class="d-flex align-items-center">
+            <span class="me-2">
+                {% if account.children %}
+                    <i class="bi bi-chevron-right toggle-children" data-account-id="{{ account.id }}"></i>
+                {% else %}
+                    <i class="bi bi-dash text-muted"></i>
+                {% endif %}
+            </span>
+            <code class="me-3">{{ account.code }}</code>
+            <div>
+                <strong>{{ account.name }}</strong>
+                {% if account.description %}
+                    <br><small class="text-muted">{{ account.description }}</small>
+                {% endif %}
+            </div>
+        </div>
+        <div class="d-flex align-items-center">
+            <span class="me-3 {% if account.current_balance > 0 %}text-success{% elif account.current_balance < 0 %}text-danger{% else %}text-muted{% endif %}">
+                {{ account.current_balance | currency }}
+            </span>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('accounts.show', account_id=account.id) }}" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-eye"></i>
+                </a>
+                <a href="{{ url_for('accounts.edit', account_id=account.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete({{ account.id }}, '{{ account.name }}')">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Child accounts -->
+    {% set children = all_accounts | selectattr('parent_id', 'equalto', account.id) | list %}
+    {% if children %}
+    <div class="children-accounts" id="children-{{ account.id }}">
+        {% for child in children %}
+            {{ render_account_tree(child, all_accounts, level + 1) }}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="accountName"></strong>?</p>
+                <p class="text-danger"><small><i class="bi bi-exclamation-triangle"></i> This action cannot be undone and may affect financial reports.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" id="deleteForm" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="_method" value="DELETE"/>
+                    <button type="submit" class="btn btn-danger">Delete Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let isTreeView = true;
+
+function toggleView() {
+    const treeView = document.getElementById('treeView');
+    const tableView = document.getElementById('tableView');
+    const viewIcon = document.getElementById('viewIcon');
+    const viewText = document.getElementById('viewText');
+    
+    if (isTreeView) {
+        treeView.style.display = 'none';
+        tableView.style.display = 'block';
+        viewIcon.className = 'bi bi-diagram-3';
+        viewText.textContent = 'Table View';
+        isTreeView = false;
+    } else {
+        treeView.style.display = 'block';
+        tableView.style.display = 'none';
+        viewIcon.className = 'bi bi-list-ul';
+        viewText.textContent = 'Tree View';
+        isTreeView = true;
+    }
+}
+
+function confirmDelete(accountId, accountName) {
+    document.getElementById('accountName').textContent = accountName;
+    document.getElementById('deleteForm').action = '/accounts/' + accountId + '/delete';
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Toggle account type sections
+document.addEventListener('DOMContentLoaded', function() {
+    // Account type toggles
+    document.querySelectorAll('.account-type-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const type = this.dataset.type;
+            const content = document.getElementById('content-' + type);
+            const icon = this.querySelector('.toggle-icon');
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.className = 'bi bi-chevron-down toggle-icon';
+            } else {
+                content.style.display = 'none';
+                icon.className = 'bi bi-chevron-right toggle-icon';
+            }
+        });
+    });
+    
+    // Child account toggles
+    document.querySelectorAll('.toggle-children').forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const accountId = this.dataset.accountId;
+            const children = document.getElementById('children-' + accountId);
+            
+            if (children.style.display === 'none') {
+                children.style.display = 'block';
+                this.className = 'bi bi-chevron-down toggle-children';
+            } else {
+                children.style.display = 'none';
+                this.className = 'bi bi-chevron-right toggle-children';
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.account-type-header {
+    cursor: pointer;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.account-type-header:hover {
+    background-color: #e9ecef;
+}
+
+.account-item {
+    transition: background-color 0.2s;
+}
+
+.account-item:hover {
+    background-color: #f8f9fa;
+}
+
+.toggle-children {
+    cursor: pointer;
+}
+
+.border-left-primary {
+    border-left: 4px solid #007bff !important;
+}
+
+.border-left-danger {
+    border-left: 4px solid #dc3545 !important;
+}
+
+.border-left-info {
+    border-left: 4px solid #17a2b8 !important;
+}
+
+.border-left-success {
+    border-left: 4px solid #28a745 !important;
+}
+
+.border-left-warning {
+    border-left: 4px solid #ffc107 !important;
+}
+</style>
+{% endblock %}

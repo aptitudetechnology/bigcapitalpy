@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}{{ account.name }} - Chart of Accounts - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('accounts.index') }}">Chart of Accounts</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ account.name }}</li>
+            </ol>
+        </nav>
+        <h1 class="h3 mb-0 text-gray-800">
+            <code class="text-primary">{{ account.code }}</code> - {{ account.name }}
+        </h1>
+    </div>
+    <div class="btn-group">
+        <a href="{{ url_for('accounts.edit', account_id=account.id) }}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Edit Account
+        </a>
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="bi bi-trash"></i> Delete
+        </button>
+    </div>
+</div>
+
+<!-- Account Details -->
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Account Information Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Account Information</h6>
+                <span class="badge bg-{% if account.is_active %}success{% else %}secondary{% endif %}">
+                    {% if account.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold text-muted">Account Code:</td>
+                                <td><code class="fs-6">{{ account.code }}</code></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">Account Name:</td>
+                                <td>{{ account.name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">Account Type:</td>
+                                <td>
+                                    <span class="badge bg-{% if account.type.value == 'asset' %}primary{% elif account.type.value == 'liability' %}danger{% elif account.type.value == 'equity' %}info{% elif account.type.value == 'income' %}success{% else %}warning{% endif %}">
+                                        <i class="bi bi-{% if account.type.value == 'asset' %}bank{% elif account.type.value == 'liability' %}credit-card{% elif account.type.value == 'equity' %}person-circle{% elif account.type.value == 'income' %}arrow-up-circle{% else %}arrow-down-circle{% endif %}"></i>
+                                        {{ account.type.value.title() }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">Parent Account:</td>
+                                <td>
+                                    {% if account.parent %}
+                                        <a href="{{ url_for('accounts.show', account_id=account.parent.id) }}" class="text-decoration-none">
+                                            <code>{{ account.parent.code }}</code> - {{ account.parent.name }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">None (Root Account)</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold text-muted">Opening Balance:</td>
+                                <td class="{% if account.opening_balance > 0 %}text-success{% elif account.opening_balance < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    {{ account.opening_balance | currency }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">Current Balance:</td>
+                                <td class="{% if account.current_balance > 0 %}text-success{% elif account.current_balance < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    {{ account.current_balance | currency }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">Created:</td>
+                                <td>{{ account.created_at.strftime('%b %d, %Y at %I:%M %p') }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-muted">Last Updated:</td>
+                                <td>{{ account.updated_at.strftime('%b %d, %Y at %I:%M %p') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                {% if account.description %}
+                <div class="mt-3">
+                    <h6 class="fw-bold text-muted mb-2">Description:</h6>
+                    <p class="text-muted mb-0">{{ account.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Transaction History Card (Placeholder) -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Transactions</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-4">
+                    <i class="bi bi-journal-text text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-3">Transaction history will be available once the transaction module is implemented.</p>
+                    <a href="#" class="btn btn-outline-primary disabled">View All Transactions</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Child Accounts Card -->
+        {% if children %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Child Accounts ({{ children|length }})</h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for child in children %}
+                    <div class="list-group-item border-0 px-0 py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <a href="{{ url_for('accounts.show', account_id=child.id) }}" class="text-decoration-none fw-bold">
+                                    <code class="text-primary">{{ child.code }}</code> {{ child.name }}
+                                </a>
+                                <div class="small text-muted">
+                                    <span class="badge bg-{% if child.type.value == 'asset' %}primary{% elif child.type.value == 'liability' %}danger{% elif child.type.value == 'equity' %}info{% elif child.type.value == 'income' %}success{% else %}warning{% endif %} badge-sm">
+                                        {{ child.type.value.title() }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold {% if child.current_balance > 0 %}text-success{% elif child.current_balance < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    {{ child.current_balance | currency }}
+                                </div>
+                                <span class="badge bg-{% if child.is_active %}success{% else %}secondary{% endif %} badge-sm">
+                                    {% if child.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Account Statistics Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Account Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="text-primary">{{ children|length }}</h4>
+                            <small class="text-muted">Child Accounts</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-info">0</h4>
+                        <small class="text-muted">Transactions</small>
+                    </div>
+                </div>
+                
+                <hr class="my-3">
+                
+                <div class="row text-center">
+                    <div class="col-12">
+                        <h5 class="{% if account.current_balance > 0 %}text-success{% elif account.current_balance < 0 %}text-danger{% else %}text-muted{% endif %}">
+                            {{ account.current_balance | currency }}
+                        </h5>
+                        <small class="text-muted">Current Balance</small>
+                    </div>
+                </div>
+                
+                {% if account.current_balance != account.opening_balance %}
+                <div class="mt-3">
+                    <small class="text-muted">
+                        Net Change: 
+                        <span class="{% if (account.current_balance - account.opening_balance) > 0 %}text-success{% elif (account.current_balance - account.opening_balance) < 0 %}text-danger{% else %}text-muted{% endif %}">
+                            {{ (account.current_balance - account.opening_balance) | currency }}
+                        </span>
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('accounts.edit', account_id=account.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit Account
+                    </a>
+                    <a href="{{ url_for('accounts.new') }}?parent_id={{ account.id }}" class="btn btn-outline-success">
+                        <i class="bi bi-plus-circle"></i> Add Child Account
+                    </a>
+                    <button class="btn btn-outline-info disabled">
+                        <i class="bi bi-journal-plus"></i> Add Transaction
+                    </button>
+                    <hr class="my-2">
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="bi bi-trash"></i> Delete Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>
+                        <strong>Warning!</strong> This action cannot be undone.
+                    </div>
+                </div>
+                <p>Are you sure you want to delete the account "<strong>{{ account.name }}</strong>"?</p>
+                {% if children %}
+                <div class="alert alert-danger">
+                    <i class="bi bi-x-circle-fill me-2"></i>
+                    This account has {{ children|length }} child account(s) and cannot be deleted. 
+                    Please remove or reassign the child accounts first.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                {% if not children %}
+                <form method="POST" action="{{ url_for('accounts.delete', account_id=account.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete Account
+                    </button>
+                </form>
+                {% else %}
+                <button type="button" class="btn btn-danger disabled">
+                    <i class="bi bi-trash"></i> Cannot Delete
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
