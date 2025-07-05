@@ -47,7 +47,8 @@ def index():
         'total_invoices': total_invoices,
         'pending_invoices': pending_invoices,
         'total_receivables': float(total_receivables),
-        'recent_invoices': recent_invoices
+        'recent_invoices': recent_invoices,
+        'current_date': datetime.now()
     }
     
     return render_template('dashboard/index.html', data=dashboard_data)

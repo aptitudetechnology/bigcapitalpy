@@ -56,6 +56,21 @@ def create_app(config_name='development'):
     def load_user(user_id):
         return User.query.get(int(user_id))
     
+    # Custom Jinja2 filters
+    @app.template_filter('datetime')
+    def datetime_filter(dt, format='%B %d, %Y'):
+        """Format datetime objects in templates"""
+        if dt is None:
+            return ''
+        return dt.strftime(format)
+    
+    @app.template_filter('currency')
+    def currency_filter(amount):
+        """Format currency amounts"""
+        if amount is None:
+            return '$0.00'
+        return f'${amount:,.2f}'
+    
     # Register blueprints
     register_blueprints(app)
     
