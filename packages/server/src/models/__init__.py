@@ -12,7 +12,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, Date, Boolean, F
 from sqlalchemy.orm import relationship
 import enum
 
-from .database import db
+from packages.server.src.database import db
 
 # Enums for various fields
 class AccountType(enum.Enum):
