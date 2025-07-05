@@ -20,10 +20,10 @@
     <div class="col-md-2">
         <div class="card text-center border-left-primary">
             <div class="card-body">
-                <h5 class="text-primary">{{ account_summary.assets.count }}</h5>
+                <h5 class="text-primary">{{ account_summary.assets.count if account_summary.assets else 0 }}</h5>
                 <small class="text-muted">Assets</small>
                 <div class="mt-2">
-                    <small class="text-success">{{ account_summary.assets.balance | currency }}</small>
+                    <small class="text-success">{{ (account_summary.assets.balance if account_summary.assets else 0) | currency }}</small>
                 </div>
             </div>
         </div>
@@ -31,10 +31,10 @@
     <div class="col-md-2">
         <div class="card text-center border-left-danger">
             <div class="card-body">
-                <h5 class="text-danger">{{ account_summary.liabilities.count }}</h5>
+                <h5 class="text-danger">{{ account_summary.liabilities.count if account_summary.liabilities else 0 }}</h5>
                 <small class="text-muted">Liabilities</small>
                 <div class="mt-2">
-                    <small class="text-danger">{{ account_summary.liabilities.balance | currency }}</small>
+                    <small class="text-danger">{{ (account_summary.liabilities.balance if account_summary.liabilities else 0) | currency }}</small>
                 </div>
             </div>
         </div>
@@ -42,10 +42,10 @@
     <div class="col-md-2">
         <div class="card text-center border-left-info">
             <div class="card-body">
-                <h5 class="text-info">{{ account_summary.equity.count }}</h5>
+                <h5 class="text-info">{{ account_summary.equity.count if account_summary.equity else 0 }}</h5>
                 <small class="text-muted">Equity</small>
                 <div class="mt-2">
-                    <small class="text-info">{{ account_summary.equity.balance | currency }}</small>
+                    <small class="text-info">{{ (account_summary.equity.balance if account_summary.equity else 0) | currency }}</small>
                 </div>
             </div>
         </div>
@@ -53,10 +53,10 @@
     <div class="col-md-3">
         <div class="card text-center border-left-success">
             <div class="card-body">
-                <h5 class="text-success">{{ account_summary.income.count }}</h5>
+                <h5 class="text-success">{{ account_summary.income.count if account_summary.income else 0 }}</h5>
                 <small class="text-muted">Income</small>
                 <div class="mt-2">
-                    <small class="text-success">{{ account_summary.income.balance | currency }}</small>
+                    <small class="text-success">{{ (account_summary.income.balance if account_summary.income else 0) | currency }}</small>
                 </div>
             </div>
         </div>
@@ -64,10 +64,10 @@
     <div class="col-md-3">
         <div class="card text-center border-left-warning">
             <div class="card-body">
-                <h5 class="text-warning">{{ account_summary.expense.count }}</h5>
+                <h5 class="text-warning">{{ account_summary.expense.count if account_summary.expense else 0 }}</h5>
                 <small class="text-muted">Expenses</small>
                 <div class="mt-2">
-                    <small class="text-warning">{{ account_summary.expense.balance | currency }}</small>
+                    <small class="text-warning">{{ (account_summary.expense.balance if account_summary.expense else 0) | currency }}</small>
                 </div>
             </div>
         </div>

@@ -93,7 +93,20 @@ def create_app(config_name='development'):
         """Get today's date for templates"""
         from datetime import date
         return date.today
-        return f'${amount:,.2f}'
+    
+    # Add template helper for safe attribute access
+    @app.template_global()
+    def safe_get(obj, attr, default=''):
+        """Safely get attribute from object with default fallback"""
+        try:
+            if hasattr(obj, attr):
+                return getattr(obj, attr)
+            elif isinstance(obj, dict) and attr in obj:
+                return obj[attr]
+            else:
+                return default
+        except:
+            return default
     
     # Register blueprints
     register_blueprints(app)

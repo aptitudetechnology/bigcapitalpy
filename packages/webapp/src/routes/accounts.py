@@ -65,16 +65,34 @@ def build_account_tree(accounts):
 
 def get_account_summary(accounts):
     """Get summary statistics for accounts by type"""
-    summary = defaultdict(lambda: {'count': 0, 'balance': 0})
+    summary = {
+        'asset': {'count': 0, 'balance': 0},
+        'liability': {'count': 0, 'balance': 0},
+        'equity': {'count': 0, 'balance': 0},
+        'income': {'count': 0, 'balance': 0},
+        'expense': {'count': 0, 'balance': 0}
+    }
     
     for account in accounts:
         account_type = account.type.value
-        summary[account_type]['count'] += 1
-        summary[account_type]['balance'] += float(account.current_balance or 0)
+        if account_type in summary:
+            summary[account_type]['count'] += 1
+            summary[account_type]['balance'] += float(account.current_balance or 0)
     
-    return dict(summary)
+    # Create an object-like structure for template access
+    class AccountSummary:
+        def __init__(self, data):
+            # Map singular to plural forms for template compatibility
+            self.assets = type('obj', (object,), data.get('asset', {'count': 0, 'balance': 0}))
+            self.liabilities = type('obj', (object,), data.get('liability', {'count': 0, 'balance': 0}))
+            self.equity = type('obj', (object,), data.get('equity', {'count': 0, 'balance': 0}))
+            self.income = type('obj', (object,), data.get('income', {'count': 0, 'balance': 0}))
+            self.expense = type('obj', (object,), data.get('expense', {'count': 0, 'balance': 0}))
+    
+    return AccountSummary(summary)
 
 @accounts_bp.route('/')
+@login_required
 def index():
     """Display the chart of accounts"""
     # Get filter parameters
@@ -82,8 +100,8 @@ def index():
     account_type_filter = request.args.get('type', '').strip()
     status_filter = request.args.get('status', '').strip()
     
-    # Build query
-    query = Account.query
+    # Build query with organization filter
+    query = Account.query.filter(Account.organization_id == current_user.organization_id)
     
     if search:
         query = query.filter(
@@ -95,7 +113,10 @@ def index():
         )
     
     if account_type_filter:
-        query = query.filter(Account.type == AccountType(account_type_filter))
+        try:
+            query = query.filter(Account.type == AccountType(account_type_filter))
+        except ValueError:
+            flash(f'Invalid account type: {account_type_filter}', 'warning')
     
     if status_filter == 'active':
         query = query.filter(Account.is_active == True)
