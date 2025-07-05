@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from packages.server.src.database import db
 from packages.server.src.models import User, Organization
 from packages.webapp.src.routes import register_blueprints
+from packages.webapp.src.api import register_api_blueprints
 
 def create_app(config_name='development'):
     """Application factory pattern"""
@@ -110,6 +111,9 @@ def create_app(config_name='development'):
     
     # Register blueprints
     register_blueprints(app)
+    
+    # Register API blueprints
+    register_api_blueprints(app)
     
     # Create tables and sample data
     with app.app_context():
