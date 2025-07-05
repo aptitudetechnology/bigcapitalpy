@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ customer.display_name }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">Edit Customer</h1>
+        <p class="text-muted mb-0">{{ customer.display_name }}</p>
+    </div>
+    <div class="btn-group">
+        <a href="{{ url_for('customers.show', customer_id=customer.id) }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Customer
+        </a>
+        <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> All Customers
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Customer Information</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('customers.edit', customer_id=customer.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <!-- Basic Information -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="display_name" class="form-label">Display Name *</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="display_name" 
+                                       name="display_name" 
+                                       value="{{ request.form.get('display_name', customer.display_name) }}"
+                                       required>
+                                <div class="form-text">How this customer appears in lists</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="company_name" class="form-label">Company Name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="company_name" 
+                                       name="company_name" 
+                                       value="{{ request.form.get('company_name', customer.company_name or '') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="first_name" 
+                                       name="first_name" 
+                                       value="{{ request.form.get('first_name', customer.first_name or '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="last_name" 
+                                       name="last_name" 
+                                       value="{{ request.form.get('last_name', customer.last_name or '') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <h5 class="mb-3 mt-4">Contact Information</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="email" 
+                                       name="email" 
+                                       value="{{ request.form.get('email', customer.email or '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="phone" 
+                                       name="phone" 
+                                       value="{{ request.form.get('phone', customer.phone or '') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="website" class="form-label">Website</label>
+                                <input type="url" 
+                                       class="form-control" 
+                                       id="website" 
+                                       name="website" 
+                                       value="{{ request.form.get('website', customer.website or '') }}"
+                                       placeholder="https://www.example.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Billing Address -->
+                    <h5 class="mb-3 mt-4">Billing Address</h5>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="billing_address" class="form-label">Street Address</label>
+                                <textarea class="form-control" 
+                                          id="billing_address" 
+                                          name="billing_address" 
+                                          rows="2">{{ request.form.get('billing_address', customer.billing_address or '') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="billing_city" class="form-label">City</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="billing_city" 
+                                       name="billing_city" 
+                                       value="{{ request.form.get('billing_city', customer.billing_city or '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="billing_state" class="form-label">State/Province</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="billing_state" 
+                                       name="billing_state" 
+                                       value="{{ request.form.get('billing_state', customer.billing_state or '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="billing_postal_code" class="form-label">Postal Code</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="billing_postal_code" 
+                                       name="billing_postal_code" 
+                                       value="{{ request.form.get('billing_postal_code', customer.billing_postal_code or '') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="billing_country" class="form-label">Country</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="billing_country" 
+                                       name="billing_country" 
+                                       value="{{ request.form.get('billing_country', customer.billing_country or 'United States') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tax_number" class="form-label">Tax ID/Number</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="tax_number" 
+                                       name="tax_number" 
+                                       value="{{ request.form.get('tax_number', customer.tax_number or '') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Settings -->
+                    <h5 class="mb-3 mt-4">Financial Settings</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="currency" class="form-label">Currency</label>
+                                <select class="form-select" id="currency" name="currency">
+                                    <option value="USD" {% if request.form.get('currency', customer.currency) == 'USD' %}selected{% endif %}>USD - US Dollar</option>
+                                    <option value="EUR" {% if request.form.get('currency', customer.currency) == 'EUR' %}selected{% endif %}>EUR - Euro</option>
+                                    <option value="GBP" {% if request.form.get('currency', customer.currency) == 'GBP' %}selected{% endif %}>GBP - British Pound</option>
+                                    <option value="CAD" {% if request.form.get('currency', customer.currency) == 'CAD' %}selected{% endif %}>CAD - Canadian Dollar</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="credit_limit" class="form-label">Credit Limit</label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="credit_limit" 
+                                       name="credit_limit" 
+                                       value="{{ request.form.get('credit_limit', customer.credit_limit or 0) }}"
+                                       step="0.01"
+                                       min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           value="1" 
+                                           id="is_active" 
+                                           name="is_active"
+                                           {% if request.form.get('is_active') or (not request.form and customer.is_active) %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Active Customer
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" 
+                                          id="notes" 
+                                          name="notes" 
+                                          rows="3" 
+                                          placeholder="Internal notes about this customer...">{{ request.form.get('notes', customer.notes or '') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <hr>
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ url_for('customers.show', customer_id=customer.id) }}" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i> Update Customer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Tips Sidebar -->
+    <div class="col-lg-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Customer Information</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless table-sm">
+                    <tr>
+                        <td class="fw-bold">Customer ID:</td>
+                        <td>{{ customer.id }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Created:</td>
+                        <td>{{ customer.created_at | dateformat }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Last Updated:</td>
+                        <td>{{ customer.updated_at | dateformat }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Current Balance:</td>
+                        <td>
+                            <span class="badge bg-{% if customer.current_balance > 0 %}success{% elif customer.current_balance < 0 %}danger{% else %}secondary{% endif %}">
+                                {{ customer.current_balance | currency }}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card shadow mt-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('customers.show', customer_id=customer.id) }}" class="btn btn-outline-info">
+                        <i class="bi bi-eye"></i> View Customer
+                    </a>
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="bi bi-file-earmark-plus"></i> Create Invoice
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary">
+                        <i class="bi bi-cash-coin"></i> Record Payment
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
