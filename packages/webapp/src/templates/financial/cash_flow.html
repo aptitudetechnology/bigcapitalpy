@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}Cash Flow Management - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Cash Flow Management</h1>
+    <div class="btn-group">
+        <a href="{{ url_for('financial.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Financial
+        </a>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-download"></i> Export
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="?format=pdf"><i class="bi bi-file-earmark-pdf"></i> PDF</a></li>
+                <li><a class="dropdown-item" href="?format=excel"><i class="bi bi-file-earmark-excel"></i> Excel</a></li>
+                <li><a class="dropdown-item" href="?format=csv"><i class="bi bi-file-earmark-text"></i> CSV</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Cash Overview Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Cash & Bank</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ data.total_cash | currency }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-cash-stack fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Cash Accounts</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ data.accounts | length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-bank fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">This Month Flow</div>
+                        {% set current_month_flow = 0 %}
+                        {% for flow in data.monthly_flow %}
+                            {% if flow.month.month == moment().month and flow.month.year == moment().year %}
+                                {% set current_month_flow = flow.net_flow %}
+                            {% endif %}
+                        {% endfor %}
+                        <div class="h5 mb-0 font-weight-bold text-gray-800 {% if current_month_flow >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ current_month_flow | currency }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-graph-up-arrow fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">6-Month Trend</div>
+                        {% set total_flow = 0 %}
+                        {% for flow in data.monthly_flow %}
+                            {% set total_flow = total_flow + flow.net_flow %}
+                        {% endfor %}
+                        <div class="h5 mb-0 font-weight-bold text-gray-800 {% if total_flow >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ total_flow | currency }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-trending-up fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cash Flow Chart and Account Details -->
+<div class="row mb-4">
+    <!-- Monthly Cash Flow Chart -->
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Monthly Cash Flow Trend (Last 6 Months)</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="cashFlowChart" width="100%" height="40"></canvas>
+                </div>
+                
+                <!-- Fallback table if chart doesn't load -->
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th class="text-end">Net Cash Flow</th>
+                                <th class="text-end">Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for flow in data.monthly_flow %}
+                            <tr>
+                                <td>{{ flow.month.strftime('%B %Y') }}</td>
+                                <td class="text-end {% if flow.net_flow >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ flow.net_flow | currency }}
+                                </td>
+                                <td class="text-end">
+                                    {% if flow.net_flow >= 0 %}
+                                        <i class="bi bi-arrow-up text-success"></i>
+                                    {% else %}
+                                        <i class="bi bi-arrow-down text-danger"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cash Account Balances -->
+    <div class="col-lg-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Cash Account Balances</h6>
+            </div>
+            <div class="card-body">
+                {% if data.accounts %}
+                    {% for account in data.accounts %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <div class="fw-bold">{{ account.name }}</div>
+                            <small class="text-muted">{{ account.code }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-bold {% if account.current_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ account.current_balance | currency }}
+                            </span>
+                        </div>
+                    </div>
+                    {% if not loop.last %}<hr class="my-2">{% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-bank text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">No cash accounts found</p>
+                        <a href="{{ url_for('accounts.new') }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus"></i> Add Cash Account
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cash Flow Actions -->
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Cash Flow Management Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('financial.create_manual_journal') }}" 
+                           class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-plus-circle fa-2x mb-2"></i>
+                            <span>Record Cash Transaction</span>
+                            <small class="text-muted">Manual journal entry</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('financial.reconciliation') }}" 
+                           class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-check-square fa-2x mb-2"></i>
+                            <span>Bank Reconciliation</span>
+                            <small class="text-muted">Match bank statements</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('reports.cash_flow') }}" 
+                           class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-file-earmark-bar-graph fa-2x mb-2"></i>
+                            <span>Cash Flow Report</span>
+                            <small class="text-muted">Detailed analysis</small>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('accounts.index') }}?type=asset" 
+                           class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-gear fa-2x mb-2"></i>
+                            <span>Manage Accounts</span>
+                            <small class="text-muted">Setup cash accounts</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cash Flow Forecast -->
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Cash Flow Insights</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Key Metrics</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Average Monthly Flow:</strong> 
+                        {% if data.monthly_flow %}
+                            {% set avg_flow = (data.monthly_flow | map(attribute='net_flow') | sum) / (data.monthly_flow | length) %}
+                            <span class="{% if avg_flow >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ avg_flow | currency }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-bank text-info"></i>
+                        <strong>Number of Cash Accounts:</strong> {{ data.accounts | length }}
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-calendar text-warning"></i>
+                        <strong>Reporting Period:</strong> Last 6 months
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Recommendations</h6>
+                <ul class="list-unstyled">
+                    {% if data.total_cash < 0 %}
+                    <li class="mb-2">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                        Consider improving cash collection processes
+                    </li>
+                    {% endif %}
+                    <li class="mb-2">
+                        <i class="bi bi-lightbulb text-info"></i>
+                        Regular bank reconciliation helps maintain accuracy
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-graph-up text-success"></i>
+                        Monitor monthly trends for better forecasting
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Cash Flow Chart
+    const ctx = document.getElementById('cashFlowChart').getContext('2d');
+    
+    // Prepare data for chart
+    const monthlyData = {{ data.monthly_flow | tojson }};
+    
+    const labels = monthlyData.map(item => {
+        const date = new Date(item.month);
+        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    });
+    
+    const values = monthlyData.map(item => parseFloat(item.net_flow) || 0);
+    
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Net Cash Flow',
+                data: values,
+                borderColor: '#4e73df',
+                backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.3,
+                pointBackgroundColor: '#4e73df',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    callbacks: {
+                        label: function(context) {
+                            return 'Cash Flow: $' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        borderDash: [3, 3]
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            elements: {
+                line: {
+                    tension: 0.3
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
