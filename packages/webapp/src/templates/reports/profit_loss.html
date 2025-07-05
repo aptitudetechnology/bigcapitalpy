@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Profit & Loss Statement - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">Profit & Loss Statement</h1>
+        <p class="text-muted mb-0">{{ report_period.start_date | dateformat }} to {{ report_period.end_date | dateformat }}</p>
+    </div>
+    <div class="btn-group">
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Reports
+        </a>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-download"></i> Export
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{{ url_for('reports.profit_loss', format='pdf') }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.profit_loss', format='excel') }}"><i class="bi bi-file-earmark-excel"></i> Excel</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.profit_loss', format='csv') }}"><i class="bi bi-file-earmark-text"></i> CSV</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Period Selection -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" 
+                       value="{{ request.args.get('start_date', report_period.start_date.strftime('%Y-%m-%d')) }}">
+            </div>
+            <div class="col-md-3">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" 
+                       value="{{ request.args.get('end_date', report_period.end_date.strftime('%Y-%m-%d')) }}">
+            </div>
+            <div class="col-md-3">
+                <label for="period" class="form-label">Quick Select</label>
+                <select class="form-select" id="period" name="period" onchange="setQuickPeriod()">
+                    <option value="custom">Custom Range</option>
+                    <option value="this_month" {% if request.args.get('period') == 'this_month' %}selected{% endif %}>This Month</option>
+                    <option value="last_month" {% if request.args.get('period') == 'last_month' %}selected{% endif %}>Last Month</option>
+                    <option value="this_quarter" {% if request.args.get('period') == 'this_quarter' %}selected{% endif %}>This Quarter</option>
+                    <option value="last_quarter" {% if request.args.get('period') == 'last_quarter' %}selected{% endif %}>Last Quarter</option>
+                    <option value="this_year" {% if request.args.get('period') == 'this_year' %}selected{% endif %}>This Year</option>
+                    <option value="last_year" {% if request.args.get('period') == 'last_year' %}selected{% endif %}>Last Year</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Generate Report
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Profit & Loss Report -->
+<div class="card shadow">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">
+            {{ current_user.organization.name }} - Profit & Loss Statement
+        </h6>
+        <small class="text-muted">{{ report_period.start_date | dateformat }} to {{ report_period.end_date | dateformat }}</small>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-borderless">
+                <!-- INCOME SECTION -->
+                <tbody>
+                    <tr class="table-active">
+                        <td class="fw-bold fs-6">INCOME</td>
+                        <td></td>
+                    </tr>
+                    
+                    {% for income_account in report_data.income_accounts %}
+                    <tr>
+                        <td class="ps-3">{{ income_account.name }}</td>
+                        <td class="text-end">{{ income_account.balance | currency }}</td>
+                    </tr>
+                    {% endfor %}
+                    
+                    <tr class="border-top">
+                        <td class="fw-bold">Total Income</td>
+                        <td class="text-end fw-bold">{{ report_data.total_income | currency }}</td>
+                    </tr>
+                    
+                    <tr><td colspan="2" class="py-2"></td></tr>
+                    
+                    <!-- COST OF GOODS SOLD -->
+                    <tr class="table-active">
+                        <td class="fw-bold fs-6">COST OF GOODS SOLD</td>
+                        <td></td>
+                    </tr>
+                    
+                    {% for cogs_account in report_data.cogs_accounts %}
+                    <tr>
+                        <td class="ps-3">{{ cogs_account.name }}</td>
+                        <td class="text-end">{{ cogs_account.balance | currency }}</td>
+                    </tr>
+                    {% endfor %}
+                    
+                    <tr class="border-top">
+                        <td class="fw-bold">Total Cost of Goods Sold</td>
+                        <td class="text-end fw-bold">{{ report_data.total_cogs | currency }}</td>
+                    </tr>
+                    
+                    <tr class="border-top border-2">
+                        <td class="fw-bold fs-6">GROSS PROFIT</td>
+                        <td class="text-end fw-bold fs-6 {% if report_data.gross_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ report_data.gross_profit | currency }}
+                        </td>
+                    </tr>
+                    
+                    <tr><td colspan="2" class="py-2"></td></tr>
+                    
+                    <!-- EXPENSES -->
+                    <tr class="table-active">
+                        <td class="fw-bold fs-6">EXPENSES</td>
+                        <td></td>
+                    </tr>
+                    
+                    {% for expense_category in report_data.expense_categories %}
+                    <tr>
+                        <td class="fw-bold">{{ expense_category.name }}</td>
+                        <td></td>
+                    </tr>
+                    {% for expense_account in expense_category.accounts %}
+                    <tr>
+                        <td class="ps-4">{{ expense_account.name }}</td>
+                        <td class="text-end">{{ expense_account.balance | currency }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                        <td class="ps-3 fw-bold border-top">Total {{ expense_category.name }}</td>
+                        <td class="text-end fw-bold border-top">{{ expense_category.total | currency }}</td>
+                    </tr>
+                    <tr><td colspan="2" class="py-1"></td></tr>
+                    {% endfor %}
+                    
+                    <tr class="border-top">
+                        <td class="fw-bold">Total Expenses</td>
+                        <td class="text-end fw-bold">{{ report_data.total_expenses | currency }}</td>
+                    </tr>
+                    
+                    <tr><td colspan="2" class="py-2"></td></tr>
+                    
+                    <!-- OTHER INCOME/EXPENSES -->
+                    <tr class="table-active">
+                        <td class="fw-bold fs-6">OTHER INCOME</td>
+                        <td></td>
+                    </tr>
+                    
+                    {% for other_income in report_data.other_income_accounts %}
+                    <tr>
+                        <td class="ps-3">{{ other_income.name }}</td>
+                        <td class="text-end">{{ other_income.balance | currency }}</td>
+                    </tr>
+                    {% endfor %}
+                    
+                    <tr class="border-top">
+                        <td class="fw-bold">Total Other Income</td>
+                        <td class="text-end fw-bold">{{ report_data.total_other_income | currency }}</td>
+                    </tr>
+                    
+                    <tr><td colspan="2" class="py-1"></td></tr>
+                    
+                    <tr class="table-active">
+                        <td class="fw-bold fs-6">OTHER EXPENSES</td>
+                        <td></td>
+                    </tr>
+                    
+                    {% for other_expense in report_data.other_expense_accounts %}
+                    <tr>
+                        <td class="ps-3">{{ other_expense.name }}</td>
+                        <td class="text-end">{{ other_expense.balance | currency }}</td>
+                    </tr>
+                    {% endfor %}
+                    
+                    <tr class="border-top">
+                        <td class="fw-bold">Total Other Expenses</td>
+                        <td class="text-end fw-bold">{{ report_data.total_other_expenses | currency }}</td>
+                    </tr>
+                    
+                    <tr><td colspan="2" class="py-2"></td></tr>
+                    
+                    <!-- NET INCOME -->
+                    <tr class="border-top border-2 table-dark">
+                        <td class="fw-bold fs-5">NET INCOME</td>
+                        <td class="text-end fw-bold fs-5 {% if report_data.net_income >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ report_data.net_income | currency }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h6>Total Revenue</h6>
+                        <h4>{{ report_data.total_income | currency }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h6>Gross Profit</h6>
+                        <h4>{{ report_data.gross_profit | currency }}</h4>
+                        <small>{{ report_data.gross_profit_margin }}% margin</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h6>Total Expenses</h6>
+                        <h4>{{ report_data.total_expenses | currency }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-{% if report_data.net_income >= 0 %}success{% else %}danger{% endif %} text-white">
+                    <div class="card-body text-center">
+                        <h6>Net Income</h6>
+                        <h4>{{ report_data.net_income | currency }}</h4>
+                        <small>{{ report_data.net_profit_margin }}% margin</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setQuickPeriod() {
+    const period = document.getElementById('period').value;
+    const today = new Date();
+    let startDate, endDate;
+    
+    switch(period) {
+        case 'this_month':
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = today;
+            break;
+        case 'last_month':
+            startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+            break;
+        case 'this_quarter':
+            const quarter = Math.floor(today.getMonth() / 3);
+            startDate = new Date(today.getFullYear(), quarter * 3, 1);
+            endDate = today;
+            break;
+        case 'last_quarter':
+            const lastQuarter = Math.floor(today.getMonth() / 3) - 1;
+            startDate = new Date(today.getFullYear(), lastQuarter * 3, 1);
+            endDate = new Date(today.getFullYear(), (lastQuarter + 1) * 3, 0);
+            break;
+        case 'this_year':
+            startDate = new Date(today.getFullYear(), 0, 1);
+            endDate = today;
+            break;
+        case 'last_year':
+            startDate = new Date(today.getFullYear() - 1, 0, 1);
+            endDate = new Date(today.getFullYear() - 1, 11, 31);
+            break;
+        default:
+            return; // Custom range - don't change dates
+    }
+    
+    if (startDate && endDate) {
+        document.getElementById('start_date').value = startDate.toISOString().split('T')[0];
+        document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+    }
+}
+</script>
+{% endblock %}
