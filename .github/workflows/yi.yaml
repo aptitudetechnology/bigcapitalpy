@@ -136,6 +136,7 @@ jobs:
             sys.path.insert(0, '/app')
             from packages.server.src.database import db
             from app import create_app
+            app = create_app()
             with app.app_context():
                 db.create_all()
                 print('✓ Database schema created successfully')
