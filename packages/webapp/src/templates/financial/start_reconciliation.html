@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Start Reconciliation - {{ account.name }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Start Reconciliation - {{ account.name }}</h1>
+    <a href="{{ url_for('financial.reconciliation') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Reconciliation
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Reconciliation Form -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Reconciliation Details</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('financial.create_reconciliation', account_id=account.id) }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="statement_date" class="form-label">Statement Ending Date</label>
+                                <input type="date" class="form-control" id="statement_date" name="statement_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="statement_balance" class="form-label">Statement Ending Balance</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control" id="statement_balance" 
+                                           name="statement_balance" required placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Current Book Balance</label>
+                            <div class="form-control-plaintext fw-bold {% if account.current_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ account.current_balance | currency }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Estimated Difference</label>
+                            <div id="estimated-difference" class="form-control-plaintext fw-bold text-muted">
+                                Calculate after entering statement balance
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('financial.upload_bank_statement', account_id=account.id) }}" 
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-upload"></i> Import Bank Statement First
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-play-circle"></i> Start Reconciliation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Account Summary -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Account Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Account Code:</span>
+                    <span class="fw-bold">{{ account.code }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Account Type:</span>
+                    <span>{{ account.type.value.title() }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Current Balance:</span>
+                    <span class="fw-bold {% if account.current_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ account.current_balance | currency }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Tips</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-lightbulb text-warning"></i> Import your bank statement CSV first for easier matching</li>
+                    <li class="mb-2"><i class="bi bi-calendar-check text-info"></i> Use the last day of your statement period</li>
+                    <li class="mb-2"><i class="bi bi-currency-dollar text-success"></i> Enter the exact ending balance from your statement</li>
+                    <li class="mb-2"><i class="bi bi-clock text-muted"></i> You can save and return to continue later</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statementBalanceInput = document.getElementById('statement_balance');
+    const bookBalance = parseFloat('{{ account.current_balance or 0 }}');
+    
+    statementBalanceInput.addEventListener('input', function() {
+        const statementBalance = parseFloat(this.value) || 0;
+        const difference = bookBalance - statementBalance;
+        
+        const diffElement = document.getElementById('estimated-difference');
+        diffElement.textContent = '$' + difference.toFixed(2);
+        
+        if (Math.abs(difference) < 0.01) {
+            diffElement.className = 'form-control-plaintext fw-bold text-success';
+        } else {
+            diffElement.className = 'form-control-plaintext fw-bold text-danger';
+        }
+    });
+});
+</script>

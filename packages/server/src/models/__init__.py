@@ -408,3 +408,63 @@ class PaymentAllocation(db.Model):
     
     # Relationships
     invoice = db.relationship('Invoice')
+
+class BankTransaction(db.Model):
+    """Bank transactions imported from CSV/bank feeds"""
+    __tablename__ = 'bank_transactions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    transaction_date = db.Column(db.Date, nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    reference = db.Column(db.String(100))
+    amount = db.Column(db.Numeric(15, 2), nullable=False)  # Positive for deposits, negative for withdrawals
+    balance = db.Column(db.Numeric(15, 2))  # Running balance after this transaction
+    bank_transaction_id = db.Column(db.String(100))  # Bank's unique identifier
+    transaction_type = db.Column(db.String(50))  # DEBIT, CREDIT, etc.
+    status = db.Column(db.String(20), default='unmatched')  # unmatched, matched, reconciled
+    organization_id = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    account = db.relationship('Account', backref='bank_transactions')
+    matches = db.relationship('ReconciliationMatch', backref='bank_transaction', cascade='all, delete-orphan')
+
+class BankReconciliation(db.Model):
+    """Bank reconciliation sessions"""
+    __tablename__ = 'bank_reconciliations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    reconciliation_date = db.Column(db.Date, nullable=False)
+    statement_ending_date = db.Column(db.Date, nullable=False)
+    statement_ending_balance = db.Column(db.Numeric(15, 2), nullable=False)
+    book_ending_balance = db.Column(db.Numeric(15, 2), nullable=False)
+    difference = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+    status = db.Column(db.String(20), default='in_progress')  # in_progress, completed, discarded
+    notes = db.Column(db.Text)
+    organization_id = db.Column(db.Integer, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    account = db.relationship('Account', backref='reconciliations')
+    creator = db.relationship('User', backref='reconciliations')
+    matches = db.relationship('ReconciliationMatch', backref='reconciliation', cascade='all, delete-orphan')
+
+class ReconciliationMatch(db.Model):
+    """Matches between bank transactions and journal entries"""
+    __tablename__ = 'reconciliation_matches'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    reconciliation_id = db.Column(db.Integer, db.ForeignKey('bank_reconciliations.id'), nullable=False)
+    bank_transaction_id = db.Column(db.Integer, db.ForeignKey('bank_transactions.id'))
+    journal_line_item_id = db.Column(db.Integer, db.ForeignKey('journal_line_items.id'))
+    match_type = db.Column(db.String(20), nullable=False)  # automatic, manual, created
+    confidence_score = db.Column(db.Float, default=0.0)  # For automatic matching
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships  
+    journal_line_item = db.relationship('JournalLineItem', backref='reconciliation_matches')

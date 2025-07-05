@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Import Bank Statement - {{ account.name }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Import Bank Statement - {{ account.name }}</h1>
+    <a href="{{ url_for('financial.start_reconciliation', account_id=account.id) }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Reconciliation
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Upload Form -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Upload CSV File</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="upload-form">
+                    <div class="mb-4">
+                        <label for="bank_statement" class="form-label">Bank Statement CSV File</label>
+                        <input type="file" class="form-control" id="bank_statement" name="bank_statement" 
+                               accept=".csv" required>
+                        <div class="form-text">Upload a CSV file downloaded from your bank.</div>
+                    </div>
+                    
+                    <div id="column-mapping" style="display: none;">
+                        <h6 class="mb-3">Map CSV Columns to Transaction Fields</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="date_column" class="form-label">Date Column <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="date_column" name="date_column" required>
+                                        <option value="">Select column...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="description_column" class="form-label">Description Column <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="description_column" name="description_column" required>
+                                        <option value="">Select column...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="amount_column" class="form-label">Amount Column <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="amount_column" name="amount_column" required>
+                                        <option value="">Select column...</option>
+                                    </select>
+                                    <div class="form-text">Use positive values for deposits, negative for withdrawals</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="reference_column" class="form-label">Reference Column</label>
+                                    <select class="form-select" id="reference_column" name="reference_column">
+                                        <option value="">Select column (optional)...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="balance_column" class="form-label">Balance Column</label>
+                                    <select class="form-select" id="balance_column" name="balance_column">
+                                        <option value="">Select column (optional)...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview -->
+                        <div id="preview-section" style="display: none;">
+                            <h6 class="mb-3">Preview</h6>
+                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                <table class="table table-sm table-bordered">
+                                    <thead id="preview-header"></thead>
+                                    <tbody id="preview-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload"></i> Import Transactions
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Instructions -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">CSV Format Requirements</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> First row should contain column headers</li>
+                    <li class="mb-2"><i class="bi bi-calendar text-info"></i> Dates in YYYY-MM-DD format (e.g., 2024-01-15)</li>
+                    <li class="mb-2"><i class="bi bi-currency-dollar text-info"></i> Amounts as numbers (positive for deposits, negative for withdrawals)</li>
+                    <li class="mb-2"><i class="bi bi-file-text text-info"></i> Descriptions should be clear and descriptive</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Sample Format -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Sample CSV Format</h6>
+            </div>
+            <div class="card-body">
+                <pre class="small text-muted">Date,Description,Amount,Reference
+2024-01-15,Deposit,1000.00,DEP001
+2024-01-16,ATM Withdrawal,-50.00,ATM123
+2024-01-17,Check #1001,-250.00,CHK1001</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('bank_statement');
+    const columnMapping = document.getElementById('column-mapping');
+    const previewSection = document.getElementById('preview-section');
+    
+    let csvData = [];
+    let headers = [];
+    
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csv = e.target.result;
+                parseCSV(csv);
+            };
+            reader.readAsText(file);
+        }
+    });
+    
+    function parseCSV(csv) {
+        const lines = csv.split('\n');
+        if (lines.length < 2) {
+            alert('CSV file must have at least a header row and one data row');
+            return;
+        }
+        
+        // Parse headers
+        headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        
+        // Parse data (first few rows for preview)
+        csvData = [];
+        for (let i = 1; i < Math.min(6, lines.length); i++) {
+            if (lines[i].trim()) {
+                const row = lines[i].split(',').map(cell => cell.trim().replace(/"/g, ''));
+                csvData.push(row);
+            }
+        }
+        
+        populateColumnSelects();
+        showColumnMapping();
+        showPreview();
+    }
+    
+    function populateColumnSelects() {
+        const selects = ['date_column', 'description_column', 'amount_column', 'reference_column', 'balance_column'];
+        
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Select column...</option>';
+            
+            headers.forEach((header, index) => {
+                const option = document.createElement('option');
+                option.value = header;
+                option.textContent = header;
+                select.appendChild(option);
+            });
+        });
+        
+        // Auto-detect common column names
+        autoDetectColumns();
+    }
+    
+    function autoDetectColumns() {
+        const detectionRules = {
+            'date_column': ['date', 'transaction date', 'trans date', 'posting date'],
+            'description_column': ['description', 'memo', 'details', 'transaction details'],
+            'amount_column': ['amount', 'transaction amount', 'debit credit', 'value'],
+            'reference_column': ['reference', 'ref', 'check number', 'transaction id'],
+            'balance_column': ['balance', 'running balance', 'account balance']
+        };
+        
+        Object.keys(detectionRules).forEach(selectId => {
+            const select = document.getElementById(selectId);
+            const patterns = detectionRules[selectId];
+            
+            for (const header of headers) {
+                const headerLower = header.toLowerCase();
+                for (const pattern of patterns) {
+                    if (headerLower.includes(pattern)) {
+                        select.value = header;
+                        break;
+                    }
+                }
+                if (select.value) break;
+            }
+        });
+    }
+    
+    function showColumnMapping() {
+        columnMapping.style.display = 'block';
+    }
+    
+    function showPreview() {
+        const previewHeader = document.getElementById('preview-header');
+        const previewBody = document.getElementById('preview-body');
+        
+        // Create header
+        previewHeader.innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+        
+        // Create body
+        previewBody.innerHTML = '';
+        csvData.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = row.map(cell => `<td>${cell}</td>`).join('');
+            previewBody.appendChild(tr);
+        });
+        
+        previewSection.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

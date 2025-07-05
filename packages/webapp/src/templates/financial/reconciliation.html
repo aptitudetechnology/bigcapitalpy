@@ -32,16 +32,91 @@
                 </div>
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-muted">Last Reconciled:</span>
-                    <span class="text-muted">Never</span>
+                    {% if stats[account.id].last_reconciliation %}
+                        <span class="text-success">{{ stats[account.id].last_reconciliation.statement_ending_date | date }}</span>
+                    {% else %}
+                        <span class="text-muted">Never</span>
+                    {% endif %}
                 </div>
-                <a href="{{ url_for('financial.reconcile_account', account_id=account.id) }}" 
-                   class="btn btn-primary w-100">
-                    <i class="bi bi-check2-square"></i> Start Reconciliation
-                </a>
+                {% if stats[account.id].unmatched_count > 0 %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Unmatched:</span>
+                    <span class="badge bg-warning">{{ stats[account.id].unmatched_count }} transactions</span>
+                </div>
+                {% endif %}
+                
+                <div class="btn-group w-100" role="group">
+                    <a href="{{ url_for('financial.start_reconciliation', account_id=account.id) }}" 
+                       class="btn btn-primary">
+                        <i class="bi bi-check2-square"></i> Reconcile
+                    </a>
+                    <a href="{{ url_for('financial.upload_bank_statement', account_id=account.id) }}" 
+                       class="btn btn-outline-primary">
+                        <i class="bi bi-upload"></i> Import
+                    </a>
+                </div>
             </div>
         </div>
     </div>
     {% endfor %}
+</div>
+
+<!-- Recent Reconciliations -->
+<div class="card shadow mt-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Recent Reconciliations</h6>
+    </div>
+    <div class="card-body">
+        {% set recent_reconciliations = [] %}
+        {% for account in accounts %}
+            {% if stats[account.id].last_reconciliation %}
+                {{ recent_reconciliations.append(stats[account.id].last_reconciliation) or "" }}
+            {% endif %}
+        {% endfor %}
+        
+        {% if recent_reconciliations %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Account</th>
+                        <th>Statement Date</th>
+                        <th>Statement Balance</th>
+                        <th>Difference</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reconciliation in recent_reconciliations[:5] %}
+                    <tr>
+                        <td>{{ reconciliation.account.name }}</td>
+                        <td>{{ reconciliation.statement_ending_date | date }}</td>
+                        <td>{{ reconciliation.statement_ending_balance | currency }}</td>
+                        <td>
+                            {% if reconciliation.difference == 0 %}
+                                <span class="text-success">{{ reconciliation.difference | currency }}</span>
+                            {% else %}
+                                <span class="text-danger">{{ reconciliation.difference | currency }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if reconciliation.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% elif reconciliation.status == 'in_progress' %}
+                                <span class="badge bg-warning">In Progress</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ reconciliation.status.title() }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No reconciliations completed yet.</p>
+        {% endif %}
+    </div>
 </div>
 
 <!-- Reconciliation Instructions -->
@@ -52,21 +127,33 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <h6>Before You Start:</h6>
+                <h6>Step 1: Import Bank Statement</h6>
                 <ul class="list-unstyled">
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Have your bank statement ready</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Note the statement ending date</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Note the statement ending balance</li>
-                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Review any pending transactions</li>
+                    <li class="mb-2"><i class="bi bi-upload text-info"></i> Upload your bank statement CSV file</li>
+                    <li class="mb-2"><i class="bi bi-table text-info"></i> Map CSV columns to transaction fields</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Review imported transactions</li>
+                </ul>
+                
+                <h6 class="mt-4">Step 2: Start Reconciliation</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-calendar text-info"></i> Enter statement ending date</li>
+                    <li class="mb-2"><i class="bi bi-currency-dollar text-info"></i> Enter statement ending balance</li>
+                    <li class="mb-2"><i class="bi bi-play-circle text-success"></i> Begin matching process</li>
                 </ul>
             </div>
             <div class="col-md-6">
-                <h6>During Reconciliation:</h6>
+                <h6>Step 3: Match Transactions</h6>
                 <ul class="list-unstyled">
-                    <li class="mb-2"><i class="bi bi-1-circle text-info"></i> Mark transactions that appear on your statement</li>
-                    <li class="mb-2"><i class="bi bi-2-circle text-info"></i> Add any missing bank transactions</li>
-                    <li class="mb-2"><i class="bi bi-3-circle text-info"></i> Verify the difference is zero</li>
-                    <li class="mb-2"><i class="bi bi-4-circle text-info"></i> Save your reconciliation</li>
+                    <li class="mb-2"><i class="bi bi-magic text-info"></i> Use auto-match for exact matches</li>
+                    <li class="mb-2"><i class="bi bi-cursor text-info"></i> Manually match remaining transactions</li>
+                    <li class="mb-2"><i class="bi bi-plus-circle text-info"></i> Create entries for bank-only transactions</li>
+                </ul>
+                
+                <h6 class="mt-4">Step 4: Complete</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-check-square text-success"></i> Verify difference is zero</li>
+                    <li class="mb-2"><i class="bi bi-save text-success"></i> Complete reconciliation</li>
+                    <li class="mb-2"><i class="bi bi-file-earmark-check text-success"></i> Generate reconciliation report</li>
                 </ul>
             </div>
         </div>

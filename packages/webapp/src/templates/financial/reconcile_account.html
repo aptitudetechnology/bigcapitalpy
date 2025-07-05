@@ -1,0 +1,528 @@
+{% extends "base.html" %}
+
+{% block title %}Bank Reconciliation - {{ data.reconciliation.account.name }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Bank Reconciliation - {{ data.reconciliation.account.name }}</h1>
+    <div>
+        <a href="{{ url_for('financial.reconciliation') }}" class="btn btn-secondary me-2">
+            <i class="bi bi-arrow-left"></i> Back to Reconciliation
+        </a>
+        {% if data.reconciliation.status == 'in_progress' %}
+        <button type="button" class="btn btn-danger" onclick="discardReconciliation()">
+            <i class="bi bi-trash"></i> Discard
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Reconciliation Summary -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small">Statement Balance</div>
+                        <div class="h5 mb-0">{{ data.reconciliation.statement_ending_balance | currency }}</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-bank" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small">Book Balance</div>
+                        <div class="h5 mb-0">{{ data.reconciliation.book_ending_balance | currency }}</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-journal-text" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small">Matched Amount</div>
+                        <div class="h5 mb-0">{{ data.matched_bank_total | currency }}</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card {% if data.remaining_difference|abs < 0.01 %}bg-success{% else %}bg-danger{% endif %} text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small">Difference</div>
+                        <div class="h5 mb-0">{{ data.remaining_difference | currency }}</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi {% if data.remaining_difference|abs < 0.01 %}bi-check-square{% else %}bi-exclamation-triangle{% endif %}" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary" onclick="autoMatchTransactions()">
+                <i class="bi bi-magic"></i> Auto Match
+            </button>
+            <button type="button" class="btn btn-outline-success" onclick="showCreateEntryModal()">
+                <i class="bi bi-plus-circle"></i> Create Entry from Bank
+            </button>
+            {% if data.remaining_difference|abs < 0.01 %}
+            <button type="button" class="btn btn-success" onclick="completeReconciliation()">
+                <i class="bi bi-check-square"></i> Complete Reconciliation
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Transactions -->
+<div class="row">
+    <!-- Bank Transactions -->
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    Bank Statement Transactions
+                    <span class="badge bg-secondary">{{ data.bank_transactions | length }}</span>
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in data.bank_transactions %}
+                            <tr id="bank-{{ transaction.id }}" 
+                                {% if transaction.status == 'matched' %}class="table-success"{% endif %}>
+                                <td>{{ transaction.transaction_date | dateformat }}</td>
+                                <td>
+                                    <div class="small fw-bold">{{ transaction.description }}</div>
+                                    {% if transaction.reference %}
+                                    <div class="text-muted small">{{ transaction.reference }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="{% if transaction.amount >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ transaction.amount | currency }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if transaction.status == 'unmatched' %}
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary btn-sm" 
+                                                onclick="selectBankTransaction({{ transaction.id }})">
+                                            Select
+                                        </button>
+                                        <button class="btn btn-outline-success btn-sm" 
+                                                onclick="createEntryFromBank({{ transaction.id }})">
+                                            Create Entry
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                    <span class="badge bg-success">Matched</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Journal Entries -->
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    Book Transactions
+                    <span class="badge bg-secondary">{{ data.journal_entries | length }}</span>
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line_item in data.journal_entries %}
+                            <tr id="journal-{{ line_item.id }}">
+                                <td>{{ line_item.journal_entry.date | dateformat }}</td>
+                                <td>
+                                    <div class="small fw-bold">{{ line_item.description or line_item.journal_entry.description }}</div>
+                                    <div class="text-muted small">{{ line_item.journal_entry.entry_number }}</div>
+                                </td>
+                                <td>
+                                    {% set amount = (line_item.debit or 0) - (line_item.credit or 0) %}
+                                    <span class="{% if amount >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ amount | currency }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-sm" 
+                                            onclick="selectJournalEntry({{ line_item.id }})">
+                                        Select
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Matches -->
+{% if data.matches %}
+<div class="row mt-4">
+    <div class="col">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    Current Matches
+                    <span class="badge bg-success">{{ data.matches | length }}</span>
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Bank Transaction</th>
+                                <th>Book Transaction</th>
+                                <th>Amount</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for match in data.matches %}
+                            <tr>
+                                <td>
+                                    {% if match.bank_transaction %}
+                                        <div class="small">{{ match.bank_transaction.transaction_date | dateformat }}</div>
+                                        <div class="fw-bold small">{{ match.bank_transaction.description }}</div>
+                                    {% else %}
+                                        <span class="text-muted">No bank transaction</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if match.journal_line_item %}
+                                        <div class="small">{{ match.journal_line_item.journal_entry.date | dateformat }}</div>
+                                        <div class="fw-bold small">{{ match.journal_line_item.journal_entry.entry_number }}</div>
+                                    {% else %}
+                                        <span class="text-muted">No book transaction</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if match.bank_transaction %}
+                                        <span class="{% if match.bank_transaction.amount >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ match.bank_transaction.amount | currency }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if match.match_type == 'automatic' %}info{% elif match.match_type == 'manual' %}warning{% else %}success{% endif %}">
+                                        {{ match.match_type.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-danger btn-sm" 
+                                            onclick="unmatchTransaction({{ match.id }})">
+                                        <i class="bi bi-x"></i> Unmatch
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Create Journal Entry Modal -->
+<div class="modal fade" id="createEntryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Journal Entry from Bank Transaction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createEntryForm">
+                <div class="modal-body">
+                    <input type="hidden" id="selected_bank_transaction_id">
+                    <div class="mb-3">
+                        <label class="form-label">Bank Transaction</label>
+                        <div id="bank_transaction_info" class="form-control-plaintext"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="contra_account_id" class="form-label">Contra Account <span class="text-danger">*</span></label>
+                        <select class="form-select" id="contra_account_id" name="contra_account_id" required>
+                            <option value="">Select account...</option>
+                            {% for account in data.accounts %}
+                            <option value="{{ account.id }}">{{ account.code }} - {{ account.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="entry_description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="entry_description" name="description">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Entry & Match</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedBankTransaction = null;
+let selectedJournalEntry = null;
+
+// Transaction selection
+function selectBankTransaction(transactionId) {
+    // Clear previous selection
+    document.querySelectorAll('[id^="bank-"]').forEach(row => {
+        row.classList.remove('table-warning');
+    });
+    
+    // Highlight selected transaction
+    const row = document.getElementById(`bank-${transactionId}`);
+    row.classList.add('table-warning');
+    
+    selectedBankTransaction = transactionId;
+    
+    // Try to match if both are selected
+    if (selectedBankTransaction && selectedJournalEntry) {
+        matchTransactions();
+    }
+}
+
+function selectJournalEntry(entryId) {
+    // Clear previous selection
+    document.querySelectorAll('[id^="journal-"]').forEach(row => {
+        row.classList.remove('table-warning');
+    });
+    
+    // Highlight selected entry
+    const row = document.getElementById(`journal-${entryId}`);
+    row.classList.add('table-warning');
+    
+    selectedJournalEntry = entryId;
+    
+    // Try to match if both are selected
+    if (selectedBankTransaction && selectedJournalEntry) {
+        matchTransactions();
+    }
+}
+
+// Matching functions
+function matchTransactions() {
+    if (!selectedBankTransaction || !selectedJournalEntry) {
+        alert('Please select both a bank transaction and a journal entry to match.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('bank_transaction_id', selectedBankTransaction);
+    formData.append('journal_line_item_id', selectedJournalEntry);
+    
+    fetch(`{{ url_for('financial.match_transactions', reconciliation_id=data.reconciliation.id) }}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error matching transactions');
+    });
+}
+
+function unmatchTransaction(matchId) {
+    if (!confirm('Are you sure you want to unmatch this transaction?')) return;
+    
+    fetch(`{{ url_for('financial.unmatch_transaction', reconciliation_id=data.reconciliation.id, match_id=0) }}`.replace('0', matchId), {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error unmatching transaction');
+    });
+}
+
+function autoMatchTransactions() {
+    fetch(`{{ url_for('financial.auto_match_transactions', reconciliation_id=data.reconciliation.id) }}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error auto-matching transactions');
+    });
+}
+
+// Create entry functions
+function showCreateEntryModal() {
+    if (!selectedBankTransaction) {
+        alert('Please select a bank transaction first.');
+        return;
+    }
+    
+    // Get bank transaction info
+    const bankRow = document.getElementById(`bank-${selectedBankTransaction}`);
+    const description = bankRow.cells[1].textContent.trim();
+    const amount = bankRow.cells[2].textContent.trim();
+    
+    document.getElementById('selected_bank_transaction_id').value = selectedBankTransaction;
+    document.getElementById('bank_transaction_info').textContent = `${description} - ${amount}`;
+    document.getElementById('entry_description').value = description;
+    
+    new bootstrap.Modal(document.getElementById('createEntryModal')).show();
+}
+
+function createEntryFromBank(transactionId) {
+    selectedBankTransaction = transactionId;
+    showCreateEntryModal();
+}
+
+// Form submission for creating entry
+document.getElementById('createEntryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('bank_transaction_id', document.getElementById('selected_bank_transaction_id').value);
+    formData.append('contra_account_id', document.getElementById('contra_account_id').value);
+    formData.append('description', document.getElementById('entry_description').value);
+    
+    fetch(`{{ url_for('financial.create_journal_entry_from_bank', reconciliation_id=data.reconciliation.id) }}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('createEntryModal')).hide();
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating journal entry');
+    });
+});
+
+// Reconciliation completion
+function completeReconciliation() {
+    if (!confirm('Are you sure you want to complete this reconciliation? This action cannot be undone.')) return;
+    
+    fetch(`{{ url_for('financial.complete_reconciliation', reconciliation_id=data.reconciliation.id) }}`, {
+        method: 'POST'
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error completing reconciliation');
+    });
+}
+
+function discardReconciliation() {
+    if (!confirm('Are you sure you want to discard this reconciliation? All matches will be removed.')) return;
+    
+    fetch(`{{ url_for('financial.discard_reconciliation', reconciliation_id=data.reconciliation.id) }}`, {
+        method: 'POST'
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error discarding reconciliation');
+    });
+}
+</script>
+{% endblock %}
