@@ -1406,3 +1406,214 @@ class AustralianGSTBASReport:
                 'quarter_display': self.quarter
             }
         }
+    
+@reports_bp.route('/australian-gst-bas')
+@login_required
+def australian_gst_bas():
+    """Australian GST Business Activity Statement (BAS) Report"""
+    period = request.args.get('period', 'this_quarter')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Get date range
+    start_date, end_date = get_date_range(period, start_date, end_date)
+    
+    # Generate BAS report
+    bas_generator = AustralianGSTBASReport(
+        start_date=start_date,
+        end_date=end_date,
+        organization_id=current_user.organization_id
+    )
+    
+    bas_data = bas_generator.generate_bas_report()
+    
+    # Get available tax codes for reference
+    tax_codes = TaxCode.query.filter_by(
+        organization_id=current_user.organization_id,
+        is_active=True
+    ).order_by(TaxCode.tax_type, TaxCode.code).all()
+    
+    return render_template('reports/australian_gst_bas.html', 
+                         bas_data=bas_data,
+                         tax_codes=tax_codes,
+                         period=period,
+                         start_date=start_date,
+                         end_date=end_date)
+
+@reports_bp.route('/australian-gst-bas/export')
+@login_required
+def export_australian_gst_bas():
+    """Export Australian GST BAS Report to CSV"""
+    period = request.args.get('period', 'this_quarter')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Get date range
+    start_date, end_date = get_date_range(period, start_date, end_date)
+    
+    # Generate BAS report
+    bas_generator = AustralianGSTBASReport(
+        start_date=start_date,
+        end_date=end_date,
+        organization_id=current_user.organization_id
+    )
+    
+    bas_data = bas_generator.generate_bas_report()
+    
+    # Create CSV response
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow(['Australian GST Business Activity Statement (BAS)'])
+    writer.writerow([f"Period: {bas_data['period']['start_date']} to {bas_data['period']['end_date']}"])
+    writer.writerow([f"Quarter: {bas_data['period']['quarter']}"])
+    writer.writerow([])
+    
+    # Sales section
+    writer.writerow(['SALES AND INCOME'])
+    writer.writerow(['Field', 'Description', 'Amount (AUD)'])
+    writer.writerow(['G1', 'Total sales (including GST)', f"${bas_data['sales']['G1']:,.2f}"])
+    writer.writerow(['G2', 'Export sales', f"${bas_data['sales']['G2']:,.2f}"])
+    writer.writerow(['G3', 'Other GST-free sales', f"${bas_data['sales']['G3']:,.2f}"])
+    writer.writerow(['G4', 'Input taxed sales', f"${bas_data['sales']['G4']:,.2f}"])
+    writer.writerow(['G7', 'Adjustments', f"${bas_data['sales']['G7']:,.2f}"])
+    writer.writerow([])
+    
+    # Purchases section
+    writer.writerow(['PURCHASES AND EXPENSES'])
+    writer.writerow(['Field', 'Description', 'Amount (AUD)'])
+    writer.writerow(['G10', 'Capital purchases (including GST)', f"${bas_data['purchases']['G10']:,.2f}"])
+    writer.writerow(['G11', 'Non-capital purchases (including GST)', f"${bas_data['purchases']['G11']:,.2f}"])
+    writer.writerow(['G13', 'Purchases for input taxed sales', f"${bas_data['purchases']['G13']:,.2f}"])
+    writer.writerow(['G14', 'Purchases without GST', f"${bas_data['purchases']['G14']:,.2f}"])
+    writer.writerow([])
+    
+    # GST calculations
+    writer.writerow(['GST CALCULATIONS'])
+    writer.writerow(['Field', 'Description', 'Amount (AUD)'])
+    writer.writerow(['1A', 'GST on sales', f"${bas_data['gst']['1A']:,.2f}"])
+    writer.writerow(['1B', 'GST on purchases', f"${bas_data['gst']['1B']:,.2f}"])
+    writer.writerow(['', 'Net GST amount', f"${bas_data['gst']['net_gst']:,.2f}"])
+    writer.writerow(['', 'Status', bas_data['gst']['status'].title()])
+    writer.writerow([])
+    
+    # Validation
+    if bas_data['validation']['errors']:
+        writer.writerow(['VALIDATION ERRORS'])
+        for error in bas_data['validation']['errors']:
+            writer.writerow(['', error])
+    else:
+        writer.writerow(['VALIDATION: PASSED'])
+    
+    output.seek(0)
+    
+    # Create response
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = f'attachment; filename=australian_gst_bas_{bas_data["period"]["quarter"]}.csv'
+    
+    return response
+
+@reports_bp.route('/tax-codes')
+@login_required
+def tax_codes_report():
+    """Tax Codes Configuration Report"""
+    tax_codes = TaxCode.query.filter_by(
+        organization_id=current_user.organization_id
+    ).order_by(TaxCode.tax_type, TaxCode.code).all()
+    
+    # Group by tax type
+    tax_codes_by_type = {}
+    for tax_code in tax_codes:
+        tax_type = tax_code.tax_type.value
+        if tax_type not in tax_codes_by_type:
+            tax_codes_by_type[tax_type] = []
+        tax_codes_by_type[tax_type].append(tax_code)
+    
+    return render_template('reports/tax_codes.html', 
+                         tax_codes_by_type=tax_codes_by_type,
+                         tax_types=TaxType)
+
+@reports_bp.route('/api/seed-australian-tax-codes', methods=['POST'])
+@login_required
+def seed_australian_tax_codes():
+    """Seed standard Australian GST tax codes"""
+    try:
+        # Check if tax codes already exist
+        existing_codes = TaxCode.query.filter_by(
+            organization_id=current_user.organization_id
+        ).count()
+        
+        if existing_codes > 0:
+            return jsonify({
+                'success': False,
+                'message': 'Tax codes already exist for this organization'
+            })
+        
+        # Standard Australian GST tax codes
+        standard_tax_codes = [
+            {
+                'code': 'GST',
+                'name': 'GST Standard Rate',
+                'description': 'Standard 10% GST rate for most goods and services',
+                'tax_type': TaxType.GST_STANDARD,
+                'rate': Decimal('0.10'),
+                'is_inclusive': True
+            },
+            {
+                'code': 'FRE',
+                'name': 'GST-Free',
+                'description': 'GST-free supplies (food, medical, education)',
+                'tax_type': TaxType.GST_FREE,
+                'rate': Decimal('0.00'),
+                'is_inclusive': False
+            },
+            {
+                'code': 'EXP',
+                'name': 'Export Sales',
+                'description': 'GST-free export sales',
+                'tax_type': TaxType.EXPORT,
+                'rate': Decimal('0.00'),
+                'is_inclusive': False
+            },
+            {
+                'code': 'INP',
+                'name': 'Input Taxed',
+                'description': 'Input taxed supplies (financial services, residential rent)',
+                'tax_type': TaxType.INPUT_TAXED,
+                'rate': Decimal('0.00'),
+                'is_inclusive': False
+            },
+            {
+                'code': 'CAP',
+                'name': 'Capital Acquisition',
+                'description': 'Capital purchases and acquisitions with GST',
+                'tax_type': TaxType.CAPITAL_ACQUISITION,
+                'rate': Decimal('0.10'),
+                'is_inclusive': True
+            }
+        ]
+        
+        # Create tax codes
+        for tax_code_data in standard_tax_codes:
+            tax_code = TaxCode(
+                organization_id=current_user.organization_id,
+                **tax_code_data
+            )
+            db.session.add(tax_code)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Successfully created {len(standard_tax_codes)} Australian GST tax codes'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error seeding tax codes: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error creating tax codes: {str(e)}'
+        }), 500
