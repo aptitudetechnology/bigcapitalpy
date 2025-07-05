@@ -135,15 +135,15 @@ bigcapitalpy/
 - [x] **Customer Management** - Complete customer lifecycle management
 - [x] **User Authentication** - Secure multi-user login system
 - [x] **Multi-tenancy** - Support for multiple organizations
-- [ ] **Invoicing** - Create, send, and track invoices
-- [ ] **Vendor Management** - Track vendors and expenses
+- [x] **Invoicing** - Create, send, and track invoices
+- [x] **Vendor Management** - Track vendors and expenses
 - [ ] **Item/Inventory Management** - Product catalog and stock tracking
 - [ ] **Chart of Accounts** - Customizable accounting structure
 - [ ] **Financial Reports** - P&L, Balance Sheet, Cash Flow
 - [ ] **Payment Tracking** - Record payments and receipts
 - [ ] **Journal Entries** - Manual accounting entries
 - [ ] **Bank Reconciliation** - Match transactions with bank statements
-- [ ] **Tax Management** - Sales tax and VAT calculations
+- [ ] **Tax Management** - Sales tax and VAT calculations- Australian GST
 
 ### 🔧 Technical Features
 - [x] **Responsive Design** - Works on desktop, tablet, and mobile
