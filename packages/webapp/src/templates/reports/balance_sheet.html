@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Balance Sheet - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">Balance Sheet</h1>
+        <p class="text-muted mb-0">As of {{ report_period.end_date | dateformat }}</p>
+    </div>
+    <div class="btn-group">
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Reports
+        </a>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-download"></i> Export
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{{ url_for('reports.balance_sheet', format='pdf') }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.balance_sheet', format='excel') }}"><i class="bi bi-file-earmark-excel"></i> Excel</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.balance_sheet', format='csv') }}"><i class="bi bi-file-earmark-text"></i> CSV</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Date Selection -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="end_date" class="form-label">As of Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" 
+                       value="{{ request.args.get('end_date', report_period.end_date.strftime('%Y-%m-%d')) }}">
+            </div>
+            <div class="col-md-3">
+                <label for="period" class="form-label">Quick Select</label>
+                <select class="form-select" id="period" name="period" onchange="setQuickPeriod()">
+                    <option value="custom">Custom Date</option>
+                    <option value="this_month" {% if request.args.get('period') == 'this_month' %}selected{% endif %}>End of This Month</option>
+                    <option value="last_month" {% if request.args.get('period') == 'last_month' %}selected{% endif %}>End of Last Month</option>
+                    <option value="this_quarter" {% if request.args.get('period') == 'this_quarter' %}selected{% endif %}>End of This Quarter</option>
+                    <option value="last_quarter" {% if request.args.get('period') == 'last_quarter' %}selected{% endif %}>End of Last Quarter</option>
+                    <option value="this_year" {% if request.args.get('period') == 'this_year' %}selected{% endif %}>End of This Year</option>
+                    <option value="last_year" {% if request.args.get('period') == 'last_year' %}selected{% endif %}>End of Last Year</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Generate Report
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Balance Sheet Report -->
+<div class="card shadow">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">
+            {{ current_user.organization.name }} - Balance Sheet
+        </h6>
+        <small class="text-muted">As of {{ report_period.end_date | dateformat }}</small>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Left Column: Assets -->
+            <div class="col-md-6">
+                <div class="table-responsive">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr class="table-active">
+                                <td class="fw-bold fs-6">ASSETS</td>
+                                <td></td>
+                            </tr>
+                            
+                            {% for asset in report_data.assets %}
+                            <tr>
+                                <td class="ps-3">{{ asset.name }}</td>
+                                <td class="text-end">{{ asset.balance | currency }}</td>
+                            </tr>
+                            {% endfor %}
+                            
+                            <tr class="border-top">
+                                <td class="fw-bold">Total Assets</td>
+                                <td class="text-end fw-bold">{{ report_data.total_assets | currency }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Right Column: Liabilities & Equity -->
+            <div class="col-md-6">
+                <div class="table-responsive">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <!-- LIABILITIES -->
+                            <tr class="table-active">
+                                <td class="fw-bold fs-6">LIABILITIES</td>
+                                <td></td>
+                            </tr>
+                            
+                            {% for liability in report_data.liabilities %}
+                            <tr>
+                                <td class="ps-3">{{ liability.name }}</td>
+                                <td class="text-end">{{ liability.balance | currency }}</td>
+                            </tr>
+                            {% endfor %}
+                            
+                            <tr class="border-top">
+                                <td class="fw-bold">Total Liabilities</td>
+                                <td class="text-end fw-bold">{{ report_data.total_liabilities | currency }}</td>
+                            </tr>
+                            
+                            <tr><td colspan="2" class="py-2"></td></tr>
+                            
+                            <!-- EQUITY -->
+                            <tr class="table-active">
+                                <td class="fw-bold fs-6">EQUITY</td>
+                                <td></td>
+                            </tr>
+                            
+                            {% for equity in report_data.equity %}
+                            <tr>
+                                <td class="ps-3">{{ equity.name }}</td>
+                                <td class="text-end">{{ equity.balance | currency }}</td>
+                            </tr>
+                            {% endfor %}
+                            
+                            <tr>
+                                <td class="ps-3">Retained Earnings</td>
+                                <td class="text-end">{{ report_data.retained_earnings | currency }}</td>
+                            </tr>
+                            
+                            <tr class="border-top">
+                                <td class="fw-bold">Total Equity</td>
+                                <td class="text-end fw-bold">{{ report_data.total_equity | currency }}</td>
+                            </tr>
+                            
+                            <tr class="border-top border-2 border-dark">
+                                <td class="fw-bold">Total Liabilities & Equity</td>
+                                <td class="text-end fw-bold">{{ report_data.total_liabilities_equity | currency }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Balance Check -->
+        <div class="row mt-4">
+            <div class="col-12">
+                {% set balance_check = report_data.total_assets - report_data.total_liabilities_equity %}
+                {% if balance_check == 0 %}
+                    <div class="alert alert-success" role="alert">
+                        <i class="bi bi-check-circle"></i> Balance Sheet balances correctly. Assets equal Liabilities + Equity.
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i> Balance Sheet does not balance. 
+                        Difference: {{ balance_check | currency }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setQuickPeriod() {
+    const period = document.getElementById('period').value;
+    if (period !== 'custom') {
+        // Clear custom dates when using quick select
+        document.getElementById('end_date').value = '';
+    }
+}
+</script>
+{% endblock %}
