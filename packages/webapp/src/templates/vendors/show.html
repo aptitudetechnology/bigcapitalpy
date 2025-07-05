@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}{{ vendor.display_name }} - Vendors - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{{ vendor.display_name }}</h1>
+    <div>
+        <a href="{{ url_for('vendors.edit', id=vendor.id) }}" class="btn btn-warning">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <a href="{{ url_for('vendors.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Vendors
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Vendor Details -->
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Vendor Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Basic Information</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Display Name:</strong></td>
+                                <td>{{ vendor.display_name }}</td>
+                            </tr>
+                            {% if vendor.company_name %}
+                            <tr>
+                                <td><strong>Company:</strong></td>
+                                <td>{{ vendor.company_name }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if vendor.first_name or vendor.last_name %}
+                            <tr>
+                                <td><strong>Contact Person:</strong></td>
+                                <td>{{ vendor.first_name }} {{ vendor.last_name }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if vendor.is_active else 'secondary' }}">
+                                        {{ 'Active' if vendor.is_active else 'Inactive' }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Contact Information</h6>
+                        <table class="table table-borderless">
+                            {% if vendor.email %}
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td><a href="mailto:{{ vendor.email }}">{{ vendor.email }}</a></td>
+                            </tr>
+                            {% endif %}
+                            {% if vendor.phone %}
+                            <tr>
+                                <td><strong>Phone:</strong></td>
+                                <td><a href="tel:{{ vendor.phone }}">{{ vendor.phone }}</a></td>
+                            </tr>
+                            {% endif %}
+                            {% if vendor.website %}
+                            <tr>
+                                <td><strong>Website:</strong></td>
+                                <td><a href="{{ vendor.website }}" target="_blank">{{ vendor.website }}</a></td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+                
+                {% if vendor.address or vendor.city or vendor.state or vendor.postal_code or vendor.country %}
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Address</h6>
+                        <address>
+                            {% if vendor.address %}{{ vendor.address }}<br>{% endif %}
+                            {% if vendor.city or vendor.state or vendor.postal_code %}
+                                {{ vendor.city }}{% if vendor.city and vendor.state %}, {% endif %}{{ vendor.state }} {{ vendor.postal_code }}<br>
+                            {% endif %}
+                            {% if vendor.country %}{{ vendor.country }}{% endif %}
+                        </address>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Financial Information</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Currency:</strong></td>
+                                <td>{{ vendor.currency }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Opening Balance:</strong></td>
+                                <td>{{ vendor.opening_balance|currency }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Current Balance:</strong></td>
+                                <td class="text-{% if vendor.current_balance > 0 %}danger{% elif vendor.current_balance < 0 %}success{% else %}muted{% endif %}">
+                                    {{ vendor.current_balance|currency }}
+                                </td>
+                            </tr>
+                            {% if vendor.tax_number %}
+                            <tr>
+                                <td><strong>Tax ID:</strong></td>
+                                <td>{{ vendor.tax_number }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if vendor.notes %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6 class="text-muted">Notes</h6>
+                        <p class="text-muted">{{ vendor.notes }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <small class="text-muted">
+                            Created: {{ vendor.created_at|dateformat }} | 
+                            Last Updated: {{ vendor.updated_at|dateformat }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions & Summary -->
+    <div class="col-lg-4">
+        <!-- Balance Summary -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Balance Summary</h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <h4 class="text-{% if vendor.current_balance > 0 %}danger{% elif vendor.current_balance < 0 %}success{% else %}muted{% endif %}">
+                        {{ vendor.current_balance|currency }}
+                    </h4>
+                    <small class="text-muted">Current Balance</small>
+                </div>
+                {% if vendor.current_balance > 0 %}
+                <div class="alert alert-warning" role="alert">
+                    <small>You owe this vendor money</small>
+                </div>
+                {% elif vendor.current_balance < 0 %}
+                <div class="alert alert-success" role="alert">
+                    <small>This vendor owes you money</small>
+                </div>
+                {% else %}
+                <div class="alert alert-info" role="alert">
+                    <small>No outstanding balance</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-receipt"></i> Create Bill
+                    </a>
+                    <a href="#" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-cash"></i> Record Payment
+                    </a>
+                    <a href="#" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-file-text"></i> View Transactions
+                    </a>
+                    <hr>
+                    <a href="{{ url_for('vendors.edit', id=vendor.id) }}" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-pencil"></i> Edit Vendor
+                    </a>
+                    <button type="button" class="btn btn-outline-danger btn-sm" 
+                            onclick="deleteVendor({{ vendor.id }}, '{{ vendor.display_name }}')">
+                        <i class="bi bi-trash"></i> Delete Vendor
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Vendor Modal -->
+<div class="modal fade" id="deleteVendorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete vendor <strong id="vendorName"></strong>?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteVendorForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-danger">Delete Vendor</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteVendor(vendorId, vendorName) {
+    document.getElementById('vendorName').textContent = vendorName;
+    document.getElementById('deleteVendorForm').action = "{{ url_for('vendors.index') }}/" + vendorId + "/delete";
+    
+    var modal = new bootstrap.Modal(document.getElementById('deleteVendorModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

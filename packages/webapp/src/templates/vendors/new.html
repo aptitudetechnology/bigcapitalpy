@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}New Vendor - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Add New Vendor</h1>
+    <a href="{{ url_for('vendors.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Vendors
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('vendors.create') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="card-title">Basic Information</h5>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="display_name" class="form-label">Display Name *</label>
+                                <input type="text" class="form-control" id="display_name" name="display_name" 
+                                       value="{{ request.form.get('display_name', '') }}" required>
+                                <div class="form-text">This name will appear on transactions</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="company_name" class="form-label">Company Name</label>
+                                <input type="text" class="form-control" id="company_name" name="company_name"
+                                       value="{{ request.form.get('company_name', '') }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name"
+                                       value="{{ request.form.get('first_name', '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name"
+                                       value="{{ request.form.get('last_name', '') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="row mb-4 mt-4">
+                        <div class="col-12">
+                            <h5 class="card-title">Contact Information</h5>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       value="{{ request.form.get('email', '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="phone" name="phone"
+                                       value="{{ request.form.get('phone', '') }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="website" class="form-label">Website</label>
+                                <input type="url" class="form-control" id="website" name="website"
+                                       value="{{ request.form.get('website', '') }}" placeholder="https://">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address -->
+                    <div class="row mb-4 mt-4">
+                        <div class="col-12">
+                            <h5 class="card-title">Address</h5>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="address" class="form-label">Street Address</label>
+                                <textarea class="form-control" id="address" name="address" rows="2">{{ request.form.get('address', '') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="city" name="city"
+                                       value="{{ request.form.get('city', '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="state" class="form-label">State</label>
+                                <input type="text" class="form-control" id="state" name="state"
+                                       value="{{ request.form.get('state', '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="postal_code" class="form-label">ZIP Code</label>
+                                <input type="text" class="form-control" id="postal_code" name="postal_code"
+                                       value="{{ request.form.get('postal_code', '') }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="country" class="form-label">Country</label>
+                                <input type="text" class="form-control" id="country" name="country"
+                                       value="{{ request.form.get('country', 'United States') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Information -->
+                    <div class="row mb-4 mt-4">
+                        <div class="col-12">
+                            <h5 class="card-title">Financial Information</h5>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tax_number" class="form-label">Tax ID/VAT Number</label>
+                                <input type="text" class="form-control" id="tax_number" name="tax_number"
+                                       value="{{ request.form.get('tax_number', '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="currency" class="form-label">Currency</label>
+                                <select class="form-select" id="currency" name="currency">
+                                    <option value="USD" {{ 'selected' if request.form.get('currency', 'USD') == 'USD' }}>USD - US Dollar</option>
+                                    <option value="EUR" {{ 'selected' if request.form.get('currency') == 'EUR' }}>EUR - Euro</option>
+                                    <option value="GBP" {{ 'selected' if request.form.get('currency') == 'GBP' }}>GBP - British Pound</option>
+                                    <option value="CAD" {{ 'selected' if request.form.get('currency') == 'CAD' }}>CAD - Canadian Dollar</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="opening_balance" class="form-label">Opening Balance</label>
+                                <input type="number" step="0.01" class="form-control" id="opening_balance" name="opening_balance"
+                                       value="{{ request.form.get('opening_balance', '0.00') }}">
+                                <div class="form-text">Enter negative amount if you owe this vendor</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="row mb-4 mt-4">
+                        <div class="col-12">
+                            <h5 class="card-title">Additional Information</h5>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3">{{ request.form.get('notes', '') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1"
+                                       {{ 'checked' if request.form.get('is_active', '1') == '1' }}>
+                                <label class="form-check-label" for="is_active">
+                                    Active Vendor
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check"></i> Create Vendor
+                            </button>
+                            <a href="{{ url_for('vendors.index') }}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Tips Sidebar -->
+    <div class="col-lg-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Tips</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-lightbulb text-warning"></i>
+                        <strong>Display Name:</strong> Use a name that helps you quickly identify this vendor
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-lightbulb text-warning"></i>
+                        <strong>Opening Balance:</strong> Enter any existing balance with this vendor
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-lightbulb text-warning"></i>
+                        <strong>Tax ID:</strong> Store tax identification numbers for reporting purposes
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
