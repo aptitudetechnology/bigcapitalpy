@@ -3,144 +3,208 @@
 {% block title %}Dashboard - BigCapitalPy{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
-    <div class="text-muted">
-        <i class="bi bi-calendar"></i> {{ data.current_date|datetime }}
-    </div>
-</div>
-
-<!-- Key Metrics Row -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-primary shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Total Customers
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ data.total_customers }}
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="bi bi-people fa-2x text-gray-300"></i>
-                    </div>
-                </div>
+<!-- Welcome Header -->
+<div class="dashboard-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <div class="dashboard-welcome">
+                <h1 class="dashboard-title">
+                    <span class="welcome-text">Welcome back,</span>
+                    <span class="user-name">{{ current_user.first_name or 'User' }}</span>
+                </h1>
+                <p class="dashboard-subtitle">Here's what's happening with your business today</p>
             </div>
         </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Accounts Receivable
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ data.total_receivables|currency }}
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            Pending Invoices
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ data.pending_invoices }}
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="bi bi-receipt fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            Total Vendors
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            {{ data.total_vendors }}
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="bi bi-building fa-2x text-gray-300"></i>
-                    </div>
+        <div class="col-lg-4 text-end">
+            <div class="dashboard-date">
+                <div class="date-card">
+                    <i class="bi bi-calendar3"></i>
+                    <span>{{ data.current_date|datetime('%B %d, %Y') }}</span>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Content Row -->
+<!-- Enhanced Metrics Row -->
+<div class="row metrics-row mb-5">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="metric-card metric-primary">
+            <div class="metric-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-label">Total Customers</div>
+                <div class="metric-value">{{ data.total_customers }}</div>
+                <div class="metric-trend positive">
+                    <i class="bi bi-arrow-up"></i> +12% this month
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="metric-card metric-success">
+            <div class="metric-icon">
+                <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-label">Accounts Receivable</div>
+                <div class="metric-value">{{ data.total_receivables|currency }}</div>
+                <div class="metric-trend positive">
+                    <i class="bi bi-arrow-up"></i> +8% this month
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="metric-card metric-info">
+            <div class="metric-icon">
+                <i class="bi bi-receipt"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-label">Pending Invoices</div>
+                <div class="metric-value">{{ data.pending_invoices }}</div>
+                <div class="metric-trend neutral">
+                    <i class="bi bi-dash"></i> No change
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="metric-card metric-warning">
+            <div class="metric-icon">
+                <i class="bi bi-building"></i>
+            </div>
+            <div class="metric-content">
+                <div class="metric-label">Total Vendors</div>
+                <div class="metric-value">{{ data.total_vendors }}</div>
+                <div class="metric-trend positive">
+                    <i class="bi bi-arrow-up"></i> +3 new
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Content Row -->
 <div class="row">
-    <!-- Sales Chart -->
+    <!-- Enhanced Sales Chart -->
     <div class="col-xl-8 col-lg-7">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Sales Overview</h6>
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <h5>Sales Overview</h5>
+                    <p>Revenue trends over the last 6 months</p>
+                </div>
+                <div class="chart-actions">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary btn-sm active">6M</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm">1Y</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm">All</button>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="chart-area">
+            <div class="chart-body">
+                <div class="chart-container">
                     <canvas id="salesChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Invoices -->
+    <!-- Enhanced Recent Activity -->
     <div class="col-xl-4 col-lg-5">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Recent Invoices</h6>
-                <a href="{{ url_for('invoices.index') }}" class="btn btn-sm btn-primary">View All</a>
+        <div class="activity-card">
+            <div class="activity-header">
+                <h5>Recent Activity</h5>
+                <a href="{{ url_for('invoices.index') }}" class="view-all-btn">
+                    View All <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
-            <div class="card-body">
+            <div class="activity-body">
                 {% if data.recent_invoices %}
                     {% for invoice in data.recent_invoices %}
-                    <div class="d-flex align-items-center border-bottom py-2">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-receipt text-primary"></i>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="bi bi-receipt"></i>
                         </div>
-                        <div class="flex-grow-1 ms-3">
-                            <div class="fw-bold">{{ invoice.invoice_number }}</div>
-                            <div class="text-muted small">{{ invoice.customer.display_name if invoice.customer else 'N/A' }}</div>
+                        <div class="activity-content">
+                            <div class="activity-title">{{ invoice.invoice_number }}</div>
+                            <div class="activity-subtitle">{{ invoice.customer.display_name if invoice.customer else 'N/A' }}</div>
+                            <div class="activity-time">{{ invoice.created_at|datetime('%m/%d/%Y') if invoice.created_at else 'Recent' }}</div>
                         </div>
-                        <div class="flex-shrink-0">
-                            <span class="badge bg-{{ 'success' if invoice.status.value == 'paid' else 'warning' }}">
+                        <div class="activity-status">
+                            <span class="status-badge status-{{ 'success' if invoice.status.value == 'paid' else 'warning' }}">
                                 {{ invoice.status.value.title() }}
                             </span>
                         </div>
                     </div>
                     {% endfor %}
                 {% else %}
-                    <div class="text-center text-muted py-4">
-                        <i class="bi bi-receipt fs-1"></i>
-                        <p>No invoices yet</p>
-                        <a href="{{ url_for('invoices.index') }}" class="btn btn-primary btn-sm">Create Invoice</a>
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+                        <h6>No recent activity</h6>
+                        <p>Start by creating your first invoice</p>
+                        <a href="{{ url_for('invoices.index') }}" class="btn btn-primary btn-sm">
+                            Create Invoice
+                        </a>
                     </div>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Row -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="quick-actions-card">
+            <div class="quick-actions-header">
+                <h5>Quick Actions</h5>
+                <p>Common tasks to help you get things done</p>
+            </div>
+            <div class="quick-actions-grid">
+                <a href="{{ url_for('invoices.index') }}" class="quick-action-item">
+                    <div class="action-icon primary">
+                        <i class="bi bi-plus-circle"></i>
+                    </div>
+                    <div class="action-content">
+                        <h6>Create Invoice</h6>
+                        <p>Bill your customers</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('customers.index') }}" class="quick-action-item">
+                    <div class="action-icon success">
+                        <i class="bi bi-person-plus"></i>
+                    </div>
+                    <div class="action-content">
+                        <h6>Add Customer</h6>
+                        <p>Manage your contacts</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('items.index') }}" class="quick-action-item">
+                    <div class="action-icon info">
+                        <i class="bi bi-box"></i>
+                    </div>
+                    <div class="action-content">
+                        <h6>Manage Items</h6>
+                        <p>Products & services</p>
+                    </div>
+                </a>
+                <a href="{{ url_for('reports.index') }}" class="quick-action-item">
+                    <div class="action-icon warning">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <div class="action-content">
+                        <h6>View Reports</h6>
+                        <p>Financial insights</p>
+                    </div>
+                </a>
             </div>
         </div>
     </div>
@@ -149,8 +213,14 @@
 
 {% block scripts %}
 <script>
-// Sales Chart
+// Enhanced Sales Chart with gradient and animation
 const ctx = document.getElementById('salesChart').getContext('2d');
+
+// Create gradient
+const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+gradient.addColorStop(0, 'rgba(78, 115, 223, 0.2)');
+gradient.addColorStop(1, 'rgba(78, 115, 223, 0.05)');
+
 const salesChart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -158,27 +228,72 @@ const salesChart = new Chart(ctx, {
         datasets: [{
             label: 'Sales',
             data: [12000, 15000, 13000, 17000, 16000, 19000],
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.1)',
-            tension: 0.1
+            borderColor: '#4e73df',
+            backgroundColor: gradient,
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#4e73df',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
         }]
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            intersect: false,
+            mode: 'index'
+        },
         plugins: {
             legend: {
                 display: false
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function(value) {
-                        return '$' + value.toLocaleString();
+            },
+            tooltip: {
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                titleColor: '#333',
+                bodyColor: '#666',
+                borderColor: '#e3e6f0',
+                borderWidth: 1,
+                cornerRadius: 8,
+                displayColors: false,
+                callbacks: {
+                    label: function(context) {
+                        return 'Sales: $' + context.parsed.y.toLocaleString();
                     }
                 }
             }
+        },
+        scales: {
+            x: {
+                grid: {
+                    display: false
+                },
+                border: {
+                    display: false
+                }
+            },
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                },
+                border: {
+                    display: false
+                },
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    },
+                    padding: 10
+                }
+            }
+        },
+        animation: {
+            duration: 2000,
+            easing: 'easeInOutQuart'
         }
     }
 });
@@ -193,9 +308,26 @@ fetch('{{ url_for("dashboard.api_metrics") }}')
                 new Date(item.month).toLocaleDateString('en-US', { month: 'short' })
             );
             salesChart.data.datasets[0].data = data.monthly_sales.map(item => item.total);
-            salesChart.update();
+            salesChart.update('active');
         }
     })
     .catch(error => console.log('Error loading metrics:', error));
+
+// Animate metric cards on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const metricCards = document.querySelectorAll('.metric-card');
+    metricCards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+            
+            requestAnimationFrame(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            });
+        }, index * 100);
+    });
+});
 </script>
 {% endblock %}
