@@ -115,7 +115,19 @@
     {% else %}
     <!-- Not authenticated content -->
     {% block unauthenticated_content %}
-        {% block content %}{% endblock %}
+    <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="text-center">
+                        <h1>BigCapitalPy</h1>
+                        <p>Please log in to continue</p>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endblock %}
     {% endif %}
 
