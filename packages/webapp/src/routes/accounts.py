@@ -17,6 +17,21 @@ from collections import defaultdict
 
 accounts_bp = Blueprint('accounts', __name__)
 
+
+def coerce_parent_id(value):
+    """Custom coerce function for parent_id SelectField.
+    
+    Handles empty strings (for 'No Parent' option) and converts valid integers.
+    Returns None for empty values, integer for valid numeric values.
+    """
+    if not value or value == '':
+        return None
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
+
+
 class AccountForm(FlaskForm):
     code = StringField('Account Code', validators=[DataRequired(), Length(min=1, max=20)])
     name = StringField('Account Name', validators=[DataRequired(), Length(min=1, max=255)])
@@ -29,7 +44,7 @@ class AccountForm(FlaskForm):
                           ('expense', 'Expense')
                       ],
                       validators=[DataRequired()])
-    parent_id = SelectField('Parent Account', coerce=int, validators=[Optional()])
+    parent_id = SelectField('Parent Account', coerce=coerce_parent_id, validators=[Optional()])
     description = TextAreaField('Description', validators=[Optional(), Length(max=500)])
     opening_balance = DecimalField('Opening Balance', 
                                  default=0.00, 
