@@ -152,7 +152,8 @@ def create():
                          customers=customers,
                          items=items,
                          next_number=next_number,
-                         sales_account=sales_account)
+                         sales_account=sales_account,
+                         today=date.today())
 
 @invoices_bp.route('/save', methods=['POST'])
 @login_required

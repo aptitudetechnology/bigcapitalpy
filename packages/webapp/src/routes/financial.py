@@ -191,7 +191,9 @@ def create_manual_journal():
         Account.is_active == True
     ).order_by(Account.code).all()
     
-    return render_template('financial/create_manual_journal.html', accounts=accounts)
+    return render_template('financial/create_manual_journal.html', 
+                         accounts=accounts,
+                         today=date.today())
 
 @financial_bp.route('/manual-journals/<int:id>')
 @login_required
