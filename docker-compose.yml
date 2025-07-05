@@ -88,7 +88,7 @@ services:
       - "gotenberg"
       - "--chromium-disable-web-security"
       - "--chromium-incognito"
-      - "--chromium-disable-crash-reporter"
+      
 
   # Nginx Reverse Proxy (for production-like setup)
   nginx:
