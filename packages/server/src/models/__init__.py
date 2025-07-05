@@ -592,3 +592,127 @@ class BASReport(db.Model):
     
     def __repr__(self):
         return f'<BASReport {self.report_number}: {self.period_description}>'
+
+
+class BankTransaction(db.Model):
+    """Model for imported bank transactions used in reconciliation"""
+    __tablename__ = 'bank_transactions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    transaction_date = db.Column(db.Date, nullable=False)
+    description = db.Column(db.String(500), nullable=False)
+    reference = db.Column(db.String(100))
+    amount = db.Column(db.Numeric(15, 2), nullable=False)
+    balance = db.Column(db.Numeric(15, 2))
+    status = db.Column(db.String(20), default='unmatched')  # unmatched, matched, reconciled
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    account = db.relationship('Account', backref='bank_transactions')
+    organization = db.relationship('Organization', backref='bank_transactions')
+    
+    def __repr__(self):
+        return f'<BankTransaction {self.transaction_date}: {self.description} - {self.amount}>'
+
+
+class BankReconciliation(db.Model):
+    """Model for bank reconciliation sessions"""
+    __tablename__ = 'bank_reconciliations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    reconciliation_date = db.Column(db.Date, nullable=False)
+    statement_ending_date = db.Column(db.Date, nullable=False)
+    statement_ending_balance = db.Column(db.Numeric(15, 2), nullable=False)
+    book_ending_balance = db.Column(db.Numeric(15, 2), nullable=False)
+    difference = db.Column(db.Numeric(15, 2), nullable=False)
+    is_completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    account = db.relationship('Account', backref='reconciliations')
+    organization = db.relationship('Organization', backref='reconciliations')
+    creator = db.relationship('User', backref='reconciliations')
+    
+    def __repr__(self):
+        return f'<BankReconciliation {self.reconciliation_date}: Account {self.account_id}>'
+
+class ReconciliationMatch(db.Model):
+    """Model for matching bank transactions to journal entries during reconciliation"""
+    __tablename__ = 'reconciliation_matches'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    reconciliation_id = db.Column(db.Integer, db.ForeignKey('bank_reconciliations.id'), nullable=False)
+    bank_transaction_id = db.Column(db.Integer, db.ForeignKey('bank_transactions.id'), nullable=True)
+    journal_line_item_id = db.Column(db.Integer, db.ForeignKey('journal_line_items.id'), nullable=True)
+    match_type = db.Column(db.String(20), default='manual')  # manual, automatic
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    reconciliation = db.relationship('BankReconciliation', backref='matches')
+    bank_transaction = db.relationship('BankTransaction', backref='matches')
+    journal_line_item = db.relationship('JournalLineItem', backref='reconciliation_matches')
+    
+    def __repr__(self):
+        return f'<ReconciliationMatch {self.id}: {self.match_type}>'
+
+
+# Payment Models
+class Payment(db.Model):
+    """Model for payments received from customers"""
+    __tablename__ = 'payments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    payment_number = db.Column(db.String(50), nullable=False, unique=True)
+    payment_date = db.Column(db.Date, nullable=False)
+    amount = db.Column(db.Numeric(15, 2), nullable=False)
+    payment_method = db.Column(db.Enum(PaymentMethod), nullable=False)
+    reference = db.Column(db.String(100))
+    notes = db.Column(db.Text)
+    
+    # Bank/Check details
+    bank_name = db.Column(db.String(255))
+    check_number = db.Column(db.String(50))
+    
+    # Relationships
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    deposit_account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    customer = db.relationship('Customer', backref='payments')
+    deposit_account = db.relationship('Account', backref='payments')
+    organization = db.relationship('Organization', backref='payments')
+    creator = db.relationship('User', backref='payments')
+    
+    def __repr__(self):
+        return f'<Payment {self.payment_number}: {self.amount}>'
+
+class PaymentAllocation(db.Model):
+    """Model for allocating payments to specific invoices"""
+    __tablename__ = 'payment_allocations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    payment_id = db.Column(db.Integer, db.ForeignKey('payments.id'), nullable=False)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), nullable=False)
+    allocated_amount = db.Column(db.Numeric(15, 2), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    payment = db.relationship('Payment', backref='allocations')
+    invoice = db.relationship('Invoice', backref='payment_allocations')
+    
+    def __repr__(self):
+        return f'<PaymentAllocation {self.payment_id} -> {self.invoice_id}: {self.allocated_amount}>'
