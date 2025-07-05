@@ -14,7 +14,7 @@ import csv
 
 from packages.server.src.models import (
     Account, AccountType, Customer, Vendor, Item, Invoice, InvoiceStatus,
-    JournalEntry, JournalLineItem
+    JournalEntry, JournalLineItem, TaxCode, TaxType, BASReport
 )
 from packages.server.src.database import db
 
@@ -1037,3 +1037,372 @@ def general_ledger():
     return render_template('reports/general_ledger.html', 
                          report_data=report_data, 
                          report_period=report_period)
+
+class AustralianGSTBASReport:
+    """
+    Australian GST Business Activity Statement (BAS) Report Generator
+    Calculates all required GST fields for ATO submission
+    """
+    
+    def __init__(self, start_date, end_date, organization_id):
+        self.start_date = start_date if isinstance(start_date, date) else datetime.strptime(start_date, '%Y-%m-%d').date()
+        self.end_date = end_date if isinstance(end_date, date) else datetime.strptime(end_date, '%Y-%m-%d').date()
+        self.organization_id = organization_id
+        
+        # Validate quarter alignment
+        self.quarter = self._get_quarter()
+        
+        # GST rate constants
+        self.GST_RATE = Decimal('0.10')  # 10% GST
+        self.GST_DIVISOR = Decimal('11')  # 1 + GST rate for inclusive calculations
+        
+    def _get_quarter(self):
+        """Get the BAS quarter from the end date"""
+        month = self.end_date.month
+        year = self.end_date.year
+        
+        if month in [1, 2, 3]:
+            return f"{year}-Q1"
+        elif month in [4, 5, 6]:
+            return f"{year}-Q2"
+        elif month in [7, 8, 9]:
+            return f"{year}-Q3"
+        else:
+            return f"{year}-Q4"
+    
+    def _get_tax_codes_for_type(self, tax_type):
+        """Get tax codes for a specific tax type"""
+        return TaxCode.query.filter_by(
+            organization_id=self.organization_id,
+            tax_type=tax_type,
+            is_active=True
+        ).all()
+    
+    def calculate_g1(self):
+        """
+        G1 - Total Sales (GST Inclusive)
+        Include all sales with GST
+        """
+        gst_tax_codes = self._get_tax_codes_for_type(TaxType.GST_STANDARD)
+        tax_code_ids = [tc.id for tc in gst_tax_codes]
+        
+        # Get sales from invoices with GST
+        invoice_total = db.session.query(func.sum(Invoice.amount)).filter(
+            Invoice.organization_id == self.organization_id,
+            Invoice.invoice_date.between(self.start_date, self.end_date),
+            Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PAID]),
+            Invoice.line_items.any(InvoiceLineItem.tax_code_id.in_(tax_code_ids))
+        ).scalar() or Decimal('0')
+        
+        # Get sales from journal entries with GST
+        journal_sales = db.session.query(func.sum(JournalLineItem.credit)).join(
+            JournalEntry
+        ).join(Account).filter(
+            JournalEntry.organization_id == self.organization_id,
+            JournalEntry.date.between(self.start_date, self.end_date),
+            Account.type == AccountType.REVENUE,
+            JournalLineItem.tax_code_id.in_(tax_code_ids)
+        ).scalar() or Decimal('0')
+        
+        return round(invoice_total + journal_sales, 2)
+    
+    def calculate_g2(self):
+        """
+        G2 - Export Sales
+        GST-free export sales
+        """
+        export_tax_codes = self._get_tax_codes_for_type(TaxType.EXPORT)
+        tax_code_ids = [tc.id for tc in export_tax_codes]
+        
+        # Get export sales from invoices
+        invoice_exports = db.session.query(func.sum(Invoice.amount)).filter(
+            Invoice.organization_id == self.organization_id,
+            Invoice.invoice_date.between(self.start_date, self.end_date),
+            Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PAID]),
+            Invoice.line_items.any(InvoiceLineItem.tax_code_id.in_(tax_code_ids))
+        ).scalar() or Decimal('0')
+        
+        # Get export sales from journal entries
+        journal_exports = db.session.query(func.sum(JournalLineItem.credit)).join(
+            JournalEntry
+        ).join(Account).filter(
+            JournalEntry.organization_id == self.organization_id,
+            JournalEntry.date.between(self.start_date, self.end_date),
+            Account.type == AccountType.REVENUE,
+            JournalLineItem.tax_code_id.in_(tax_code_ids)
+        ).scalar() or Decimal('0')
+        
+        return round(invoice_exports + journal_exports, 2)
+    
+    def calculate_g3(self):
+        """
+        G3 - Other GST-Free Sales
+        Domestic GST-free sales (excluding exports)
+        """
+        gst_free_tax_codes = self._get_tax_codes_for_type(TaxType.GST_FREE)
+        tax_code_ids = [tc.id for tc in gst_free_tax_codes]
+        
+        # Get GST-free sales from invoices
+        invoice_gst_free = db.session.query(func.sum(Invoice.amount)).filter(
+            Invoice.organization_id == self.organization_id,
+            Invoice.invoice_date.between(self.start_date, self.end_date),
+            Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PAID]),
+            Invoice.line_items.any(InvoiceLineItem.tax_code_id.in_(tax_code_ids))
+        ).scalar() or Decimal('0')
+        
+        # Get GST-free sales from journal entries
+        journal_gst_free = db.session.query(func.sum(JournalLineItem.credit)).join(
+            JournalEntry
+        ).join(Account).filter(
+            JournalEntry.organization_id == self.organization_id,
+            JournalEntry.date.between(self.start_date, self.end_date),
+            Account.type == AccountType.REVENUE,
+            JournalLineItem.tax_code_id.in_(tax_code_ids)
+        ).scalar() or Decimal('0')
+        
+        return round(invoice_gst_free + journal_gst_free, 2)
+    
+    def calculate_g4(self):
+        """
+        G4 - Input Taxed Sales
+        Input taxed sales (financial services, residential rent)
+        """
+        input_taxed_codes = self._get_tax_codes_for_type(TaxType.INPUT_TAXED)
+        tax_code_ids = [tc.id for tc in input_taxed_codes]
+        
+        # Get input taxed sales from invoices
+        invoice_input_taxed = db.session.query(func.sum(Invoice.amount)).filter(
+            Invoice.organization_id == self.organization_id,
+            Invoice.invoice_date.between(self.start_date, self.end_date),
+            Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PAID]),
+            Invoice.line_items.any(InvoiceLineItem.tax_code_id.in_(tax_code_ids))
+        ).scalar() or Decimal('0')
+        
+        # Get input taxed sales from journal entries
+        journal_input_taxed = db.session.query(func.sum(JournalLineItem.credit)).join(
+            JournalEntry
+        ).join(Account).filter(
+            JournalEntry.organization_id == self.organization_id,
+            JournalEntry.date.between(self.start_date, self.end_date),
+            Account.type == AccountType.REVENUE,
+            JournalLineItem.tax_code_id.in_(tax_code_ids)
+        ).scalar() or Decimal('0')
+        
+        return round(invoice_input_taxed + journal_input_taxed, 2)
+    
+    def calculate_g10(self):
+        """
+        G10 - Capital Purchases (GST Inclusive)
+        Capital purchases including GST
+        """
+        gst_tax_codes = self._get_tax_codes_for_type(TaxType.GST_STANDARD)
+        capital_tax_codes = self._get_tax_codes_for_type(TaxType.CAPITAL_ACQUISITION)
+        tax_code_ids = [tc.id for tc in gst_tax_codes + capital_tax_codes]
+        
+        # Get capital purchases from journal entries
+        capital_purchases = db.session.query(func.sum(JournalLineItem.debit)).join(
+            JournalEntry
+        ).join(Account).filter(
+            JournalEntry.organization_id == self.organization_id,
+            JournalEntry.date.between(self.start_date, self.end_date),
+            Account.type.in_([AccountType.ASSET, AccountType.FIXED_ASSET]),
+            JournalLineItem.tax_code_id.in_(tax_code_ids)
+        ).scalar() or Decimal('0')
+        
+        return round(capital_purchases, 2)
+    
+    def calculate_g11(self):
+        """
+        G11 - Non-Capital Purchases (GST Inclusive)
+        Operating expenses and inventory purchases with GST
+        """
+        gst_tax_codes = self._get_tax_codes_for_type(TaxType.GST_STANDARD)
+        tax_code_ids = [tc.id for tc in gst_tax_codes]
+        
+        # Get non-capital purchases from journal entries
+        non_capital_purchases = db.session.query(func.sum(JournalLineItem.debit)).join(
+            JournalEntry
+        ).join(Account).filter(
+            JournalEntry.organization_id == self.organization_id,
+            JournalEntry.date.between(self.start_date, self.end_date),
+            Account.type.in_([AccountType.EXPENSE, AccountType.COST_OF_GOODS_SOLD]),
+            JournalLineItem.tax_code_id.in_(tax_code_ids)
+        ).scalar() or Decimal('0')
+        
+        return round(non_capital_purchases, 2)
+    
+    def calculate_g13(self):
+        """
+        G13 - Credit Purchases for Input Taxed Sales
+        Purchases related to making input taxed sales
+        """
+        # This requires specific allocation logic based on business rules
+        # For now, return 0 unless specifically configured
+        return Decimal('0')
+    
+    def calculate_g14(self):
+        """
+        G14 - Purchases Without GST
+        GST-free purchases and imports
+        """
+        gst_free_tax_codes = self._get_tax_codes_for_type(TaxType.GST_FREE)
+        export_tax_codes = self._get_tax_codes_for_type(TaxType.EXPORT)
+        tax_code_ids = [tc.id for tc in gst_free_tax_codes + export_tax_codes]
+        
+        # Get GST-free purchases from journal entries
+        gst_free_purchases = db.session.query(func.sum(JournalLineItem.debit)).join(
+            JournalEntry
+        ).join(Account).filter(
+            JournalEntry.organization_id == self.organization_id,
+            JournalEntry.date.between(self.start_date, self.end_date),
+            Account.type.in_([AccountType.EXPENSE, AccountType.COST_OF_GOODS_SOLD, AccountType.ASSET]),
+            JournalLineItem.tax_code_id.in_(tax_code_ids)
+        ).scalar() or Decimal('0')
+        
+        return round(gst_free_purchases, 2)
+    
+    def calculate_1a(self):
+        """
+        1A - GST on Sales
+        GST collected on sales (extract from GST-inclusive amounts)
+        """
+        g1_total = self.calculate_g1()
+        # For GST-inclusive amounts: GST = amount ÷ 11
+        gst_on_sales = g1_total / self.GST_DIVISOR
+        return round(gst_on_sales, 2)
+    
+    def calculate_1b(self):
+        """
+        1B - GST on Purchases (Input Tax Credits)
+        GST paid on purchases that can be claimed as credits
+        """
+        g10_total = self.calculate_g10()
+        g11_total = self.calculate_g11()
+        total_gst_purchases = g10_total + g11_total
+        
+        # For GST-inclusive amounts: GST = amount ÷ 11
+        gst_on_purchases = total_gst_purchases / self.GST_DIVISOR
+        return round(gst_on_purchases, 2)
+    
+    def calculate_adjustments(self):
+        """
+        Calculate any BAS adjustments
+        This would include corrections from previous periods
+        """
+        # For now, return 0 unless specific adjustments are recorded
+        return Decimal('0')
+    
+    def calculate_net_gst(self):
+        """
+        Net GST position (amount owed to or refund from ATO)
+        Positive = Amount owed to ATO
+        Negative = Refund from ATO
+        """
+        gst_on_sales = self.calculate_1a()
+        gst_on_purchases = self.calculate_1b()
+        adjustments = self.calculate_adjustments()
+        
+        net_gst = gst_on_sales - gst_on_purchases + adjustments
+        return round(net_gst, 2)
+    
+    def validate_bas_data(self):
+        """
+        Validate BAS calculations for accuracy
+        """
+        validations = []
+        
+        # Check G1 vs 1A relationship
+        g1 = self.calculate_g1()
+        one_a = self.calculate_1a()
+        expected_1a = g1 / self.GST_DIVISOR
+        
+        if abs(one_a - expected_1a) > Decimal('0.01'):
+            validations.append(f"1A calculation ({one_a}) doesn't match G1 ÷ 11 ({expected_1a})")
+        
+        # Check purchase GST calculation
+        g10 = self.calculate_g10()
+        g11 = self.calculate_g11()
+        one_b = self.calculate_1b()
+        expected_1b = (g10 + g11) / self.GST_DIVISOR
+        
+        if abs(one_b - expected_1b) > Decimal('0.01'):
+            validations.append(f"1B calculation ({one_b}) doesn't match (G10 + G11) ÷ 11 ({expected_1b})")
+        
+        # Check for negative amounts (which shouldn't occur)
+        fields_to_check = {
+            'G1': g1, 'G10': g10, 'G11': g11,
+            '1A': one_a, '1B': one_b
+        }
+        
+        for field_name, value in fields_to_check.items():
+            if value < 0:
+                validations.append(f"{field_name} has negative value: {value}")
+        
+        # Check quarter alignment
+        if self.end_date.month not in [3, 6, 9, 12]:
+            validations.append("BAS period should end on a quarter end (March, June, September, December)")
+        
+        return validations
+    
+    def generate_bas_report(self):
+        """
+        Generate complete BAS report with all calculations
+        """
+        # Calculate all fields
+        g1 = self.calculate_g1()
+        g2 = self.calculate_g2()
+        g3 = self.calculate_g3()
+        g4 = self.calculate_g4()
+        g7 = self.calculate_adjustments()
+        
+        g10 = self.calculate_g10()
+        g11 = self.calculate_g11()
+        g13 = self.calculate_g13()
+        g14 = self.calculate_g14()
+        
+        one_a = self.calculate_1a()
+        one_b = self.calculate_1b()
+        net_gst = self.calculate_net_gst()
+        
+        validations = self.validate_bas_data()
+        
+        return {
+            'period': {
+                'start_date': self.start_date,
+                'end_date': self.end_date,
+                'quarter': self.quarter
+            },
+            'sales': {
+                'G1': float(g1),
+                'G2': float(g2),
+                'G3': float(g3),
+                'G4': float(g4),
+                'G7': float(g7),
+                'total_sales': float(g1 + g2 + g3 + g4)
+            },
+            'purchases': {
+                'G10': float(g10),
+                'G11': float(g11),
+                'G13': float(g13),
+                'G14': float(g14),
+                'total_purchases': float(g10 + g11 + g13 + g14)
+            },
+            'gst': {
+                '1A': float(one_a),
+                '1B': float(one_b),
+                'net_gst': float(net_gst),
+                'gst_rate': float(self.GST_RATE),
+                'status': 'refund' if net_gst < 0 else 'payable' if net_gst > 0 else 'nil'
+            },
+            'validation': {
+                'errors': validations,
+                'is_valid': len(validations) == 0
+            },
+            'summary': {
+                'gst_inclusive_sales': float(g1),
+                'gst_free_sales': float(g2 + g3 + g4),
+                'gst_inclusive_purchases': float(g10 + g11),
+                'gst_liability': float(net_gst),
+                'quarter_display': self.quarter
+            }
+        }

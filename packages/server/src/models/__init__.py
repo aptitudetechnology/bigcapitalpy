@@ -45,6 +45,14 @@ class PaymentMethod(enum.Enum):
     PAYPAL = "paypal"
     OTHER = "other"
 
+class TaxType(enum.Enum):
+    """Tax type enumeration"""
+    GST_STANDARD = "gst_standard"
+    GST_FREE = "gst_free"
+    EXPORT = "export"
+    INPUT_TAXED = "input_taxed"
+    CAPITAL_ACQUISITION = "capital_acquisition"
+
 # Core Models
 class Organization(db.Model):
     __tablename__ = 'organizations'
@@ -311,9 +319,11 @@ class InvoiceLineItem(db.Model):
     # Tax
     tax_rate = db.Column(db.Numeric(5, 2), default=0)
     tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    tax_code_id = db.Column(db.Integer, db.ForeignKey('tax_codes.id'))
     
     # Relationships
     item = db.relationship('Item')
+    # tax_code relationship is defined in TaxCode model
 
 # Journal and Transaction Models
 class JournalEntry(db.Model):
@@ -354,6 +364,7 @@ class JournalLineItem(db.Model):
     description = db.Column(db.String(500))
     debit = db.Column(db.Numeric(15, 2), default=0)
     credit = db.Column(db.Numeric(15, 2), default=0)
+    tax_code_id = db.Column(db.Integer, db.ForeignKey('tax_codes.id'))
     
     # Contact reference (customer/vendor)
     contact_type = db.Column(db.String(50))  # customer, vendor
@@ -361,110 +372,3 @@ class JournalLineItem(db.Model):
     
     # Relationships
     account = db.relationship('Account')
-
-class Payment(db.Model):
-    __tablename__ = 'payments'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    payment_number = db.Column(db.String(50), nullable=False)
-    payment_date = db.Column(db.Date, nullable=False, default=date.today)
-    amount = db.Column(db.Numeric(15, 2), nullable=False)
-    
-    # Payment details
-    reference = db.Column(db.String(255))
-    payment_method = db.Column(db.Enum(PaymentMethod), nullable=False, default=PaymentMethod.CASH)
-    notes = db.Column(db.Text)
-    
-    # Bank details (for bank transfers/checks)
-    bank_name = db.Column(db.String(255))
-    check_number = db.Column(db.String(100))
-    
-    # Foreign Keys
-    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
-    deposit_account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
-    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    
-    # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    customer = db.relationship('Customer')
-    deposit_account = db.relationship('Account')
-    creator = db.relationship('User')
-    payment_allocations = db.relationship('PaymentAllocation', backref='payment', cascade='all, delete-orphan')
-
-class PaymentAllocation(db.Model):
-    __tablename__ = 'payment_allocations'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    payment_id = db.Column(db.Integer, db.ForeignKey('payments.id'), nullable=False)
-    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), nullable=False)
-    allocated_amount = db.Column(db.Numeric(15, 2), nullable=False)
-    
-    # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    invoice = db.relationship('Invoice')
-
-class BankTransaction(db.Model):
-    """Bank transactions imported from CSV/bank feeds"""
-    __tablename__ = 'bank_transactions'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
-    transaction_date = db.Column(db.Date, nullable=False)
-    description = db.Column(db.String(255), nullable=False)
-    reference = db.Column(db.String(100))
-    amount = db.Column(db.Numeric(15, 2), nullable=False)  # Positive for deposits, negative for withdrawals
-    balance = db.Column(db.Numeric(15, 2))  # Running balance after this transaction
-    bank_transaction_id = db.Column(db.String(100))  # Bank's unique identifier
-    transaction_type = db.Column(db.String(50))  # DEBIT, CREDIT, etc.
-    status = db.Column(db.String(20), default='unmatched')  # unmatched, matched, reconciled
-    organization_id = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    account = db.relationship('Account', backref='bank_transactions')
-    matches = db.relationship('ReconciliationMatch', backref='bank_transaction', cascade='all, delete-orphan')
-
-class BankReconciliation(db.Model):
-    """Bank reconciliation sessions"""
-    __tablename__ = 'bank_reconciliations'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
-    reconciliation_date = db.Column(db.Date, nullable=False)
-    statement_ending_date = db.Column(db.Date, nullable=False)
-    statement_ending_balance = db.Column(db.Numeric(15, 2), nullable=False)
-    book_ending_balance = db.Column(db.Numeric(15, 2), nullable=False)
-    difference = db.Column(db.Numeric(15, 2), nullable=False, default=0)
-    status = db.Column(db.String(20), default='in_progress')  # in_progress, completed, discarded
-    notes = db.Column(db.Text)
-    organization_id = db.Column(db.Integer, nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    account = db.relationship('Account', backref='reconciliations')
-    creator = db.relationship('User', backref='reconciliations')
-    matches = db.relationship('ReconciliationMatch', backref='reconciliation', cascade='all, delete-orphan')
-
-class ReconciliationMatch(db.Model):
-    """Matches between bank transactions and journal entries"""
-    __tablename__ = 'reconciliation_matches'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    reconciliation_id = db.Column(db.Integer, db.ForeignKey('bank_reconciliations.id'), nullable=False)
-    bank_transaction_id = db.Column(db.Integer, db.ForeignKey('bank_transactions.id'))
-    journal_line_item_id = db.Column(db.Integer, db.ForeignKey('journal_line_items.id'))
-    match_type = db.Column(db.String(20), nullable=False)  # automatic, manual, created
-    confidence_score = db.Column(db.Float, default=0.0)  # For automatic matching
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships  
-    journal_line_item = db.relationship('JournalLineItem', backref='reconciliation_matches')
