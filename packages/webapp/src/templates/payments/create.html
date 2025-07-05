@@ -1,0 +1,480 @@
+{% extends "base.html" %}
+
+{% block title %}Record Payment - Payments Received - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('payments.index') }}">Payments Received</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Record Payment</li>
+            </ol>
+        </nav>
+        <h1 class="h3 mb-0 text-gray-800">Record Customer Payment</h1>
+    </div>
+    <div>
+        <a href="{{ url_for('payments.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Payments
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-cash-stack"></i> Payment Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('payments.save') }}" id="paymentForm">
+                    <div class="row">
+                        <!-- Payment Number -->
+                        <div class="col-md-6 mb-3">
+                            <label for="payment_number" class="form-label fw-bold">
+                                Payment Number <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="payment_number" name="payment_number" 
+                                   value="{{ next_number }}" required>
+                            <div class="form-text">Unique identifier for this payment</div>
+                        </div>
+                        
+                        <!-- Payment Date -->
+                        <div class="col-md-6 mb-3">
+                            <label for="payment_date" class="form-label fw-bold">
+                                Payment Date <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" class="form-control" id="payment_date" name="payment_date" 
+                                   value="{{ today.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Customer -->
+                        <div class="col-md-6 mb-3">
+                            <label for="customer_id" class="form-label fw-bold">
+                                Customer <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="customer_id" name="customer_id" required>
+                                <option value="">Select Customer</option>
+                                {% for customer in customers %}
+                                    <option value="{{ customer.id }}">{{ customer.display_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Customer making the payment</div>
+                        </div>
+                        
+                        <!-- Amount -->
+                        <div class="col-md-6 mb-3">
+                            <label for="amount" class="form-label fw-bold">
+                                Payment Amount <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="amount" name="amount" 
+                                       step="0.01" min="0.01" required>
+                            </div>
+                            <div class="form-text">Total amount received</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Payment Method -->
+                        <div class="col-md-6 mb-3">
+                            <label for="payment_method" class="form-label fw-bold">
+                                Payment Method <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="payment_method" name="payment_method" required>
+                                <option value="">Select Method</option>
+                                {% for method in PaymentMethod %}
+                                    <option value="{{ method.value }}">
+                                        {{ method.value.replace('_', ' ').title() }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Deposit Account -->
+                        <div class="col-md-6 mb-3">
+                            <label for="deposit_account_id" class="form-label fw-bold">
+                                Deposit To <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="deposit_account_id" name="deposit_account_id" required>
+                                <option value="">Select Account</option>
+                                {% for account in deposit_accounts %}
+                                    <option value="{{ account.id }}">
+                                        {{ account.code }} - {{ account.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Account to deposit the payment</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bank Details (shown for relevant payment methods) -->
+                    <div id="bankDetails" class="row" style="display: none;">
+                        <div class="col-md-6 mb-3">
+                            <label for="bank_name" class="form-label">Bank Name</label>
+                            <input type="text" class="form-control" id="bank_name" name="bank_name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="check_number" class="form-label">Check Number</label>
+                            <input type="text" class="form-control" id="check_number" name="check_number">
+                        </div>
+                    </div>
+                    
+                    <!-- Reference -->
+                    <div class="mb-3">
+                        <label for="reference" class="form-label fw-bold">Reference</label>
+                        <input type="text" class="form-control" id="reference" name="reference" 
+                               placeholder="Reference number or description">
+                        <div class="form-text">Optional reference for this payment</div>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="mb-3">
+                        <label for="notes" class="form-label fw-bold">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="Optional notes about this payment"></textarea>
+                    </div>
+                    
+                    <!-- Invoice Allocations -->
+                    <div id="invoiceAllocations" style="display: none;">
+                        <hr class="my-4">
+                        <h6 class="text-primary mb-3">
+                            <i class="bi bi-receipt"></i> Allocate to Invoices
+                        </h6>
+                        <div id="invoicesList">
+                            <!-- Dynamically populated -->
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="alert alert-info">
+                                    <strong>Remaining Amount:</strong> 
+                                    <span id="remainingAmount">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <hr class="my-4">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <a href="{{ url_for('payments.index') }}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle"></i> Cancel
+                                    </a>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-check-circle"></i> Record Payment
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Payment Method Guide -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="bi bi-info-circle"></i> Payment Methods
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-success me-2">Cash</span>
+                        <small class="text-muted">Physical cash payment</small>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-primary me-2">Check</span>
+                        <small class="text-muted">Bank check payment</small>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-warning me-2">Credit Card</span>
+                        <small class="text-muted">Card payment</small>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-info me-2">Bank Transfer</span>
+                        <small class="text-muted">Wire transfer or ACH</small>
+                    </div>
+                </div>
+                
+                <div class="mb-0">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-secondary me-2">PayPal</span>
+                        <small class="text-muted">Online payment</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tips -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-warning">
+                    <i class="bi bi-lightbulb"></i> Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <small>
+                        <i class="bi bi-check-circle"></i>
+                        <strong>Tip:</strong> Select a customer to see their outstanding invoices for allocation.
+                    </small>
+                </div>
+                
+                <div class="alert alert-success">
+                    <small>
+                        <i class="bi bi-lightbulb"></i>
+                        <strong>Auto-Allocation:</strong> Payments will be automatically allocated to oldest invoices first.
+                    </small>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <small>
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Overpayment:</strong> Any amount not allocated to invoices will be recorded as customer deposit.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const customerSelect = document.getElementById('customer_id');
+    const paymentMethodSelect = document.getElementById('payment_method');
+    const amountInput = document.getElementById('amount');
+    const bankDetails = document.getElementById('bankDetails');
+    const invoiceAllocations = document.getElementById('invoiceAllocations');
+    const invoicesList = document.getElementById('invoicesList');
+    const remainingAmountSpan = document.getElementById('remainingAmount');
+    
+    let customerInvoices = [];
+    let paymentAmount = 0;
+    
+    // Show/hide bank details based on payment method
+    paymentMethodSelect.addEventListener('change', function() {
+        const method = this.value;
+        if (method === 'check' || method === 'bank_transfer') {
+            bankDetails.style.display = 'block';
+        } else {
+            bankDetails.style.display = 'none';
+        }
+    });
+    
+    // Load customer invoices when customer is selected
+    customerSelect.addEventListener('change', function() {
+        const customerId = this.value;
+        if (customerId) {
+            loadCustomerInvoices(customerId);
+        } else {
+            invoiceAllocations.style.display = 'none';
+            customerInvoices = [];
+        }
+    });
+    
+    // Update remaining amount when payment amount changes
+    amountInput.addEventListener('input', function() {
+        paymentAmount = parseFloat(this.value) || 0;
+        updateRemainingAmount();
+    });
+    
+    function loadCustomerInvoices(customerId) {
+        fetch(`/payments/customer/${customerId}/invoices`)
+            .then(response => response.json())
+            .then(data => {
+                customerInvoices = data.invoices;
+                displayInvoices();
+                invoiceAllocations.style.display = customerInvoices.length > 0 ? 'block' : 'none';
+            })
+            .catch(error => {
+                console.error('Error loading invoices:', error);
+                customerInvoices = [];
+                invoiceAllocations.style.display = 'none';
+            });
+    }
+    
+    function displayInvoices() {
+        invoicesList.innerHTML = '';
+        
+        if (customerInvoices.length === 0) {
+            invoicesList.innerHTML = '<div class="alert alert-info">No outstanding invoices for this customer.</div>';
+            return;
+        }
+        
+        const table = document.createElement('table');
+        table.className = 'table table-sm table-bordered';
+        table.innerHTML = `
+            <thead class="table-light">
+                <tr>
+                    <th>Invoice #</th>
+                    <th>Date</th>
+                    <th>Amount Due</th>
+                    <th>Allocate</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        
+        const tbody = table.querySelector('tbody');
+        
+        customerInvoices.forEach(invoice => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <strong>${invoice.invoice_number}</strong>
+                    <br><small class="text-muted">Due: ${formatDate(invoice.due_date)}</small>
+                </td>
+                <td>${formatDate(invoice.invoice_date)}</td>
+                <td>
+                    <strong>$${invoice.balance.toFixed(2)}</strong>
+                    <br><small class="text-muted">Total: $${invoice.total.toFixed(2)}</small>
+                </td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control allocation-input" 
+                               data-invoice-id="${invoice.id}"
+                               data-max-amount="${invoice.balance}"
+                               step="0.01" min="0" max="${invoice.balance}"
+                               placeholder="0.00">
+                        <input type="hidden" name="allocations" value="">
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-1" 
+                            onclick="allocateFullAmount(${invoice.id}, ${invoice.balance})">
+                        Full Amount
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        invoicesList.appendChild(table);
+        
+        // Add event listeners to allocation inputs
+        const allocationInputs = table.querySelectorAll('.allocation-input');
+        allocationInputs.forEach(input => {
+            input.addEventListener('input', updateAllocations);
+        });
+        
+        updateRemainingAmount();
+    }
+    
+    function updateAllocations() {
+        const allocationInputs = document.querySelectorAll('.allocation-input');
+        const allocationsInput = document.querySelector('input[name="allocations"]');
+        const allocations = [];
+        
+        allocationInputs.forEach(input => {
+            const invoiceId = input.dataset.invoiceId;
+            const amount = parseFloat(input.value) || 0;
+            
+            if (amount > 0) {
+                allocations.push(`${invoiceId}:${amount}`);
+            }
+        });
+        
+        // Update hidden input
+        const hiddenInputs = document.querySelectorAll('input[name="allocations"]');
+        hiddenInputs.forEach(hidden => {
+            hidden.remove();
+        });
+        
+        allocations.forEach(allocation => {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'allocations';
+            hidden.value = allocation;
+            document.getElementById('paymentForm').appendChild(hidden);
+        });
+        
+        updateRemainingAmount();
+    }
+    
+    function updateRemainingAmount() {
+        const allocationInputs = document.querySelectorAll('.allocation-input');
+        let totalAllocated = 0;
+        
+        allocationInputs.forEach(input => {
+            totalAllocated += parseFloat(input.value) || 0;
+        });
+        
+        const remaining = paymentAmount - totalAllocated;
+        remainingAmountSpan.textContent = `$${remaining.toFixed(2)}`;
+        remainingAmountSpan.className = remaining >= 0 ? 'text-success' : 'text-danger';
+    }
+    
+    window.allocateFullAmount = function(invoiceId, maxAmount) {
+        const input = document.querySelector(`input[data-invoice-id="${invoiceId}"]`);
+        const remaining = parseFloat(remainingAmountSpan.textContent.replace('$', ''));
+        const allocateAmount = Math.min(maxAmount, remaining + (parseFloat(input.value) || 0));
+        
+        input.value = allocateAmount.toFixed(2);
+        updateAllocations();
+    };
+    
+    // Auto-allocate payments when amount is entered
+    window.autoAllocate = function() {
+        const allocationInputs = document.querySelectorAll('.allocation-input');
+        let remainingToAllocate = paymentAmount;
+        
+        // Clear existing allocations
+        allocationInputs.forEach(input => input.value = '');
+        
+        // Allocate to invoices in order (oldest first)
+        allocationInputs.forEach(input => {
+            if (remainingToAllocate <= 0) return;
+            
+            const maxAmount = parseFloat(input.dataset.maxAmount);
+            const allocateAmount = Math.min(maxAmount, remainingToAllocate);
+            
+            if (allocateAmount > 0) {
+                input.value = allocateAmount.toFixed(2);
+                remainingToAllocate -= allocateAmount;
+            }
+        });
+        
+        updateAllocations();
+    };
+    
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+    
+    // Auto-allocate when payment amount changes (optional)
+    amountInput.addEventListener('blur', function() {
+        if (customerInvoices.length > 0 && paymentAmount > 0) {
+            // Uncomment to enable auto-allocation
+            // autoAllocate();
+        }
+    });
+});
+</script>
+{% endblock %}

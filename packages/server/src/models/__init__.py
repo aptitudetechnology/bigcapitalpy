@@ -37,6 +37,14 @@ class InvoiceStatus(enum.Enum):
     OVERDUE = "overdue"
     CANCELLED = "cancelled"
 
+class PaymentMethod(enum.Enum):
+    CASH = "cash"
+    CHECK = "check"
+    CREDIT_CARD = "credit_card"
+    BANK_TRANSFER = "bank_transfer"
+    PAYPAL = "paypal"
+    OTHER = "other"
+
 # Core Models
 class Organization(db.Model):
     __tablename__ = 'organizations'
@@ -353,3 +361,50 @@ class JournalLineItem(db.Model):
     
     # Relationships
     account = db.relationship('Account')
+
+class Payment(db.Model):
+    __tablename__ = 'payments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    payment_number = db.Column(db.String(50), nullable=False)
+    payment_date = db.Column(db.Date, nullable=False, default=date.today)
+    amount = db.Column(db.Numeric(15, 2), nullable=False)
+    
+    # Payment details
+    reference = db.Column(db.String(255))
+    payment_method = db.Column(db.Enum(PaymentMethod), nullable=False, default=PaymentMethod.CASH)
+    notes = db.Column(db.Text)
+    
+    # Bank details (for bank transfers/checks)
+    bank_name = db.Column(db.String(255))
+    check_number = db.Column(db.String(100))
+    
+    # Foreign Keys
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    deposit_account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    customer = db.relationship('Customer')
+    deposit_account = db.relationship('Account')
+    creator = db.relationship('User')
+    payment_allocations = db.relationship('PaymentAllocation', backref='payment', cascade='all, delete-orphan')
+
+class PaymentAllocation(db.Model):
+    __tablename__ = 'payment_allocations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    payment_id = db.Column(db.Integer, db.ForeignKey('payments.id'), nullable=False)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), nullable=False)
+    allocated_amount = db.Column(db.Numeric(15, 2), nullable=False)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    invoice = db.relationship('Invoice')

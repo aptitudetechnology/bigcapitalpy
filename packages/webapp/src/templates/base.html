@@ -60,7 +60,7 @@
                         <span>Items</span>
                     </a>
                     <div class="dropdown-submenu">
-                        <a href="#" class="dropdown-link submenu-toggle {{ 'active' if 'invoices' in request.endpoint }}" data-submenu="sales">
+                        <a href="#" class="dropdown-link submenu-toggle {{ 'active' if 'invoices' in request.endpoint or 'payments' in request.endpoint }}" data-submenu="sales">
                             <i class="bi bi-receipt"></i>
                             <span>Sales</span>
                             <i class="bi bi-chevron-right submenu-arrow"></i>
@@ -68,7 +68,7 @@
                         <div class="submenu-content" id="sales">
                             <a href="{{ url_for('invoices.index') }}" class="submenu-link">Invoices</a>
                             <a href="#" class="submenu-link">Estimates</a>
-                            <a href="#" class="submenu-link">Payments Received</a>
+                            <a href="{{ url_for('payments.index') }}" class="submenu-link">Payments Received</a>
                             <a href="#" class="submenu-link">Credit Notes</a>
                         </div>
                     </div>

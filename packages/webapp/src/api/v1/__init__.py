@@ -9,6 +9,7 @@ from .customers import customers_api_bp
 from .vendors import vendors_api_bp
 from .items import items_api_bp
 from .invoices import invoices_api_bp
+from .payments import payments_api_bp
 from .accounts import accounts_api_bp
 from .reports import reports_api_bp
 from .organizations import organizations_api_bp
@@ -25,6 +26,7 @@ def register_api_blueprints(app):
     api_v1_bp.register_blueprint(vendors_api_bp, url_prefix='/vendors')
     api_v1_bp.register_blueprint(items_api_bp, url_prefix='/items')
     api_v1_bp.register_blueprint(invoices_api_bp, url_prefix='/invoices')
+    api_v1_bp.register_blueprint(payments_api_bp, url_prefix='/payments')
     api_v1_bp.register_blueprint(accounts_api_bp, url_prefix='/accounts')
     api_v1_bp.register_blueprint(reports_api_bp, url_prefix='/reports')
     api_v1_bp.register_blueprint(organizations_api_bp, url_prefix='/organizations')

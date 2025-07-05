@@ -11,6 +11,7 @@ from .accounts import accounts_bp
 from .reports import reports_bp
 from .invoices import invoices_bp
 from .financial import financial_bp
+from .payments import payments_bp
 
 def register_blueprints(app):
     """Register all application blueprints"""
@@ -26,6 +27,7 @@ def register_blueprints(app):
     app.register_blueprint(accounts_bp, url_prefix='/accounts')
     app.register_blueprint(reports_bp, url_prefix='/reports')
     app.register_blueprint(invoices_bp, url_prefix='/invoices')
+    app.register_blueprint(payments_bp, url_prefix='/payments')
     app.register_blueprint(financial_bp, url_prefix='/financial')
     
     print("✅ All blueprints registered successfully")

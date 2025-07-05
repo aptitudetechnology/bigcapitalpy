@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Payment {{ payment.payment_number }} - Payments Received - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('payments.index') }}">Payments Received</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ payment.payment_number }}</li>
+            </ol>
+        </nav>
+        <h1 class="h3 mb-0 text-gray-800">Payment {{ payment.payment_number }}</h1>
+    </div>
+    <div>
+        <a href="{{ url_for('payments.edit', id=payment.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <a href="{{ url_for('payments.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Payments
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Payment Details -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-cash-stack"></i> Payment Details
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold">Payment Number:</td>
+                                <td>{{ payment.payment_number }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Payment Date:</td>
+                                <td>{{ payment.payment_date | dateformat('%B %d, %Y') }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Amount:</td>
+                                <td class="fw-bold text-success">{{ payment.amount | currency }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Payment Method:</td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ payment.payment_method.value.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% if payment.reference %}
+                            <tr>
+                                <td class="fw-bold">Reference:</td>
+                                <td>{{ payment.reference }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold">Customer:</td>
+                                <td>
+                                    <strong>{{ payment.customer.display_name }}</strong>
+                                    {% if payment.customer.email %}
+                                        <br><small class="text-muted">{{ payment.customer.email }}</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Deposited To:</td>
+                                <td>{{ payment.deposit_account.code }} - {{ payment.deposit_account.name }}</td>
+                            </tr>
+                            {% if payment.bank_name %}
+                            <tr>
+                                <td class="fw-bold">Bank:</td>
+                                <td>{{ payment.bank_name }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if payment.check_number %}
+                            <tr>
+                                <td class="fw-bold">Check Number:</td>
+                                <td>{{ payment.check_number }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td class="fw-bold">Created:</td>
+                                <td>
+                                    {{ payment.created_at | datetime('%B %d, %Y at %I:%M %p') }}
+                                    <br><small class="text-muted">by {{ payment.creator.full_name }}</small>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                {% if payment.notes %}
+                <div class="row">
+                    <div class="col-12">
+                        <hr>
+                        <h6 class="text-muted">Notes</h6>
+                        <p>{{ payment.notes | nl2br | safe }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Invoice Allocations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-receipt"></i> Invoice Allocations
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if payment.payment_allocations %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Invoice Number</th>
+                                    <th>Invoice Date</th>
+                                    <th>Due Date</th>
+                                    <th>Total Amount</th>
+                                    <th>Allocated Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set total_allocated = 0 %}
+                                {% for allocation in payment.payment_allocations %}
+                                    {% set total_allocated = total_allocated + allocation.allocated_amount %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('invoices.view', id=allocation.invoice.id) }}" 
+                                               class="text-decoration-none">
+                                                <strong>{{ allocation.invoice.invoice_number }}</strong>
+                                            </a>
+                                        </td>
+                                        <td>{{ allocation.invoice.invoice_date | dateformat('%B %d, %Y') }}</td>
+                                        <td>{{ allocation.invoice.due_date | dateformat('%B %d, %Y') }}</td>
+                                        <td>{{ allocation.invoice.total | currency }}</td>
+                                        <td class="fw-bold text-success">{{ allocation.allocated_amount | currency }}</td>
+                                        <td>
+                                            {% if allocation.invoice.status.value == 'paid' %}
+                                                <span class="badge bg-success">Paid</span>
+                                            {% elif allocation.invoice.status.value == 'partial' %}
+                                                <span class="badge bg-warning">Partial</span>
+                                            {% else %}
+                                                <span class="badge bg-info">{{ allocation.invoice.status.value.title() }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="4" class="text-end">Total Allocated:</th>
+                                    <th class="text-success">{{ total_allocated | currency }}</th>
+                                    <th></th>
+                                </tr>
+                                {% if payment.amount > total_allocated %}
+                                <tr>
+                                    <th colspan="4" class="text-end">Unallocated Amount:</th>
+                                    <th class="text-warning">{{ (payment.amount - total_allocated) | currency }}</th>
+                                    <th><span class="badge bg-warning">Prepayment</span></th>
+                                </tr>
+                                {% endif %}
+                            </tfoot>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-receipt display-1 text-muted"></i>
+                        <h5 class="mt-3">No Invoice Allocations</h5>
+                        <p class="text-muted">This payment was not allocated to any specific invoices.<br>
+                        The full amount is recorded as a customer prepayment.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Payment Summary -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-info-circle"></i> Payment Summary
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <h2 class="text-success">{{ payment.amount | currency }}</h2>
+                    <p class="text-muted mb-0">Total Payment</p>
+                </div>
+                
+                <hr>
+                
+                {% if payment.payment_allocations %}
+                    {% set total_allocated = payment.payment_allocations | sum(attribute='allocated_amount') %}
+                    <div class="d-flex justify-content-between">
+                        <span>Allocated to Invoices:</span>
+                        <strong class="text-success">{{ total_allocated | currency }}</strong>
+                    </div>
+                    
+                    {% if payment.amount > total_allocated %}
+                        <div class="d-flex justify-content-between">
+                            <span>Customer Prepayment:</span>
+                            <strong class="text-warning">{{ (payment.amount - total_allocated) | currency }}</strong>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="d-flex justify-content-between">
+                        <span>Customer Prepayment:</span>
+                        <strong class="text-warning">{{ payment.amount | currency }}</strong>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Customer Information -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="bi bi-person"></i> Customer Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-person-circle display-3 text-primary"></i>
+                    <h5 class="mt-2">{{ payment.customer.display_name }}</h5>
+                </div>
+                
+                {% if payment.customer.email %}
+                    <div class="mb-2">
+                        <i class="bi bi-envelope me-2"></i>
+                        <a href="mailto:{{ payment.customer.email }}">{{ payment.customer.email }}</a>
+                    </div>
+                {% endif %}
+                
+                {% if payment.customer.phone %}
+                    <div class="mb-2">
+                        <i class="bi bi-telephone me-2"></i>
+                        <a href="tel:{{ payment.customer.phone }}">{{ payment.customer.phone }}</a>
+                    </div>
+                {% endif %}
+                
+                {% if payment.customer.website %}
+                    <div class="mb-2">
+                        <i class="bi bi-globe me-2"></i>
+                        <a href="{{ payment.customer.website }}" target="_blank">{{ payment.customer.website }}</a>
+                    </div>
+                {% endif %}
+                
+                <hr>
+                
+                <div class="d-grid">
+                    <a href="{{ url_for('customers.view', id=payment.customer.id) }}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye"></i> View Customer
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-warning">
+                    <i class="bi bi-gear"></i> Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('payments.edit', id=payment.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit Payment
+                    </a>
+                    
+                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Print Receipt
+                    </button>
+                    
+                    <hr>
+                    
+                    <button type="button" class="btn btn-outline-danger" 
+                            onclick="confirmDelete({{ payment.id }}, '{{ payment.payment_number }}')">
+                        <i class="bi bi-trash"></i> Delete Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete payment <strong id="deletePaymentNumber"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This action will:
+                    <ul class="mb-0 mt-2">
+                        <li>Reverse all invoice allocations</li>
+                        <li>Delete the payment record</li>
+                        <li>Remove related journal entries</li>
+                    </ul>
+                    This action cannot be undone.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete Payment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(paymentId, paymentNumber) {
+    document.getElementById('deletePaymentNumber').textContent = paymentNumber;
+    document.getElementById('deleteForm').action = `/payments/${paymentId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Print styles
+document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        @media print {
+            .btn, .breadcrumb, nav, .modal { display: none !important; }
+            .card { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
+            .card-header { background-color: #f8f9fa !important; }
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}
