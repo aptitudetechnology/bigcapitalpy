@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}New Item - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Add New Item</h1>
+    <a href="{{ url_for('items.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Items
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Item Information</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('items.new') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <!-- Basic Information -->
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Item Name *</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="name" 
+                                       name="name" 
+                                       value="{{ request.form.get('name', '') }}"
+                                       required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="sku" class="form-label">SKU/Code</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="sku" 
+                                       name="sku" 
+                                       value="{{ request.form.get('sku', '') }}"
+                                       placeholder="AUTO">
+                                <div class="form-text">Leave blank to auto-generate</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" 
+                                          id="description" 
+                                          name="description" 
+                                          rows="3">{{ request.form.get('description', '') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item Type -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="type" class="form-label">Item Type *</label>
+                                <select class="form-select" id="type" name="type" required onchange="toggleInventoryFields()">
+                                    <option value="">Select Type</option>
+                                    <option value="inventory" {% if request.form.get('type') == 'inventory' %}selected{% endif %}>Inventory Item</option>
+                                    <option value="service" {% if request.form.get('type') == 'service' %}selected{% endif %}>Service</option>
+                                    <option value="non-inventory" {% if request.form.get('type') == 'non-inventory' %}selected{% endif %}>Non-Inventory Item</option>
+                                </select>
+                                <div class="form-text">
+                                    <small>
+                                        <strong>Inventory:</strong> Physical products you track quantity<br>
+                                        <strong>Service:</strong> Services you provide<br>
+                                        <strong>Non-Inventory:</strong> Items you don't track quantity
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="category" 
+                                       name="category" 
+                                       value="{{ request.form.get('category', '') }}"
+                                       placeholder="e.g., Electronics, Services, Office Supplies">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing -->
+                    <h5 class="mb-3 mt-4">Pricing</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="sell_price" class="form-label">Selling Price *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="sell_price" 
+                                           name="sell_price" 
+                                           value="{{ request.form.get('sell_price', '') }}"
+                                           step="0.01"
+                                           min="0"
+                                           required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="cost_price" class="form-label">Cost Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="cost_price" 
+                                           name="cost_price" 
+                                           value="{{ request.form.get('cost_price', '') }}"
+                                           step="0.01"
+                                           min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inventory Fields (shown only for inventory items) -->
+                    <div id="inventoryFields" style="display: none;">
+                        <h5 class="mb-3 mt-4">Inventory Details</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="quantity_on_hand" class="form-label">Current Quantity</label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="quantity_on_hand" 
+                                           name="quantity_on_hand" 
+                                           value="{{ request.form.get('quantity_on_hand', '0') }}"
+                                           step="0.01"
+                                           min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="reorder_level" class="form-label">Reorder Level</label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="reorder_level" 
+                                           name="reorder_level" 
+                                           value="{{ request.form.get('reorder_level', '0') }}"
+                                           step="0.01"
+                                           min="0">
+                                    <div class="form-text">Alert when quantity falls below this</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="unit" class="form-label">Unit of Measure</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="unit" 
+                                           name="unit" 
+                                           value="{{ request.form.get('unit', '') }}"
+                                           placeholder="e.g., pcs, kg, meters">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="weight" class="form-label">Weight</label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="weight" 
+                                               name="weight" 
+                                               value="{{ request.form.get('weight', '') }}"
+                                               step="0.01"
+                                               min="0">
+                                        <span class="input-group-text">kg</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="dimensions" class="form-label">Dimensions</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="dimensions" 
+                                           name="dimensions" 
+                                           value="{{ request.form.get('dimensions', '') }}"
+                                           placeholder="L x W x H">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <hr>
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ url_for('items.index') }}" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i> Create Item
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Tips Sidebar -->
+    <div class="col-lg-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Item Types</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6><i class="bi bi-box-seam text-primary"></i> Inventory Item</h6>
+                    <small class="text-muted">Physical products you buy and sell. Quantity is tracked automatically.</small>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-gear text-success"></i> Service</h6>
+                    <small class="text-muted">Services you provide to customers. No quantity tracking.</small>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-file-text text-info"></i> Non-Inventory</h6>
+                    <small class="text-muted">Items you buy and sell but don't need to track quantity.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mt-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Pricing Tips</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6><i class="bi bi-currency-dollar text-success"></i> Selling Price</h6>
+                    <small class="text-muted">The price you charge customers. This appears on invoices and estimates.</small>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-receipt text-warning"></i> Cost Price</h6>
+                    <small class="text-muted">How much you pay for this item. Used for profit calculations.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleInventoryFields() {
+    const itemType = document.getElementById('type').value;
+    const inventoryFields = document.getElementById('inventoryFields');
+    
+    if (itemType === 'inventory') {
+        inventoryFields.style.display = 'block';
+    } else {
+        inventoryFields.style.display = 'none';
+    }
+}
+
+// Auto-generate SKU based on item name
+document.getElementById('name').addEventListener('blur', function() {
+    const skuField = document.getElementById('sku');
+    if (!skuField.value && this.value) {
+        // Simple SKU generation: take first 3 letters + random number
+        const prefix = this.value.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
+        const suffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        skuField.value = prefix + suffix;
+    }
+});
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    toggleInventoryFields();
+});
+</script>
+{% endblock %}

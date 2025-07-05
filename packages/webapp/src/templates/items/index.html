@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Items - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Items & Inventory</h1>
+    <a href="{{ url_for('items.new') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Add New Item
+    </a>
+</div>
+
+<!-- Filters and Search -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" 
+                       class="form-control" 
+                       name="search" 
+                       placeholder="Search items..." 
+                       value="{{ request.args.get('search', '') }}">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="type">
+                    <option value="">All Types</option>
+                    <option value="inventory" {% if request.args.get('type') == 'inventory' %}selected{% endif %}>Inventory</option>
+                    <option value="service" {% if request.args.get('type') == 'service' %}selected{% endif %}>Service</option>
+                    <option value="non-inventory" {% if request.args.get('type') == 'non-inventory' %}selected{% endif %}>Non-Inventory</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">All Status</option>
+                    <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if request.args.get('status') == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Items Table -->
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Items List</h6>
+    </div>
+    <div class="card-body">
+        {% if items %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="itemsTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>SKU</th>
+                        <th>Type</th>
+                        <th>Sell Price</th>
+                        <th>Cost Price</th>
+                        <th>Quantity</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="bi bi-box"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ item.name }}</div>
+                                    {% if item.description %}
+                                    <small class="text-muted">{{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if item.sku %}
+                                <code>{{ item.sku }}</code>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if item.type == 'inventory' %}primary{% elif item.type == 'service' %}success{% else %}secondary{% endif %}">
+                                {{ item.type.title() }}
+                            </span>
+                        </td>
+                        <td>{{ item.sell_price | currency }}</td>
+                        <td>{{ item.cost_price | currency }}</td>
+                        <td>
+                            {% if item.type == 'inventory' %}
+                                <span class="{% if item.quantity_on_hand <= item.reorder_level %}text-danger{% else %}text-success{% endif %}">
+                                    {{ item.quantity_on_hand }}
+                                </span>
+                                {% if item.unit %}
+                                    <small class="text-muted">{{ item.unit }}</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if item.is_active %}success{% else %}secondary{% endif %}">
+                                {% if item.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('items.show', item_id=item.id) }}" 
+                                   class="btn btn-sm btn-outline-info" 
+                                   title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('items.edit', item_id=item.id) }}" 
+                                   class="btn btn-sm btn-outline-primary" 
+                                   title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick="confirmDelete({{ item.id }}, '{{ item.name }}')"
+                                        title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-box fs-1 text-muted d-block mb-3"></i>
+            <h5 class="text-muted">No Items Found</h5>
+            <p class="text-muted">Start by adding your first item to the inventory.</p>
+            <a href="{{ url_for('items.new') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add First Item
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="itemName"></strong>?</p>
+                <p class="text-danger"><small><i class="bi bi-exclamation-triangle"></i> This action cannot be undone.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" id="deleteForm" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="_method" value="DELETE"/>
+                    <button type="submit" class="btn btn-danger">Delete Item</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(itemId, itemName) {
+    document.getElementById('itemName').textContent = itemName;
+    document.getElementById('deleteForm').action = '/items/' + itemId + '/delete';
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Initialize DataTable if there are items
+{% if items %}
+document.addEventListener('DOMContentLoaded', function() {
+    // Simple sorting functionality
+    const table = document.getElementById('itemsTable');
+    const headers = table.querySelectorAll('th');
+    
+    headers.forEach((header, index) => {
+        if (index < headers.length - 1) { // Don't make Actions column sortable
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', function() {
+                // Simple client-side sorting could be implemented here
+                console.log('Sort by column:', header.textContent);
+            });
+        }
+    });
+});
+{% endif %}
+</script>
+{% endblock %}

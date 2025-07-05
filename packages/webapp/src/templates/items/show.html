@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.name }} - Item Details - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">{{ item.name }}</h1>
+        <p class="text-muted mb-0">Item Details</p>
+    </div>
+    <div class="btn-group">
+        <a href="{{ url_for('items.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Items
+        </a>
+        <a href="{{ url_for('items.edit', item_id=item.id) }}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Edit Item
+        </a>
+        <button class="btn btn-outline-danger" onclick="confirmDelete()">
+            <i class="bi bi-trash"></i> Delete
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Item Information -->
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Item Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold">Item Name:</td>
+                                <td>{{ item.name }}</td>
+                            </tr>
+                            {% if item.sku %}
+                            <tr>
+                                <td class="fw-bold">SKU/Code:</td>
+                                <td><code>{{ item.sku }}</code></td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td class="fw-bold">Type:</td>
+                                <td>
+                                    <span class="badge bg-{% if item.type == 'inventory' %}primary{% elif item.type == 'service' %}success{% else %}secondary{% endif %}">
+                                        {{ item.type.title() }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% if item.category %}
+                            <tr>
+                                <td class="fw-bold">Category:</td>
+                                <td>{{ item.category }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td class="fw-bold">Status:</td>
+                                <td>
+                                    <span class="badge bg-{% if item.is_active %}success{% else %}secondary{% endif %}">
+                                        {% if item.is_active %}Active{% else %}Inactive{% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold">Selling Price:</td>
+                                <td class="text-success fw-bold">{{ item.sell_price | currency }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Cost Price:</td>
+                                <td>{{ item.cost_price | currency }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Profit Margin:</td>
+                                <td>
+                                    {% if item.sell_price > 0 and item.cost_price > 0 %}
+                                        {% set margin = ((item.sell_price - item.cost_price) / item.sell_price * 100) %}
+                                        <span class="{% if margin > 20 %}text-success{% elif margin > 10 %}text-warning{% else %}text-danger{% endif %}">
+                                            {{ "%.1f"|format(margin) }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Item ID:</td>
+                                <td>{{ item.id }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                {% if item.description %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Description</h6>
+                        <p class="text-muted">{{ item.description | nl2br }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Inventory Information (only for inventory items) -->
+        {% if item.type == 'inventory' %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Inventory Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="{% if item.quantity_on_hand <= item.reorder_level %}text-danger{% else %}text-success{% endif %}">
+                                {{ item.quantity_on_hand }}
+                            </h4>
+                            <small class="text-muted">
+                                Current Stock
+                                {% if item.unit %}<br>({{ item.unit }}){% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h5 class="text-warning">{{ item.reorder_level }}</h5>
+                            <small class="text-muted">Reorder Level</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h5 class="text-info">{{ item.cost_price * item.quantity_on_hand | currency }}</h5>
+                            <small class="text-muted">Inventory Value</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            {% if item.quantity_on_hand <= item.reorder_level %}
+                                <span class="badge bg-danger">Low Stock</span>
+                            {% elif item.quantity_on_hand == 0 %}
+                                <span class="badge bg-danger">Out of Stock</span>
+                            {% else %}
+                                <span class="badge bg-success">In Stock</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if item.weight or item.dimensions %}
+                <hr>
+                <div class="row">
+                    {% if item.weight %}
+                    <div class="col-md-6">
+                        <strong>Weight:</strong> {{ item.weight }} kg
+                    </div>
+                    {% endif %}
+                    {% if item.dimensions %}
+                    <div class="col-md-6">
+                        <strong>Dimensions:</strong> {{ item.dimensions }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Transactions -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Transactions</h6>
+                <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Reference</th>
+                                <th>Quantity</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="bi bi-receipt fs-2 d-block mb-2"></i>
+                                    No recent transactions found
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if item.type == 'inventory' %}
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle"></i> Adjust Inventory
+                    </a>
+                    {% endif %}
+                    <a href="#" class="btn btn-outline-success">
+                        <i class="bi bi-file-earmark-plus"></i> Add to Invoice
+                    </a>
+                    <a href="#" class="btn btn-outline-info">
+                        <i class="bi bi-file-earmark-text"></i> Add to Estimate
+                    </a>
+                    <a href="{{ url_for('items.edit', item_id=item.id) }}" class="btn btn-outline-warning">
+                        <i class="bi bi-pencil"></i> Edit Item
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item Statistics -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Item Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h5 class="text-primary mb-0">0</h5>
+                            <small class="text-muted">Times Sold</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-success mb-0">$0.00</h5>
+                        <small class="text-muted">Total Revenue</small>
+                    </div>
+                </div>
+                <hr class="my-3">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h6 class="text-info mb-0">0</h6>
+                            <small class="text-muted">In Quotes</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-warning mb-0">0</h6>
+                        <small class="text-muted">On Order</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item Details -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Item Details</h6>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    <strong>Created:</strong> {{ item.created_at | dateformat }}<br>
+                    <strong>Updated:</strong> {{ item.updated_at | dateformat }}<br>
+                    <strong>Organization:</strong> {{ item.organization.name }}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong>{{ item.name }}</strong>?</p>
+                <p class="text-danger"><small><i class="bi bi-exclamation-triangle"></i> This action cannot be undone.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('items.delete', item_id=item.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="_method" value="DELETE"/>
+                    <button type="submit" class="btn btn-danger">Delete Item</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+</script>
+{% endblock %}
