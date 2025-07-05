@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Dashboard - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Financial Dashboard</h1>
+    <div class="btn-group">
+        <a href="{{ url_for('financial.banking') }}" class="btn btn-primary">
+            <i class="bi bi-bank"></i> Banking
+        </a>
+        <a href="{{ url_for('financial.manual_journals') }}" class="btn btn-outline-primary">
+            <i class="bi bi-journal-text"></i> Manual Journals
+        </a>
+    </div>
+</div>
+
+<!-- Financial Overview Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Cash</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ data.total_cash | currency }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-cash-stack fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Bank Accounts</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ data.accounts_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-bank fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Recent Transactions</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ data.recent_transactions | length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-arrow-left-right fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Unreconciled</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ data.unreconciled_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('financial.create_manual_journal') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-journal-plus fa-2x mb-2"></i>
+                            <span>Manual Journal</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('financial.reconciliation') }}" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-check2-square fa-2x mb-2"></i>
+                            <span>Reconciliation</span>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('financial.cash_flow') }}" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-graph-up-arrow fa-2x mb-2"></i>
+                            <span>Cash Flow</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Bank Accounts</h6>
+            </div>
+            <div class="card-body">
+                {% if data.cash_accounts %}
+                    {% for account in data.cash_accounts %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>{{ account.name }}</strong>
+                            <br><small class="text-muted">{{ account.code }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="{% if account.current_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ account.current_balance | currency }}
+                            </span>
+                        </div>
+                    </div>
+                    {% if not loop.last %}<hr class="my-2">{% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No bank accounts found</p>
+                    <a href="{{ url_for('accounts.create') }}" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-plus"></i> Add Bank Account
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="card shadow">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">Recent Transactions</h6>
+        <a href="{{ url_for('financial.manual_journals') }}" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="card-body">
+        {% if data.recent_transactions %}
+        <div class="table-responsive">
+            <table class="table table-borderless">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Entry #</th>
+                        <th>Description</th>
+                        <th>Reference</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in data.recent_transactions %}
+                    <tr>
+                        <td>{{ transaction.date | dateformat }}</td>
+                        <td>
+                            <a href="{{ url_for('financial.view_manual_journal', id=transaction.id) }}" class="text-decoration-none">
+                                {{ transaction.entry_number }}
+                            </a>
+                        </td>
+                        <td>{{ transaction.description or '-' }}</td>
+                        <td>{{ transaction.reference or '-' }}</td>
+                        <td class="text-end">{{ transaction.debit_total | currency }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="bi bi-journal text-muted" style="font-size: 3rem;"></i>
+            <h5 class="text-muted mt-3">No Recent Transactions</h5>
+            <p class="text-muted">Start by creating a manual journal entry.</p>
+            <a href="{{ url_for('financial.create_manual_journal') }}" class="btn btn-primary">
+                <i class="bi bi-plus"></i> Create Journal Entry
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

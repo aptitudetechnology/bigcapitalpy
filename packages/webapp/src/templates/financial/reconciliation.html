@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Bank Reconciliation - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Bank Reconciliation</h1>
+    <a href="{{ url_for('financial.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Financial
+    </a>
+</div>
+
+<!-- Bank Accounts for Reconciliation -->
+{% if accounts %}
+<div class="row">
+    {% for account in accounts %}
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">{{ account.name }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Account Code:</span>
+                    <span class="fw-bold">{{ account.code }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Book Balance:</span>
+                    <span class="fw-bold {% if account.current_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ account.current_balance | currency }}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Last Reconciled:</span>
+                    <span class="text-muted">Never</span>
+                </div>
+                <a href="{{ url_for('financial.reconcile_account', account_id=account.id) }}" 
+                   class="btn btn-primary w-100">
+                    <i class="bi bi-check2-square"></i> Start Reconciliation
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Reconciliation Instructions -->
+<div class="card shadow mt-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">How to Reconcile Your Bank Account</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Before You Start:</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Have your bank statement ready</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Note the statement ending date</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Note the statement ending balance</li>
+                    <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Review any pending transactions</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>During Reconciliation:</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-1-circle text-info"></i> Mark transactions that appear on your statement</li>
+                    <li class="mb-2"><i class="bi bi-2-circle text-info"></i> Add any missing bank transactions</li>
+                    <li class="mb-2"><i class="bi bi-3-circle text-info"></i> Verify the difference is zero</li>
+                    <li class="mb-2"><i class="bi bi-4-circle text-info"></i> Save your reconciliation</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="text-center py-5">
+    <i class="bi bi-bank text-muted" style="font-size: 4rem;"></i>
+    <h3 class="text-muted mt-3">No Bank Accounts Found</h3>
+    <p class="text-muted">You need to set up bank accounts before you can reconcile them.</p>
+    <a href="{{ url_for('accounts.create') }}?type=asset" class="btn btn-primary">
+        <i class="bi bi-plus"></i> Add Bank Account
+    </a>
+</div>
+{% endif %}
+{% endblock %}

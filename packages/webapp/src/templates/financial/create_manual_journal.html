@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Create Manual Journal Entry - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Create Manual Journal Entry</h1>
+    <a href="{{ url_for('financial.manual_journals') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Journals
+    </a>
+</div>
+
+<div class="card shadow">
+    <div class="card-body">
+        <form method="POST" id="journalForm">
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <label for="date" class="form-label">Date *</label>
+                    <input type="date" class="form-control" id="date" name="date" 
+                           value="{{ date.today().strftime('%Y-%m-%d') }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="reference" class="form-label">Reference</label>
+                    <input type="text" class="form-control" id="reference" name="reference" 
+                           placeholder="Reference number or note">
+                </div>
+                <div class="col-md-4">
+                    <label for="description" class="form-label">Description</label>
+                    <input type="text" class="form-control" id="description" name="description" 
+                           placeholder="Journal entry description">
+                </div>
+            </div>
+            
+            <!-- Journal Line Items -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Journal Line Items</h5>
+                    <button type="button" class="btn btn-outline-primary" onclick="addLineItem()">
+                        <i class="bi bi-plus"></i> Add Line
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="lineItemsTable">
+                        <thead>
+                            <tr>
+                                <th width="35%">Account</th>
+                                <th width="30%">Description</th>
+                                <th width="15%">Debit</th>
+                                <th width="15%">Credit</th>
+                                <th width="5%">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lineItemsBody">
+                            <!-- Initial empty rows will be added by JavaScript -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-active">
+                                <th colspan="2">Totals</th>
+                                <th class="text-end">
+                                    <span id="totalDebits">$0.00</span>
+                                </th>
+                                <th class="text-end">
+                                    <span id="totalCredits">$0.00</span>
+                                </th>
+                                <th></th>
+                            </tr>
+                            <tr id="balanceRow">
+                                <th colspan="2">Difference</th>
+                                <th colspan="2" class="text-end">
+                                    <span id="difference" class="text-success">$0.00</span>
+                                </th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> 
+                    The total debits must equal total credits for the journal entry to be valid.
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('financial.manual_journals') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                    <i class="bi bi-save"></i> Save Journal Entry
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Hidden accounts data for JavaScript -->
+<script id="accountsData" type="application/json">
+{{ accounts | tojson }}
+</script>
+
+<script>
+let lineItemCounter = 0;
+let accounts = JSON.parse(document.getElementById('accountsData').textContent);
+
+// Initialize with two empty line items
+document.addEventListener('DOMContentLoaded', function() {
+    addLineItem();
+    addLineItem();
+});
+
+function addLineItem() {
+    const tbody = document.getElementById('lineItemsBody');
+    const row = document.createElement('tr');
+    row.id = `lineItem_${lineItemCounter}`;
+    
+    row.innerHTML = `
+        <td>
+            <select class="form-select" name="account_id_${lineItemCounter}" required onchange="updateCalculations()">
+                <option value="">Select Account</option>
+                ${accounts.map(account => 
+                    `<option value="${account.id}">${account.code} - ${account.name}</option>`
+                ).join('')}
+            </select>
+        </td>
+        <td>
+            <input type="text" class="form-control" name="line_description_${lineItemCounter}" 
+                   placeholder="Line description">
+        </td>
+        <td>
+            <input type="number" class="form-control" name="debit_${lineItemCounter}" 
+                   step="0.01" min="0" placeholder="0.00" onchange="updateCalculations()" oninput="validateDebitCredit(this)">
+        </td>
+        <td>
+            <input type="number" class="form-control" name="credit_${lineItemCounter}" 
+                   step="0.01" min="0" placeholder="0.00" onchange="updateCalculations()" oninput="validateDebitCredit(this)">
+        </td>
+        <td>
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeLineItem('lineItem_${lineItemCounter}')">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(row);
+    lineItemCounter++;
+    
+    // Add hidden input to track line items
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'line_items';
+    hiddenInput.value = lineItemCounter - 1;
+    document.getElementById('journalForm').appendChild(hiddenInput);
+}
+
+function removeLineItem(rowId) {
+    const row = document.getElementById(rowId);
+    if (row && document.getElementById('lineItemsBody').children.length > 2) {
+        row.remove();
+        updateCalculations();
+    }
+}
+
+function validateDebitCredit(input) {
+    const row = input.closest('tr');
+    const debitInput = row.querySelector('input[name*="debit_"]');
+    const creditInput = row.querySelector('input[name*="credit_"]');
+    
+    if (input === debitInput && input.value > 0) {
+        creditInput.value = '';
+    } else if (input === creditInput && input.value > 0) {
+        debitInput.value = '';
+    }
+}
+
+function updateCalculations() {
+    let totalDebits = 0;
+    let totalCredits = 0;
+    
+    // Calculate totals
+    const debitInputs = document.querySelectorAll('input[name*="debit_"]');
+    const creditInputs = document.querySelectorAll('input[name*="credit_"]');
+    
+    debitInputs.forEach(input => {
+        totalDebits += parseFloat(input.value) || 0;
+    });
+    
+    creditInputs.forEach(input => {
+        totalCredits += parseFloat(input.value) || 0;
+    });
+    
+    // Update display
+    document.getElementById('totalDebits').textContent = formatCurrency(totalDebits);
+    document.getElementById('totalCredits').textContent = formatCurrency(totalCredits);
+    
+    const difference = Math.abs(totalDebits - totalCredits);
+    const differenceElement = document.getElementById('difference');
+    differenceElement.textContent = formatCurrency(difference);
+    
+    // Update color and submit button state
+    const isBalanced = difference === 0 && totalDebits > 0;
+    if (isBalanced) {
+        differenceElement.className = 'text-success';
+        document.getElementById('submitBtn').disabled = false;
+    } else {
+        differenceElement.className = 'text-danger';
+        document.getElementById('submitBtn').disabled = true;
+    }
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(amount);
+}
+
+// Form validation
+document.getElementById('journalForm').addEventListener('submit', function(e) {
+    const totalDebits = parseFloat(document.getElementById('totalDebits').textContent.replace(/[$,]/g, ''));
+    const totalCredits = parseFloat(document.getElementById('totalCredits').textContent.replace(/[$,]/g, ''));
+    
+    if (Math.abs(totalDebits - totalCredits) > 0.01) {
+        e.preventDefault();
+        alert('Journal entry must be balanced. Total debits must equal total credits.');
+        return false;
+    }
+    
+    if (totalDebits === 0) {
+        e.preventDefault();
+        alert('Please enter at least one debit or credit amount.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

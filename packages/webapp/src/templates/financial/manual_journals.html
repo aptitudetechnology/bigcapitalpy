@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Manual Journals - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Manual Journal Entries</h1>
+    <a href="{{ url_for('financial.create_manual_journal') }}" class="btn btn-primary">
+        <i class="bi bi-plus"></i> Create Journal Entry
+    </a>
+</div>
+
+<!-- Manual Journals List -->
+{% if journals.items %}
+<div class="card shadow">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Entry Number</th>
+                        <th>Date</th>
+                        <th>Reference</th>
+                        <th>Description</th>
+                        <th class="text-end">Debit Total</th>
+                        <th class="text-end">Credit Total</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for journal in journals.items %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('financial.view_manual_journal', id=journal.id) }}" class="text-decoration-none">
+                                <strong>{{ journal.entry_number }}</strong>
+                            </a>
+                        </td>
+                        <td>{{ journal.date | dateformat }}</td>
+                        <td>{{ journal.reference or '-' }}</td>
+                        <td>
+                            {{ journal.description or '-' }}
+                            {% if journal.description and journal.description|length > 50 %}
+                                <span title="{{ journal.description }}">...</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">{{ journal.debit_total | currency }}</td>
+                        <td class="text-end">{{ journal.credit_total | currency }}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('financial.view_manual_journal', id=journal.id) }}" 
+                                   class="btn btn-outline-primary" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <button class="btn btn-outline-secondary" title="Edit" disabled>
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if journals.pages > 1 %}
+        <nav aria-label="Journal entries pagination">
+            <ul class="pagination justify-content-center">
+                {% if journals.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('financial.manual_journals', page=journals.prev_num) }}">Previous</a>
+                    </li>
+                {% endif %}
+                
+                {% for page_num in journals.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != journals.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('financial.manual_journals', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if journals.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('financial.manual_journals', page=journals.next_num) }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="card shadow">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-journal-text text-muted" style="font-size: 4rem;"></i>
+        <h3 class="text-muted mt-3">No Manual Journal Entries</h3>
+        <p class="text-muted">Create your first manual journal entry to record transactions.</p>
+        <a href="{{ url_for('financial.create_manual_journal') }}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Create Journal Entry
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
