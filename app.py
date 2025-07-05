@@ -64,6 +64,15 @@ def create_app(config_name='development'):
             return ''
         return dt.strftime(format)
     
+    @app.template_filter('dateformat')
+    def dateformat_filter(dt, format='%B %d, %Y'):
+        """Format date objects in templates"""
+        if dt is None:
+            return ''
+        if hasattr(dt, 'strftime'):
+            return dt.strftime(format)
+        return str(dt)
+    
     @app.template_filter('currency')
     def currency_filter(amount):
         """Format currency amounts"""
