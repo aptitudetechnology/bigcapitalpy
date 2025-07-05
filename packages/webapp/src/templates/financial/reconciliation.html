@@ -33,7 +33,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-muted">Last Reconciled:</span>
                     {% if stats[account.id].last_reconciliation %}
-                        <span class="text-success">{{ stats[account.id].last_reconciliation.statement_ending_date | date }}</span>
+                        <span class="text-success">{{ stats[account.id].last_reconciliation.statement_ending_date | dateformat }}</span>
                     {% else %}
                         <span class="text-muted">Never</span>
                     {% endif %}
@@ -90,7 +90,7 @@
                     {% for reconciliation in recent_reconciliations[:5] %}
                     <tr>
                         <td>{{ reconciliation.account.name }}</td>
-                        <td>{{ reconciliation.statement_ending_date | date }}</td>
+                        <td>{{ reconciliation.statement_ending_date | dateformat }}</td>
                         <td>{{ reconciliation.statement_ending_balance | currency }}</td>
                         <td>
                             {% if reconciliation.difference == 0 %}
