@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Invoices - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Invoices</h1>
+    <a href="{{ url_for('invoices.create') }}" class="btn btn-primary">
+        <i class="bi bi-plus"></i> New Invoice
+    </a>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Invoices</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_invoices }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-file-earmark-text fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Amount</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_amount | currency }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Paid Amount</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.paid_amount | currency }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Outstanding</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.outstanding_amount | currency }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-2">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All Statuses</option>
+                    <option value="draft" {% if request.args.get('status') == 'draft' %}selected{% endif %}>Draft</option>
+                    <option value="sent" {% if request.args.get('status') == 'sent' %}selected{% endif %}>Sent</option>
+                    <option value="partial" {% if request.args.get('status') == 'partial' %}selected{% endif %}>Partial</option>
+                    <option value="paid" {% if request.args.get('status') == 'paid' %}selected{% endif %}>Paid</option>
+                    <option value="overdue" {% if request.args.get('status') == 'overdue' %}selected{% endif %}>Overdue</option>
+                    <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="customer" class="form-label">Customer</label>
+                <select class="form-select" id="customer" name="customer">
+                    <option value="">All Customers</option>
+                    {% for customer in customers %}
+                    <option value="{{ customer.id }}" {% if request.args.get('customer') == customer.id|string %}selected{% endif %}>
+                        {{ customer.display_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" 
+                       value="{{ request.args.get('date_from', '') }}">
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" 
+                       value="{{ request.args.get('date_to', '') }}">
+            </div>
+            <div class="col-md-2">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       placeholder="Invoice # or customer"
+                       value="{{ request.args.get('search', '') }}">
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Invoices Table -->
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Invoice List</h6>
+    </div>
+    <div class="card-body">
+        {% if invoices.items %}
+        <div class="table-responsive">
+            <table class="table table-striped" id="invoicesTable">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Due Date</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-end">Paid</th>
+                        <th class="text-end">Balance</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices.items %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('invoices.view', id=invoice.id) }}" class="text-decoration-none">
+                                <strong>{{ invoice.invoice_number }}</strong>
+                            </a>
+                            {% if invoice.reference %}
+                            <br><small class="text-muted">Ref: {{ invoice.reference }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ invoice.customer.display_name }}</td>
+                        <td>{{ invoice.invoice_date | dateformat }}</td>
+                        <td>
+                            {{ invoice.due_date | dateformat }}
+                            {% if invoice.status in [InvoiceStatus.SENT, InvoiceStatus.PARTIAL] and invoice.due_date < today %}
+                                <br><small class="text-danger"><i class="bi bi-exclamation-triangle"></i> Overdue</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">{{ invoice.total | currency }}</td>
+                        <td class="text-end">
+                            {% if invoice.paid_amount > 0 %}
+                                <span class="text-success">{{ invoice.paid_amount | currency }}</span>
+                            {% else %}
+                                <span class="text-muted">{{ invoice.paid_amount | currency }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if invoice.balance > 0 %}
+                                <span class="text-warning">{{ invoice.balance | currency }}</span>
+                            {% else %}
+                                <span class="text-muted">{{ invoice.balance | currency }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if invoice.status == InvoiceStatus.DRAFT %}
+                                <span class="badge bg-secondary">Draft</span>
+                            {% elif invoice.status == InvoiceStatus.SENT %}
+                                <span class="badge bg-primary">Sent</span>
+                            {% elif invoice.status == InvoiceStatus.PARTIAL %}
+                                <span class="badge bg-warning">Partial</span>
+                            {% elif invoice.status == InvoiceStatus.PAID %}
+                                <span class="badge bg-success">Paid</span>
+                            {% elif invoice.status == InvoiceStatus.OVERDUE %}
+                                <span class="badge bg-danger">Overdue</span>
+                            {% elif invoice.status == InvoiceStatus.CANCELLED %}
+                                <span class="badge bg-dark">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('invoices.view', id=invoice.id) }}" 
+                                   class="btn btn-outline-primary" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if invoice.status == InvoiceStatus.DRAFT %}
+                                <a href="{{ url_for('invoices.edit', id=invoice.id) }}" 
+                                   class="btn btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                                {% if invoice.status == InvoiceStatus.DRAFT %}
+                                <form method="POST" action="{{ url_for('invoices.send', id=invoice.id) }}" 
+                                      style="display: inline;" onsubmit="return confirm('Send this invoice?')">
+                                    <button type="submit" class="btn btn-outline-success" title="Send">
+                                        <i class="bi bi-send"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                                {% if invoice.status in [InvoiceStatus.SENT, InvoiceStatus.PARTIAL, InvoiceStatus.OVERDUE] %}
+                                <form method="POST" action="{{ url_for('invoices.mark_paid', id=invoice.id) }}" 
+                                      style="display: inline;" onsubmit="return confirm('Mark this invoice as paid?')">
+                                    <button type="submit" class="btn btn-outline-success" title="Mark Paid">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if invoices.pages > 1 %}
+        <nav aria-label="Invoice pagination">
+            <ul class="pagination justify-content-center">
+                {% if invoices.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('invoices.index', page=invoices.prev_num, **request.args) }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in invoices.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != invoices.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('invoices.index', page=page_num, **request.args) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if invoices.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('invoices.index', page=invoices.next_num, **request.args) }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-4">
+            <i class="bi bi-file-earmark-text text-muted" style="font-size: 3rem;"></i>
+            <h5 class="text-muted mt-3">No Invoices Found</h5>
+            <p class="text-muted">Create your first invoice to get started.</p>
+            <a href="{{ url_for('invoices.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus"></i> Create Invoice
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Auto-update overdue invoices
+document.addEventListener('DOMContentLoaded', function() {
+    // Mark overdue invoices
+    const today = new Date();
+    const rows = document.querySelectorAll('#invoicesTable tbody tr');
+    
+    rows.forEach(row => {
+        const dueDateCell = row.children[3];
+        const statusCell = row.children[7];
+        const statusBadge = statusCell.querySelector('.badge');
+        
+        if (statusBadge && (statusBadge.textContent === 'Sent' || statusBadge.textContent === 'Partial')) {
+            const dueDateText = dueDateCell.textContent.trim().split('\n')[0];
+            const dueDate = new Date(dueDateText);
+            
+            if (dueDate < today) {
+                statusBadge.className = 'badge bg-danger';
+                statusBadge.textContent = 'Overdue';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

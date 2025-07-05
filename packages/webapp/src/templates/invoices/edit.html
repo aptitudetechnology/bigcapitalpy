@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Invoice {{ invoice.invoice_number }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Edit Invoice {{ invoice.invoice_number }}</h1>
+    <div class="btn-group">
+        <a href="{{ url_for('invoices.view', id=invoice.id) }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Invoice
+        </a>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('invoices.save') }}" id="invoiceForm">
+    <input type="hidden" name="invoice_id" value="{{ invoice.id }}">
+    
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Invoice Header -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Invoice Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="customer_id" class="form-label">Customer <span class="text-danger">*</span></label>
+                                <select class="form-select" id="customer_id" name="customer_id" required>
+                                    <option value="">Select Customer</option>
+                                    {% for customer in customers %}
+                                    <option value="{{ customer.id }}" {% if customer.id == invoice.customer_id %}selected{% endif %}>
+                                        {{ customer.display_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="invoice_number" class="form-label">Invoice Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="invoice_number" name="invoice_number" 
+                                       value="{{ invoice.invoice_number }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="reference" class="form-label">Reference</label>
+                                <input type="text" class="form-control" id="reference" name="reference" 
+                                       value="{{ invoice.reference or '' }}" placeholder="P.O. Number, etc.">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="invoice_date" class="form-label">Invoice Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="invoice_date" name="invoice_date" 
+                                       value="{{ invoice.invoice_date.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="due_date" name="due_date" 
+                                       value="{{ invoice.due_date.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Line Items -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Line Items</h6>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="addLineItem()">
+                        <i class="bi bi-plus"></i> Add Item
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-borderless" id="lineItemsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 25%;">Item/Description <span class="text-danger">*</span></th>
+                                    <th style="width: 15%;">Quantity</th>
+                                    <th style="width: 20%;">Rate</th>
+                                    <th style="width: 20%;">Amount</th>
+                                    <th style="width: 10%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="lineItemsBody">
+                                {% for line_item in invoice.line_items %}
+                                <tr class="line-item">
+                                    <td>
+                                        <select class="form-select item-select" name="item_id[]" onchange="selectItem(this)">
+                                            <option value="">Select Item or Enter Custom</option>
+                                            {% for item in items %}
+                                            <option value="{{ item.id }}" 
+                                                    {% if item.id == line_item.item_id %}selected{% endif %}
+                                                    data-description="{{ item.description }}" data-price="{{ item.sell_price }}">
+                                                {{ item.name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        <input type="text" class="form-control mt-2" name="description[]" 
+                                               value="{{ line_item.description }}" placeholder="Description" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control quantity-input" name="quantity[]" 
+                                               value="{{ line_item.quantity }}" min="0" step="0.01" onchange="calculateLineTotal(this)">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control rate-input" name="rate[]" 
+                                               value="{{ line_item.rate }}" min="0" step="0.01" onchange="calculateLineTotal(this)">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control amount-display" readonly 
+                                               value="{{ line_item.amount | currency }}">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLineItem(this)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes and Terms -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Additional Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="terms" class="form-label">Terms & Conditions</label>
+                                <textarea class="form-control" id="terms" name="terms" rows="4" 
+                                          placeholder="Payment terms, conditions, etc.">{{ invoice.terms or '' }}</textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="4" 
+                                          placeholder="Internal notes, special instructions, etc.">{{ invoice.notes or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Summary -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Invoice Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span id="subtotalAmount">{{ invoice.subtotal | currency }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax:</span>
+                        <span id="taxAmount">{{ invoice.tax_amount | currency }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Discount:</span>
+                        <span id="discountAmount">{{ invoice.discount_amount | currency }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Total:</strong>
+                        <strong id="totalAmount">{{ invoice.total | currency }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Changes
+                        </button>
+                        <a href="{{ url_for('invoices.view', id=invoice.id) }}" class="btn btn-secondary">
+                            <i class="bi bi-x"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Hidden template for line items -->
+<div id="lineItemTemplate" style="display: none;">
+    <tr class="line-item">
+        <td>
+            <select class="form-select item-select" name="item_id[]" onchange="selectItem(this)">
+                <option value="">Select Item or Enter Custom</option>
+                {% for item in items %}
+                <option value="{{ item.id }}" data-description="{{ item.description }}" data-price="{{ item.sell_price }}">
+                    {{ item.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <input type="text" class="form-control mt-2" name="description[]" placeholder="Description" required>
+        </td>
+        <td>
+            <input type="number" class="form-control quantity-input" name="quantity[]" 
+                   value="1" min="0" step="0.01" onchange="calculateLineTotal(this)">
+        </td>
+        <td>
+            <input type="number" class="form-control rate-input" name="rate[]" 
+                   value="0.00" min="0" step="0.01" onchange="calculateLineTotal(this)">
+        </td>
+        <td>
+            <input type="text" class="form-control amount-display" readonly value="$0.00">
+        </td>
+        <td>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLineItem(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    </tr>
+</div>
+
+<script>
+let lineItemCounter = {{ invoice.line_items|length }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate initial totals
+    calculateTotal();
+});
+
+function addLineItem() {
+    const template = document.getElementById('lineItemTemplate');
+    const tbody = document.getElementById('lineItemsBody');
+    const newRow = template.innerHTML;
+    
+    tbody.insertAdjacentHTML('beforeend', newRow);
+    lineItemCounter++;
+    
+    // Focus on the description field of the new row
+    const newRowElement = tbody.lastElementChild;
+    const descriptionInput = newRowElement.querySelector('input[name="description[]"]');
+    if (descriptionInput) {
+        descriptionInput.focus();
+    }
+}
+
+function removeLineItem(button) {
+    const row = button.closest('tr');
+    row.remove();
+    calculateTotal();
+}
+
+function selectItem(select) {
+    const row = select.closest('tr');
+    const descriptionInput = row.querySelector('input[name="description[]"]');
+    const rateInput = row.querySelector('input[name="rate[]"]');
+    
+    if (select.value) {
+        const option = select.selectedOptions[0];
+        const description = option.getAttribute('data-description') || option.text;
+        const price = option.getAttribute('data-price') || '0.00';
+        
+        descriptionInput.value = description;
+        rateInput.value = parseFloat(price).toFixed(2);
+        
+        calculateLineTotal(rateInput);
+    }
+}
+
+function calculateLineTotal(input) {
+    const row = input.closest('tr');
+    const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+    const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
+    const amount = quantity * rate;
+    
+    row.querySelector('.amount-display').value = '$' + amount.toFixed(2);
+    
+    calculateTotal();
+}
+
+function calculateTotal() {
+    let subtotal = 0;
+    const amountDisplays = document.querySelectorAll('.amount-display');
+    
+    amountDisplays.forEach(function(display) {
+        const value = display.value.replace('$', '').replace(',', '');
+        subtotal += parseFloat(value) || 0;
+    });
+    
+    const tax = 0; // No tax calculation for now
+    const discount = 0; // No discount calculation for now
+    const total = subtotal + tax - discount;
+    
+    document.getElementById('subtotalAmount').textContent = '$' + subtotal.toFixed(2);
+    document.getElementById('taxAmount').textContent = '$' + tax.toFixed(2);
+    document.getElementById('discountAmount').textContent = '$' + discount.toFixed(2);
+    document.getElementById('totalAmount').textContent = '$' + total.toFixed(2);
+}
+
+// Form validation
+document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+    const lineItems = document.querySelectorAll('#lineItemsBody tr');
+    let hasValidItems = false;
+    
+    lineItems.forEach(function(row) {
+        const description = row.querySelector('input[name="description[]"]').value.trim();
+        if (description) {
+            hasValidItems = true;
+        }
+    });
+    
+    if (!hasValidItems) {
+        e.preventDefault();
+        alert('Please add at least one line item with a description.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

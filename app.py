@@ -80,6 +80,21 @@ def create_app(config_name='development'):
             return '$0.00'
         return f'${amount:,.2f}'
     
+    @app.template_filter('nl2br')
+    def nl2br_filter(text):
+        """Convert newlines to HTML line breaks"""
+        if not text:
+            return ''
+        return text.replace('\n', '<br>')
+    
+    # Template globals
+    @app.template_global()
+    def today():
+        """Get today's date for templates"""
+        from datetime import date
+        return date.today
+        return f'${amount:,.2f}'
+    
     # Register blueprints
     register_blueprints(app)
     
