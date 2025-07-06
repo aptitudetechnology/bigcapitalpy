@@ -162,7 +162,7 @@ bigcapitalpy/
 - [x] **Dashboard** - Overview of key metrics and recent activity
 - [x] **Customer Management** - Complete customer lifecycle management
 - [x] **User Authentication** - Secure multi-user login system
-- [x] **Multi-tenancy** - Support for multiple organizations
+- [ ] **Multi-tenancy** - Support for multiple organizations
 - [x] **Invoicing** - Create, send, and track invoices
 - [x] **Vendor Management** - Track vendors and expenses
 - [x] **Item/Inventory Management** - Product catalog and stock tracking
