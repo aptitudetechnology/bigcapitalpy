@@ -144,16 +144,7 @@ jobs:
             -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bigcapitalpy_test \
             -e SECRET_KEY=test-secret \
             ${{ env.DOCKER_IMAGE_NAME }} \
-            python -c "
-            import sys
-            sys.path.insert(0, '/app')
-            from packages.server.src.database import db
-            from app import create_app
-            app = create_app()
-            with app.app_context():
-                db.create_all()
-                print('✓ Database schema created successfully')
-            "
+            python -c "import sys; sys.path.insert(0, '/app'); from packages.server.src.database import db; from app import create_app; app = create_app(); exec('with app.app_context():\n    db.create_all()\n    print(\"✓ Database schema created successfully\")')"
 
   api-integration-test:
     runs-on: ubuntu-latest
@@ -229,32 +220,32 @@ jobs:
             -e SECRET_KEY=test-secret \
             ${{ env.DOCKER_IMAGE_NAME }} \
             python -c "
-            import sys
-            sys.path.insert(0, '/app')
-            
-            # Test model imports
-            try:
-                from packages.server.src.models import (
-                    Account, Customer, Vendor, Invoice, Item, 
-                    BankTransaction, Payment, JournalEntry
-                )
-                print('✓ Core models imported successfully')
-            except ImportError as e:
-                print(f'✗ Model import failed: {e}')
-                sys.exit(1)
-            
-            # Test enum imports
-            try:
-                from packages.server.src.models import (
-                    AccountType, InvoiceStatus, PaymentMethod
-                )
-                print('✓ Enums imported successfully')
-            except ImportError as e:
-                print(f'✗ Enum import failed: {e}')
-                sys.exit(1)
-            
-            print('✓ BigCapitalPy core functionality validated')
-            "
+import sys
+sys.path.insert(0, '/app')
+
+# Test model imports
+try:
+    from packages.server.src.models import (
+        Account, Customer, Vendor, Invoice, Item, 
+        BankTransaction, Payment, JournalEntry
+    )
+    print('✓ Core models imported successfully')
+except ImportError as e:
+    print(f'✗ Model import failed: {e}')
+    sys.exit(1)
+
+# Test enum imports
+try:
+    from packages.server.src.models import (
+        AccountType, InvoiceStatus, PaymentMethod
+    )
+    print('✓ Enums imported successfully')
+except ImportError as e:
+    print(f'✗ Enum import failed: {e}')
+    sys.exit(1)
+
+print('✓ BigCapitalPy core functionality validated')
+"
 
   security-scan:
     runs-on: ubuntu-latest
