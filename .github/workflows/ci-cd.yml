@@ -1,0 +1,283 @@
+name: CI/CD Pipeline - BigCapitalPy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  DOCKER_IMAGE_NAME: bigcapitalpy
+  DOCKER_HUB_REPO: caston81/bigcapitalpy
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        # Build the Docker image using the main Dockerfile
+        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
+
+      - name: Test Application Startup
+        # Test that the Flask application can start without errors
+        run: |
+          docker run --rm -d \
+            --name bigcapitalpy-test \
+            -p 5000:5000 \
+            -e DATABASE_URL=sqlite:///test.db \
+            -e SECRET_KEY=test-secret \
+            ${{ env.DOCKER_IMAGE_NAME }}
+          
+          # Wait for app to start with retry logic
+          echo "Waiting for application to start..."
+          for i in {1..30}; do
+            if docker exec bigcapitalpy-test curl -f http://localhost:5000/health 2>/dev/null; then
+              echo "✓ Application started successfully"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "✗ Application failed to start within 30 seconds"
+              docker logs bigcapitalpy-test
+              exit 1
+            fi
+            sleep 1
+          done
+          
+          # Stop test container
+          docker stop bigcapitalpy-test
+
+      - name: Test Database Models Import
+        # Verify that all database models can be imported without errors
+        run: |
+          docker run --rm \
+            --entrypoint /bin/bash \
+            -e DATABASE_URL=sqlite:///test.db \
+            ${{ env.DOCKER_IMAGE_NAME }} \
+            -c "cd /app && python -c 'from packages.server.src.models import *; print(\"✓ All models imported successfully\")'"
+
+      - name: Test Flask Application Import
+        # Verify that the Flask application can be imported
+        run: |
+          docker run --rm \
+            --entrypoint /bin/bash \
+            -e DATABASE_URL=sqlite:///test.db \
+            ${{ env.DOCKER_IMAGE_NAME }} \
+            -c "cd /app && python -c 'from app import create_app; app = create_app(); print(\"✓ Flask application imported successfully\")'"
+
+      - name: Log in to Docker Hub
+        # Only logs in if the event is a 'push' to 'main' or 'develop' branches.
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Generate Docker Tags
+        # Generates appropriate Docker tags based on the branch.
+        # 'main' branch gets 'latest' and SHA.
+        # 'develop' branch gets 'develop' and 'develop-SHA'.
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        id: meta
+        run: |
+          if [[ $GITHUB_REF == refs/heads/main ]]; then
+            echo "tags=${{ env.DOCKER_HUB_REPO }}:latest,${{ env.DOCKER_HUB_REPO }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "tags=${{ env.DOCKER_HUB_REPO }}:develop,${{ env.DOCKER_HUB_REPO }}:develop-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Tag and Push Docker Image to Docker Hub
+        # Tags the built Docker image and pushes it to Docker Hub.
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        run: |
+          set -euo pipefail
+
+          echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' | while IFS= read -r tag; do
+            if [ -n "$tag" ]; then
+              docker tag ${{ env.DOCKER_IMAGE_NAME }} "$tag"
+              docker push "$tag"
+              echo "Pushed: $tag"
+            fi
+          done
+
+  database-migration-test:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bigcapitalpy_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        # Rebuild the image for this job since it runs on a separate runner
+        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
+
+      - name: Test Database Migration
+        # Test database schema creation with PostgreSQL
+        run: |
+          docker run --rm \
+            --network host \
+            -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bigcapitalpy_test \
+            -e SECRET_KEY=test-secret \
+            ${{ env.DOCKER_IMAGE_NAME }} \
+            python -c "
+            import sys
+            sys.path.insert(0, '/app')
+            from packages.server.src.database import db
+            from app import create_app
+            app = create_app()
+            with app.app_context():
+                db.create_all()
+                print('✓ Database schema created successfully')
+            "
+
+  api-integration-test:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        # Rebuild the image for this job since it runs on a separate runner
+        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
+
+      - name: Start Application for API Testing
+        run: |
+          docker run --rm -d \
+            --name bigcapitalpy-api-test \
+            -p 5000:5000 \
+            -e DATABASE_URL=sqlite:///test.db \
+            -e SECRET_KEY=test-secret \
+            ${{ env.DOCKER_IMAGE_NAME }}
+          
+          # Wait for app to start with retry logic
+          echo "Waiting for application to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:5000/health 2>/dev/null; then
+              echo "✓ Application started successfully"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "✗ Application failed to start within 30 seconds"
+              docker logs bigcapitalpy-api-test
+              exit 1
+            fi
+            sleep 1
+          done
+
+      - name: Test API Endpoints
+        run: |
+          # Test health endpoint
+          curl -f http://localhost:5000/health || exit 1
+          echo "✓ Health endpoint working"
+          
+          # Test login page
+          curl -f http://localhost:5000/auth/login || exit 1
+          echo "✓ Login page accessible"
+          
+          # Test API structure
+          curl -f http://localhost:5000/api/v1/ || exit 1
+          echo "✓ API v1 accessible"
+
+      - name: Cleanup API Test
+        if: always()
+        run: docker stop bigcapitalpy-api-test || true
+
+  accounting-workflow-test:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        # Rebuild the image for this job since it runs on a separate runner
+        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
+
+      - name: Test BigCapitalPy Core Features
+        # Test core accounting functionality
+        run: |
+          docker run --rm \
+            -e DATABASE_URL=sqlite:///test.db \
+            -e SECRET_KEY=test-secret \
+            ${{ env.DOCKER_IMAGE_NAME }} \
+            python -c "
+            import sys
+            sys.path.insert(0, '/app')
+            
+            # Test model imports
+            try:
+                from packages.server.src.models import (
+                    Account, Customer, Vendor, Invoice, Item, 
+                    BankTransaction, Payment, JournalEntry
+                )
+                print('✓ Core models imported successfully')
+            except ImportError as e:
+                print(f'✗ Model import failed: {e}')
+                sys.exit(1)
+            
+            # Test enum imports
+            try:
+                from packages.server.src.models import (
+                    AccountType, InvoiceStatus, PaymentMethod
+                )
+                print('✓ Enums imported successfully')
+            except ImportError as e:
+                print(f'✗ Enum import failed: {e}')
+                sys.exit(1)
+            
+            print('✓ BigCapitalPy core functionality validated')
+            "
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        # Rebuild the image for this job since it runs on a separate runner
+        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
+
+      - name: Run Security Scan with Trivy
+        # Runs Trivy scan on the built Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_IMAGE_NAME }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
