@@ -49,7 +49,7 @@
   <img src="https://img.shields.io/badge/flask-2.3+-green.svg" alt="Flask 2.3+"/>
   <img src="https://img.shields.io/badge/postgresql-15-blue.svg" alt="PostgreSQL 15"/>
   <img src="https://img.shields.io/badge/docker-ready-blue.svg" alt="Docker Ready"/>
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"/>
+ <img src="https://img.shields.io/badge/license-AGPL-blue.svg" alt="AGPL License"/>
 </p>
 
 ## 🚀 Quick Start
