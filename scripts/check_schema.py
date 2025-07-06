@@ -3,13 +3,27 @@
 Schema Sync Checker for BigCapitalPy
 Check all model columns vs database columns to identify mismatches
 """
+import sys
+import os
 
-from packages.server.src.models import *
-from sqlalchemy import inspect
+# Add the parent directory to Python path so we can import from packages
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from packages.server.src.models import *
+    from sqlalchemy import inspect
+except ImportError as e:
+    print(f"❌ Import error: {e}")
+    print("Make sure you're running this from the project root or the models are available")
+    sys.exit(1)
 
 def check_schema_sync():
     """Check if database schema matches SQLAlchemy models"""
-    inspector = inspect(db.engine)
+    try:
+        inspector = inspect(db.engine)
+    except Exception as e:
+        print(f"❌ Database connection error: {e}")
+        return False
     
     # Get all tables from database
     db_tables = inspector.get_table_names()
@@ -38,7 +52,7 @@ def check_schema_sync():
             print(f"❌ Table '{table_name}' does not exist in database!")
             all_good = False
             continue
-            
+        
         # Get columns from database
         table_columns = [col['name'] for col in inspector.get_columns(table_name)]
         
@@ -55,7 +69,7 @@ def check_schema_sync():
             all_good = False
         
         if extra_in_db:
-            print(f"⚠️  Extra columns in database: {extra_in_db}")
+            print(f"⚠️ Extra columns in database: {extra_in_db}")
         
         if not missing_in_db and not extra_in_db:
             print("✅ Schema matches perfectly!")
@@ -68,15 +82,21 @@ def check_schema_sync():
     if all_good:
         print("🎉 ALL SCHEMAS ARE IN SYNC!")
     else:
-        print("⚠️  SCHEMA MISMATCHES FOUND - Run migrations to fix")
+        print("⚠️ SCHEMA MISMATCHES FOUND - Run migrations to fix")
         print("\nTo fix:")
         print("1. make db-migrate MSG='Fix schema mismatches'")
         print("2. make db-upgrade")
     print("=" * 60)
+    
+    return all_good
 
 def check_specific_table(table_name, model_class):
     """Check a specific table/model combination"""
-    inspector = inspect(db.engine)
+    try:
+        inspector = inspect(db.engine)
+    except Exception as e:
+        print(f"❌ Database connection error: {e}")
+        return
     
     print(f"\n🔍 Detailed check for {table_name}:")
     
