@@ -38,6 +38,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     FLASK_APP=app.py \
     FLASK_ENV=production
 
+# Schema checking environment variables (passive mode)
+ENV SCHEMA_CHECK_MODE=warning \
+    SCHEMA_CHECK_STRICT=false \
+    SCHEMA_CHECK_ENABLED=true \
+    SCHEMA_CHECK_FAIL_ON_ERROR=false \
+    SCHEMA_CHECK_LOG_LEVEL=warning
+
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     libpq5 \
@@ -56,7 +63,11 @@ COPY --from=builder /opt/venv /opt/venv
 # Copy application code
 COPY . .
 
-# Create necessary directories
+# Copy the schema checker script and ensure scripts directory exists
+RUN mkdir -p /app/scripts
+COPY scripts/check_schema.py /app/scripts/check_schema.py
+
+# Create necessary directories and set permissions
 RUN mkdir -p uploads logs static && \
     chown -R bigcapital:bigcapital /app
 
@@ -66,7 +77,7 @@ USER bigcapital
 # Expose port
 EXPOSE 5000
 
-# Health check
+# Health check (application only, no schema validation to avoid crashes)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
