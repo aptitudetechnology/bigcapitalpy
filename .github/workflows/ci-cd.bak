@@ -144,8 +144,7 @@ jobs:
             -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bigcapitalpy_test \
             -e SECRET_KEY=test-secret \
             ${{ env.DOCKER_IMAGE_NAME }} \
-            python -c "
-import sys
+            python -c "import sys
 sys.path.insert(0, '/app')
 from packages.server.src.database import db
 from app import create_app
@@ -228,8 +227,7 @@ with app.app_context():
             -e DATABASE_URL=sqlite:///test.db \
             -e SECRET_KEY=test-secret \
             ${{ env.DOCKER_IMAGE_NAME }} \
-            python -c "
-import sys
+            python -c "import sys
 sys.path.insert(0, '/app')
 
 # Test model imports
