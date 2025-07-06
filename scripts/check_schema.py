@@ -10,8 +10,10 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    # Import Flask app first to set up application context
-    from app import app
+    # Import the create_app function and create the Flask app instance
+    from app import create_app
+    flask_app = create_app()
+    
     from packages.server.src.models import *
     from sqlalchemy import inspect
 except ImportError as e:
@@ -21,7 +23,7 @@ except ImportError as e:
 
 def check_schema_sync():
     """Check if database schema matches SQLAlchemy models"""
-    with app.app_context():
+    with flask_app.app_context():
         try:
             inspector = inspect(db.engine)
         except Exception as e:
@@ -95,7 +97,7 @@ def check_schema_sync():
 
 def check_specific_table(table_name, model_class):
     """Check a specific table/model combination"""
-    with app.app_context():
+    with flask_app.app_context():
         try:
             inspector = inspect(db.engine)
         except Exception as e:
