@@ -11,6 +11,7 @@ on:
       - develop
 
 env:
+  DOCKER_IMAGE_NAME: bigcapitalpy
   DOCKER_HUB_REPO: caston81/bigcapitalpy
 
 jobs:
@@ -25,8 +26,8 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker Image
-        # Build the Docker image using the full repository name
-        run: docker build -t ${{ env.DOCKER_HUB_REPO }}:temp .
+        # Build the Docker image using the main Dockerfile
+        run: docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
 
       - name: Test Application Startup
         # Test that the Flask application can start without errors
@@ -36,7 +37,7 @@ jobs:
             -p 5000:5000 \
             -e DATABASE_URL=sqlite:///test.db \
             -e SECRET_KEY=test-secret \
-            ${{ env.DOCKER_HUB_REPO }}:temp
+            ${{ env.DOCKER_IMAGE_NAME }}
           
           # Wait for app to start
           sleep 10
@@ -53,7 +54,7 @@ jobs:
           docker run --rm \
             --entrypoint /bin/bash \
             -e DATABASE_URL=sqlite:///test.db \
-            ${{ env.DOCKER_HUB_REPO }}:temp \
+            ${{ env.DOCKER_IMAGE_NAME }} \
             -c "cd /app && python -c 'from packages.server.src.models import *; print(\"✓ All models imported successfully\")'"
 
       - name: Test Flask Application Import
@@ -62,7 +63,7 @@ jobs:
           docker run --rm \
             --entrypoint /bin/bash \
             -e DATABASE_URL=sqlite:///test.db \
-            ${{ env.DOCKER_HUB_REPO }}:temp \
+            ${{ env.DOCKER_IMAGE_NAME }} \
             -c "cd /app && python -c 'from app import create_app; app = create_app(); print(\"✓ Flask application imported successfully\")'"
 
       - name: Log in to Docker Hub
@@ -94,7 +95,7 @@ jobs:
 
           echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' | while IFS= read -r tag; do
             if [ -n "$tag" ]; then
-              docker tag ${{ env.DOCKER_HUB_REPO }}:temp "$tag"
+              docker tag ${{ env.DOCKER_IMAGE_NAME }} "$tag"
               docker push "$tag"
               echo "Pushed: $tag"
             fi
@@ -122,10 +123,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
-        # Rebuild the image for this job since it runs on a separate runner
-        run: docker build -t ${{ env.DOCKER_HUB_REPO }}:temp .
-
       - name: Test Database Migration
         # Test database schema creation with PostgreSQL
         run: |
@@ -133,7 +130,7 @@ jobs:
             --network host \
             -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bigcapitalpy_test \
             -e SECRET_KEY=test-secret \
-            ${{ env.DOCKER_HUB_REPO }}:temp \
+            ${{ env.DOCKER_IMAGE_NAME }} \
             python -c "
             import sys
             sys.path.insert(0, '/app')
@@ -152,10 +149,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
-        # Rebuild the image for this job since it runs on a separate runner
-        run: docker build -t ${{ env.DOCKER_HUB_REPO }}:temp .
-
       - name: Start Application for API Testing
         run: |
           docker run --rm -d \
@@ -163,7 +156,7 @@ jobs:
             -p 5000:5000 \
             -e DATABASE_URL=sqlite:///test.db \
             -e SECRET_KEY=test-secret \
-            ${{ env.DOCKER_HUB_REPO }}:temp
+            ${{ env.DOCKER_IMAGE_NAME }}
           
           # Wait for app to start
           sleep 15
@@ -194,17 +187,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
-        # Rebuild the image for this job since it runs on a separate runner
-        run: docker build -t ${{ env.DOCKER_HUB_REPO }}:temp .
-
       - name: Test BigCapitalPy Core Features
         # Test core accounting functionality
         run: |
           docker run --rm \
             -e DATABASE_URL=sqlite:///test.db \
             -e SECRET_KEY=test-secret \
-            ${{ env.DOCKER_HUB_REPO }}:temp \
+            ${{ env.DOCKER_IMAGE_NAME }} \
             python -c "
             import sys
             sys.path.insert(0, '/app')
@@ -241,15 +230,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
-        # Rebuild the image for this job since it runs on a separate runner
-        run: docker build -t ${{ env.DOCKER_HUB_REPO }}:temp .
-
       - name: Run Security Scan with Trivy
         # Runs Trivy scan on the built Docker image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.DOCKER_HUB_REPO }}:temp
+          image-ref: ${{ env.DOCKER_IMAGE_NAME }}
           format: 'sarif'
           output: 'trivy-results.sarif'
 
