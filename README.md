@@ -167,7 +167,7 @@ bigcapitalpy/
 - [x] **Vendor Management** - Track vendors and expenses
 - [x] **Item/Inventory Management** - Product catalog and stock tracking
 - [x] **Chart of Accounts** - Customizable accounting structure
-- [ ] **Financial Reports** - P&L, Balance Sheet, Cash Flow
+- [x] **Financial Reports** - P&L, Balance Sheet, Cash Flow
 - [ ] **Payment Tracking** - Record payments and receipts
 - [ ] **Journal Entries** - Manual accounting entries
 - [ ] **Bank Reconciliation** - Match transactions with bank statements
