@@ -84,6 +84,53 @@ db-reset: ## Reset database (WARNING: destroys all data)
 	$(MAKE) db-upgrade
 	@echo "$(GREEN)✅ Database reset complete$(NC)"
 
+# Database Schema Validation Commands
+.PHONY: db-check-schema
+db-check-schema: ## Check critical database schema sync
+	@echo "$(YELLOW)🔍 Checking critical database schema...$(NC)"
+	@$(VENV_DIR)/bin/python scripts/check_schema.py --critical
+
+.PHONY: db-check-schema-all
+db-check-schema-all: ## Check all database schema sync
+	@echo "$(YELLOW)🔍 Checking all database schema...$(NC)"
+	@$(VENV_DIR)/bin/python scripts/check_schema.py --all
+
+.PHONY: db-check-schema-basic
+db-check-schema-basic: ## Check basic database schema sync
+	@echo "$(YELLOW)🔍 Checking basic database schema...$(NC)"
+	@$(VENV_DIR)/bin/python scripts/check_schema.py --basic
+
+.PHONY: db-check-schema-strict
+db-check-schema-strict: ## Check schema with strict mode (fails on mismatch)
+	@echo "$(YELLOW)🔍 Checking database schema (strict mode)...$(NC)"
+	@$(VENV_DIR)/bin/python scripts/check_schema.py --critical --exit-on-error
+
+.PHONY: db-check-schema-silent
+db-check-schema-silent: ## Check schema silently
+	@$(VENV_DIR)/bin/python scripts/check_schema.py --critical --silent
+
+.PHONY: db-check-schema-models
+db-check-schema-models: ## List all discovered models
+	@echo "$(YELLOW)📋 Listing discovered models...$(NC)"
+	@$(VENV_DIR)/bin/python scripts/check_schema.py --list-models
+
+# Database Integration Commands
+.PHONY: db-setup-with-check
+db-setup-with-check: db-upgrade db-check-schema ## Setup database and validate schema
+	@echo "$(GREEN)✅ Database setup with validation complete$(NC)"
+
+.PHONY: db-migrate-with-check
+db-migrate-with-check: db-migrate db-check-schema ## Run migration and validate schema
+	@echo "$(GREEN)✅ Migration with validation complete$(NC)"
+
+.PHONY: db-full-check
+db-full-check: db-check-schema-all ## Alias for comprehensive schema check
+
+.PHONY: dev-db-validate
+dev-db-validate: ## Validate database schema for development
+	@echo "$(YELLOW)🔧 Development database validation...$(NC)"
+	@$(VENV_DIR)/bin/python scripts/check_schema.py --critical || echo "$(RED)⚠️  Schema mismatches found - run 'make db-migrate' to fix$(NC)"
+
 # Docker Commands
 .PHONY: docker-build
 docker-build: ## Build Docker image
