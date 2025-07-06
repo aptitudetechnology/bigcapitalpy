@@ -144,7 +144,8 @@ jobs:
             -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bigcapitalpy_test \
             -e SECRET_KEY=test-secret \
             ${{ env.DOCKER_IMAGE_NAME }} \
-            python -c "import sys
+            bash -c "cat << 'EOF' > /tmp/test_db_migration.py
+import sys
 sys.path.insert(0, '/app')
 from packages.server.src.database import db
 from app import create_app
@@ -152,7 +153,9 @@ app = create_app()
 with app.app_context():
     db.create_all()
     print('✓ Database schema created successfully')
-"
+EOF
+python /tmp/test_db_migration.py
+rm /tmp/test_db_migration.py"
 
   api-integration-test:
     runs-on: ubuntu-latest
@@ -227,13 +230,14 @@ with app.app_context():
             -e DATABASE_URL=sqlite:///test.db \
             -e SECRET_KEY=test-secret \
             ${{ env.DOCKER_IMAGE_NAME }} \
-            python -c "import sys
+            bash -c "cat << 'EOF' > /tmp/test_core_features.py
+import sys
 sys.path.insert(0, '/app')
 
 # Test model imports
 try:
     from packages.server.src.models import (
-        Account, Customer, Vendor, Invoice, Item, 
+        Account, Customer, Vendor, Invoice, Item,
         BankTransaction, Payment, JournalEntry
     )
     print('✓ Core models imported successfully')
@@ -252,7 +256,9 @@ except ImportError as e:
     sys.exit(1)
 
 print('✓ BigCapitalPy core functionality validated')
-"
+EOF
+python /tmp/test_core_features.py
+rm /tmp/test_core_features.py"
 
   security-scan:
     runs-on: ubuntu-latest
