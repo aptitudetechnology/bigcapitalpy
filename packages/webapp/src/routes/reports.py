@@ -14,7 +14,7 @@ import csv
 
 from packages.server.src.models import (
     Account, AccountType, Customer, Vendor, Item, Invoice, InvoiceStatus,
-    JournalEntry, JournalLineItem, TaxCode, TaxType, BASReport
+    JournalEntry, JournalLineItem, TaxCode, TaxType, BASReport, InvoiceLineItem
 )
 from packages.server.src.database import db
 
