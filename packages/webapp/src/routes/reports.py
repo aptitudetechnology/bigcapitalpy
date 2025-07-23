@@ -20,6 +20,13 @@ from packages.server.src.database import db
 
 reports_bp = Blueprint('reports', __name__)
 
+
+@reports_bp.route('/tax-summary')
+@login_required
+def tax_summary():
+    """Tax Summary Report (Placeholder)"""
+    return render_template('reports/tax_summary.html')
+
 def get_date_range(period=None, start_date=None, end_date=None):
     """Get date range based on period or custom dates"""
     today = date.today()
