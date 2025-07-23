@@ -1033,7 +1033,7 @@ class AustralianGSTBASReport:
         tax_code_ids = [tc.id for tc in gst_tax_codes]
         
         # Get sales from invoices with GST
-        invoice_total = db.session.query(func.sum(Invoice.amount)).filter(
+        invoice_total = db.session.query(func.sum(Invoice.total)).filter(
             Invoice.organization_id == self.organization_id,
             Invoice.invoice_date.between(self.start_date, self.end_date),
             Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PAID]),
@@ -1061,7 +1061,7 @@ class AustralianGSTBASReport:
         tax_code_ids = [tc.id for tc in export_tax_codes]
         
         # Get export sales from invoices
-        invoice_exports = db.session.query(func.sum(Invoice.amount)).filter(
+        invoice_exports = db.session.query(func.sum(Invoice.total)).filter(
             Invoice.organization_id == self.organization_id,
             Invoice.invoice_date.between(self.start_date, self.end_date),
             Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PAID]),
@@ -1089,7 +1089,7 @@ class AustralianGSTBASReport:
         tax_code_ids = [tc.id for tc in gst_free_tax_codes]
         
         # Get GST-free sales from invoices
-        invoice_gst_free = db.session.query(func.sum(Invoice.amount)).filter(
+        invoice_gst_free = db.session.query(func.sum(Invoice.total)).filter(
             Invoice.organization_id == self.organization_id,
             Invoice.invoice_date.between(self.start_date, self.end_date),
             Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PAID]),
@@ -1117,7 +1117,7 @@ class AustralianGSTBASReport:
         tax_code_ids = [tc.id for tc in input_taxed_codes]
         
         # Get input taxed sales from invoices
-        invoice_input_taxed = db.session.query(func.sum(Invoice.amount)).filter(
+        invoice_input_taxed = db.session.query(func.sum(Invoice.total)).filter(
             Invoice.organization_id == self.organization_id,
             Invoice.invoice_date.between(self.start_date, self.end_date),
             Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.PAID]),
