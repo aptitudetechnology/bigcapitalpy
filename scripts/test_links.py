@@ -87,12 +87,14 @@ if __name__ == "__main__":
         login_resp = session.post(LOGIN_URL, data=login_data, timeout=10)
         login_resp.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
 
+        print(f"Login POST request completed. Final URL: {login_resp.url}")
+
         # Check if login was successful by looking for a redirect or specific text
-        # Adjust this check based on your application's post-login behavior
-        if "login" in login_resp.url.lower(): # If still on a login-related URL, it failed
+        # If the final URL still contains 'login' or is the same as LOGIN_URL, it likely failed
+        if "login" in login_resp.url.lower() or login_resp.url == LOGIN_URL:
             print(f"Login failed! Status: {login_resp.status_code}")
-            print("Response content (might indicate reason):")
-            print(login_resp.text)
+            print("Response content (might indicate reason for failure, e.g., 'Invalid credentials'):")
+            print(login_resp.text) # Print the full response text for debugging
             exit(1)
         
         print("Login successful. Starting crawl...")
