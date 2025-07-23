@@ -52,8 +52,8 @@ def crawl(url):
 
 if __name__ == "__main__":
     print(f"Attempting to log in to {LOGIN_URL}...")
-    print(f"Using Username: {USERNAME}") # Added this line
-    print(f"Using Password: {PASSWORD}") # Added this line
+    print(f"Using Email: {USERNAME}") # Changed to Email
+    print(f"Using Password: {PASSWORD}")
 
     # 1. Get the login page to extract the CSRF token
     try:
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     # 2. Prepare login data including the CSRF token
     login_data = {
-        "username": USERNAME,
+        "email": USERNAME, # CHANGED THIS KEY FROM "username" TO "email"
         "password": PASSWORD,
         "csrf_token": csrf_token # Include the extracted CSRF token
     }
@@ -95,9 +95,9 @@ if __name__ == "__main__":
         # If the final URL still contains 'login' or is the same as LOGIN_URL, it likely failed
         if "login" in login_resp.url.lower() or login_resp.url == LOGIN_URL:
             print(f"Login failed! Status: {login_resp.status_code}")
-            print("--- BEGIN RESPONSE CONTENT ---") # Added this line
+            print("--- BEGIN RESPONSE CONTENT ---")
             print(login_resp.text) # Print the full response text for debugging
-            print("--- END RESPONSE CONTENT ---")   # Added this line
+            print("--- END RESPONSE CONTENT ---")
             exit(1)
         
         print("Login successful. Starting crawl...")
