@@ -26,6 +26,13 @@ def custom():
     return render_template('reports/custom.html')
 
 
+@reports_bp.route('/profitability')
+@login_required
+def profitability():
+    """Profitability Report (Placeholder)"""
+    return render_template('reports/profitability.html')
+
+
 @reports_bp.route('/tax-summary')
 @login_required
 def tax_summary():
