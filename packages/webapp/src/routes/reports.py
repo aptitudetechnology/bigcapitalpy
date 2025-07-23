@@ -25,6 +25,11 @@ def custom():
     """Custom Report Builder (Placeholder)"""
     return render_template('reports/custom.html')
 
+@reports_bp.route('/dashboard')
+@login_required
+def dashboard():
+    """Dashboard (Placeholder)"""
+    return render_template('dashboard.html')
 
 @reports_bp.route('/profitability')
 @login_required
