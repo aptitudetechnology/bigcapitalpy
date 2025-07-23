@@ -211,7 +211,6 @@
             </div>
             <div class="card-body">
                 <div class="list-group list-group-flush">
-                    {#
                     <a href="{{ url_for('reports.inventory_summary') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         <div>
                             <i class="bi bi-box text-primary me-2"></i>
@@ -238,8 +237,6 @@
                         </div>
                         <i class="bi bi-chevron-right"></i>
                     </a>
-                    #}
-                    <p class="text-muted text-center py-3">Inventory reports coming soon!</p>
                 </div>
             </div>
         </div>
@@ -403,3 +400,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+{% endblock %}
