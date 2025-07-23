@@ -1046,7 +1046,7 @@ class AustralianGSTBASReport:
         ).join(Account).filter(
             JournalEntry.organization_id == self.organization_id,
             JournalEntry.date.between(self.start_date, self.end_date),
-            Account.type == AccountType.REVENUE,
+            Account.type == AccountType.INCOME,
             JournalLineItem.tax_code_id.in_(tax_code_ids)
         ).scalar() or Decimal('0')
         
