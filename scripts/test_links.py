@@ -93,8 +93,9 @@ if __name__ == "__main__":
         # If the final URL still contains 'login' or is the same as LOGIN_URL, it likely failed
         if "login" in login_resp.url.lower() or login_resp.url == LOGIN_URL:
             print(f"Login failed! Status: {login_resp.status_code}")
-            print("Response content (might indicate reason for failure, e.g., 'Invalid credentials'):")
+            print("--- BEGIN RESPONSE CONTENT ---") # Added this line
             print(login_resp.text) # Print the full response text for debugging
+            print("--- END RESPONSE CONTENT ---")   # Added this line
             exit(1)
         
         print("Login successful. Starting crawl...")
