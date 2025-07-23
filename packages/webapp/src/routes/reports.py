@@ -19,6 +19,11 @@ from packages.server.src.models import (
 from packages.server.src.database import db
 
 reports_bp = Blueprint('reports', __name__)
+@reports_bp.route('/custom')
+@login_required
+def custom():
+    """Custom Report Builder (Placeholder)"""
+    return render_template('reports/custom.html')
 
 
 @reports_bp.route('/tax-summary')
