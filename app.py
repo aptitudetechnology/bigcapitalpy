@@ -149,6 +149,11 @@ def create_app(config_name='development'):
     @app.route('/health')
     def health_check():
         return {'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()}, 200
+
+    # Dashboard route
+    @app.route('/')
+    def dashboard():
+        return app.send_static_file('dashboard.html') if os.path.exists(os.path.join(app.static_folder, 'dashboard.html')) else render_template('dashboard.html')
     
     return app
 
