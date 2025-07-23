@@ -32,6 +32,10 @@ Flask-Mail==0.9.1
 # Environment Variables
 python-dotenv==1.0.0
 
+# Web Scraping
+requests==2.31.0
+beautifulsoup4==4.12.2
+
 # PDF Generation
 reportlab==4.0.4
 WeasyPrint==60.1
