@@ -52,6 +52,8 @@ def crawl(url):
 
 if __name__ == "__main__":
     print(f"Attempting to log in to {LOGIN_URL}...")
+    print(f"Using Username: {USERNAME}") # Added this line
+    print(f"Using Password: {PASSWORD}") # Added this line
 
     # 1. Get the login page to extract the CSRF token
     try:
