@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 
-BASE_URL = "http://simple.local:8080"  # Change to your running app's base URL
+BASE_URL = "http://simple.local:5000"  # Change to your running app's base URL
 LOGIN_URL = BASE_URL + "/auth/login"     # Change to your login endpoint
 USERNAME = "admin"                  # Change to your username
 PASSWORD = "admin123"               # Change to your password
