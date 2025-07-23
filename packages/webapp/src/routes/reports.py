@@ -1151,7 +1151,7 @@ class AustralianGSTBASReport:
         ).join(Account).filter(
             JournalEntry.organization_id == self.organization_id,
             JournalEntry.date.between(self.start_date, self.end_date),
-            Account.type.in_([AccountType.ASSET, AccountType.FIXED_ASSET]),
+            Account.type == AccountType.ASSET,
             JournalLineItem.tax_code_id.in_(tax_code_ids)
         ).scalar() or Decimal('0')
         
@@ -1171,7 +1171,7 @@ class AustralianGSTBASReport:
         ).join(Account).filter(
             JournalEntry.organization_id == self.organization_id,
             JournalEntry.date.between(self.start_date, self.end_date),
-            Account.type.in_([AccountType.EXPENSE, AccountType.COST_OF_GOODS_SOLD]),
+            Account.type == AccountType.EXPENSE,
             JournalLineItem.tax_code_id.in_(tax_code_ids)
         ).scalar() or Decimal('0')
         
@@ -1201,7 +1201,7 @@ class AustralianGSTBASReport:
         ).join(Account).filter(
             JournalEntry.organization_id == self.organization_id,
             JournalEntry.date.between(self.start_date, self.end_date),
-            Account.type.in_([AccountType.EXPENSE, AccountType.COST_OF_GOODS_SOLD, AccountType.ASSET]),
+            Account.type.in_([AccountType.EXPENSE, AccountType.ASSET]),
             JournalLineItem.tax_code_id.in_(tax_code_ids)
         ).scalar() or Decimal('0')
         
