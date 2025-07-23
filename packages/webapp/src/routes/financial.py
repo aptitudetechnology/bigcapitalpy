@@ -484,13 +484,13 @@ def cash_flow():
     six_months_ago = date.today() - timedelta(days=180)
     
     monthly_flow = db.session.query(
-        func.date_trunc('month', JournalEntry.date).label('month'),
+        func.strftime('%Y-%m', JournalEntry.date).label('month'),
         func.sum(JournalLineItem.debit - JournalLineItem.credit).label('net_flow')
     ).join(JournalLineItem).filter(
         JournalEntry.organization_id == current_user.organization_id,
         JournalEntry.date >= six_months_ago,
         JournalLineItem.account_id.in_([acc.id for acc in cash_accounts])
-    ).group_by(func.date_trunc('month', JournalEntry.date)).all()
+    ).group_by(func.strftime('%Y-%m', JournalEntry.date)).all()
     
     cash_flow_data = {
         'accounts': cash_accounts,
