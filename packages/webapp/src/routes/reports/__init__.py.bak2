@@ -8,25 +8,10 @@ reports_bp = Blueprint('reports', __name__, url_prefix='/reports')
 def index():
     """
     Default index route for the /reports URL prefix.
-    This route is defined at the module level to ensure it's available
-    when url_for('reports.index') is called early in the application lifecycle.
-    
-    It will now render the 'reports/index.html' template and pass a placeholder
-    'report_data' dictionary to avoid 'UndefinedError'.
+    Renders the financial reports dashboard from reports/index.html.
     """
-    # Provide a placeholder or empty report_data dictionary
-    # You might want to fetch actual summary data here in a real application
-    report_data = {
-        'total_revenue': 0.00,
-        'total_expenses': 0.00,
-        'net_profit': 0.00,
-        'total_sales_invoices': 0,
-        'total_purchase_bills': 0,
-        'cash_balance': 0.00,
-        'unreconciled_transactions': 0
-    }
-    
-    return render_template('reports/index.html', report_data=report_data)
+    # You can pass context variables if needed, e.g. report_data, recent_reports
+    return render_template('reports/index.html')
 
 
 def register_reports_blueprints(app):
