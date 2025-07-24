@@ -597,9 +597,11 @@ def customer_aging():
     report_data = {
         'aging_data': aging_data,
         'totals': totals,
-        'as_of_date': as_of_date
+        'as_of_date': as_of_date,
+        'report_date': as_of_date  # Always provide report_date for template
     }
-    
+    # Debug: print report_data structure before rendering
+    # print("report_data:", report_data)
     return render_template('reports/customer_aging.html', report_data=report_data)
 
 @reports_bp.route('/vendor-aging')
