@@ -1,37 +1,49 @@
 """
-Flask Blueprint Registration for BigCapitalPy
+Main blueprint registration for the BigCapitalPy web application.
+This file registers all top-level blueprints with the Flask app instance.
 """
 
-from .dashboard import dashboard_bp
+from flask import Blueprint
+
+# Import individual blueprints (adjust these based on your actual project structure)
+# Ensure ALL top-level blueprints are imported here.
+# Example:
 from .auth import auth_bp
-from .customers import customers_bp
+from .main import main_bp
+from .admin import admin_bp
 from .vendors import vendors_bp
+from .customers import customers_bp
 from .items import items_bp
-from .accounts import accounts_bp
-from .reports import reports_bp
 from .invoices import invoices_bp
-from .financial import financial_bp
-from .payments import payments_bp
+from .bills import bills_bp
+from .dashboard import dashboard_bp # Assuming your main dashboard blueprint is here
+
+# Import the reports blueprint registration function
+# This should remain here.
+from .reports import register_reports_blueprints
+
 
 def register_blueprints(app):
-    """Register all application blueprints"""
-    
-    # Authentication routes
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    
-    # Main application routes
-    app.register_blueprint(dashboard_bp, url_prefix='/')
-    app.register_blueprint(customers_bp, url_prefix='/customers')
-    app.register_blueprint(vendors_bp, url_prefix='/vendors')
-    app.register_blueprint(items_bp, url_prefix='/items')
-    app.register_blueprint(accounts_bp, url_prefix='/accounts')
-    app.register_blueprint(reports_bp, url_prefix='/reports')
-    app.register_blueprint(invoices_bp, url_prefix='/invoices')
-    app.register_blueprint(payments_bp, url_prefix='/payments')
-    app.register_blueprint(financial_bp, url_prefix='/financial')
-    
-    # User management routes
-    from .users import users_bp
-    app.register_blueprint(users_bp)
-    
-    print("✅ All blueprints registered successfully")
+    """
+    Registers all application blueprints with the given Flask app instance.
+    This function is called from app.py during application initialization.
+    """
+    # CRITICAL: Register reports blueprints FIRST if other blueprints' templates
+    # (like base.html used by dashboard) rely on reports URLs.
+    register_reports_blueprints(app)
+
+    # Now, register other top-level blueprints.
+    # The order of these other blueprints generally doesn't matter unless
+    # one explicitly relies on another being registered *before* it for `url_for` calls
+    # within its *own* module or templates that are not base.html.
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(main_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(vendors_bp)
+    app.register_blueprint(customers_bp)
+    app.register_blueprint(items_bp)
+    app.register_blueprint(invoices_bp)
+    app.register_blueprint(bills_bp)
+    app.register_blueprint(dashboard_bp) 
+
+    # Add any other top-level blueprint registrations here if you have them.
