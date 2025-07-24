@@ -87,7 +87,7 @@
                     
                     <tr class="border-top">
                         <td class="fw-bold">Total Income</td>
-                        <td class="text-end fw-bold">{{ report_data.total_income | currency }}</td>
+                       <td class="text-end fw-bold">{{ report_data.total_cogs | default(0) | currency }}</td>
                     </tr>
                     
                     <tr><td colspan="2" class="py-2"></td></tr>
