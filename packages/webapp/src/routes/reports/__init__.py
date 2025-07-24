@@ -10,8 +10,16 @@ def index():
     """
     Main index route for the /reports section.
     """
-    # You can pass context variables as needed
-    return render_template('reports/index.html')
+    # Sample report_data structure matching template requirements
+    report_data = {
+        "total_revenue": 125000.00,
+        "net_profit": 32000.00,
+        "total_expenses": 93000.00,
+        "accounts_receivable": 15000.00
+    }
+    # Optionally, provide an empty recent_reports list for template
+    recent_reports = []
+    return render_template('reports/index.html', report_data=report_data, recent_reports=recent_reports)
 
 # The 'index' route for /reports is defined in the reports_dashboard_bp
 # and registered below.
