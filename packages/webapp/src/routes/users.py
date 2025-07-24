@@ -92,4 +92,4 @@ def settings():
         # Save settings logic here
         flash('Settings saved.', 'success')
         return redirect(url_for('users.settings'))
-    return render_template('system/users/settings.html', form=form)
+    return render_template('system/users/settings.html', form=form, user=current_user)
