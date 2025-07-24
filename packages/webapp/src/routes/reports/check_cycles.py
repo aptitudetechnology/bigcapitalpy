@@ -9,9 +9,8 @@ target_dir = os.path.dirname(__file__) or "."
 
 try:
     result = subprocess.run(
-        ["pycycle", target_dir],
+        ["pycycle", "find", target_dir],
         check=True,
-        capture_output=False,  # set to True if you want to suppress output and capture it
     )
 except FileNotFoundError:
     print("❌ pycycle is not installed or not in PATH. Try running: pip install pycycle")
