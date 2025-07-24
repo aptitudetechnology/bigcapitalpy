@@ -88,8 +88,9 @@ def change_password():
 @login_required
 def settings():
     form = SettingsForm()
+    user_real = current_user._get_current_object() if hasattr(current_user, '_get_current_object') else current_user
     if form.validate_on_submit():
         # Save settings logic here
         flash('Settings saved.', 'success')
         return redirect(url_for('users.settings'))
-    return render_template('system/users/settings.html', form=form, user=current_user)
+    return render_template('system/users/settings.html', form=form, user=user_real)
