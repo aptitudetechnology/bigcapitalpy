@@ -234,7 +234,7 @@ def profit_loss():
         'gross_profit': total_income,  # Simplified for now
         'cost_of_goods_sold': Decimal('0.00'),  # To be implemented
         'total_cogs': None,  # Add total_cogs placeholder
-        'total_other_income': None  # Add total_other_income placeholder
+        'total_other_income': None,  # Add total_other_income placeholder
         'total_other_expenses': None  # Add total_other_expenses placeholder
     }
     # Ensure total_cogs is always a number (default 0.0)
