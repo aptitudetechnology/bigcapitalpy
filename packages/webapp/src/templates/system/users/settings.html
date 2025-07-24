@@ -25,7 +25,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-muted">Language</label>
-                            <div class="fw-medium">{{ getattr(user, 'language', 'EN').upper() }}</div>
+                            <div class="fw-medium">{{ user.language.upper() if user.language is defined and user.language else 'EN' }}</div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-muted">Timezone</label>
