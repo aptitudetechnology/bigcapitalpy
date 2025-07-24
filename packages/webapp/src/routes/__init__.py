@@ -14,7 +14,8 @@ from .dashboard import dashboard_bp # Keep this if dashboard_bp exists
 from .customers import customers_bp # Already re-added
 from .vendors import vendors_bp # Already re-added
 from .items import items_bp # Already re-added
-from .invoices import invoices_bp # RE-ADDED: Ensure packages/webapp/src/routes/invoices.py exists and defines 'invoices_bp'
+from .invoices import invoices_bp # Already re-added
+from .payments import payments_bp # RE-ADDED: Ensure packages/webapp/src/routes/payments.py exists and defines 'payments_bp'
 
 # Import the reports blueprint registration function
 from .reports import register_reports_blueprints
@@ -30,13 +31,14 @@ def register_blueprints(app):
     register_reports_blueprints(app)
 
     # Now, register other top-level blueprints.
-    # Registering auth_bp, dashboard_bp, customers_bp, vendors_bp, items_bp, and invoices_bp.
+    # Registering auth_bp, dashboard_bp, customers_bp, vendors_bp, items_bp, invoices_bp, and payments_bp.
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp) 
     app.register_blueprint(customers_bp) 
     app.register_blueprint(vendors_bp) 
     app.register_blueprint(items_bp) 
-    app.register_blueprint(invoices_bp) # RE-ADDED: Register the invoices_bp
+    app.register_blueprint(invoices_bp) 
+    app.register_blueprint(payments_bp) # RE-ADDED: Register the payments_bp
 
     # If you have other top-level blueprints (e.g., for bills, admin, main)
     # and their files *do* exist, you will need to re-add their imports
