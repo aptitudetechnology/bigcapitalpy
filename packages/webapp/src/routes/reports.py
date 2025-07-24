@@ -246,7 +246,7 @@ def profit_loss():
     # Ensure total_other_expenses is always a number (default 0.0)
     if report_data.get('total_other_expenses') is None:
         report_data['total_other_expenses'] = 0.0
-    # Ensure all other currency-formatted fields are numeric
+    # Ensure all other currency-formatted fields are numeric.
     for key in ['total_income', 'total_expenses', 'net_profit', 'gross_profit', 'cost_of_goods_sold']:
         if report_data.get(key) is None:
             report_data[key] = 0.0
