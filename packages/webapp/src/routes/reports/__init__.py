@@ -23,7 +23,8 @@ def index():
         'total_sales_invoices': 0,
         'total_purchase_bills': 0,
         'cash_balance': 0.00,
-        'unreconciled_transactions': 0
+        'unreconciled_transactions': 0,
+        'accounts_receivable': 0.00 # Added this key with a default value
     }
     
     return render_template('reports/index.html', report_data=report_data)
