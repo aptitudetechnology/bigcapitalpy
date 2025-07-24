@@ -200,7 +200,7 @@
                         <p>Products & services</p>
                     </div>
                 </a>
-                <a href="{{ url_for('reports.reports_dashboard.index') }}" class="quick-action-item">
+                <a href="{{ url_for('reports.index') }}" class="quick-action-item">
                     <div class="action-icon warning">
                         <i class="bi bi-graph-up"></i>
                     </div>
