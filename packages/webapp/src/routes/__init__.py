@@ -31,12 +31,12 @@ def register_blueprints(app):
     # Now, register other top-level blueprints that are confirmed to exist.
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp) 
-    app.register_blueprint(customers_bp) 
-    app.register_blueprint(vendors_bp) 
-    app.register_blueprint(items_bp) 
-    app.register_blueprint(invoices_bp) 
-    app.register_blueprint(payments_bp)
-    app.register_blueprint(accounts_bp)
+    app.register_blueprint(customers_bp, url_prefix='/customers') 
+    app.register_blueprint(vendors_bp, url_prefix='/vendors')
+    app.register_blueprint(items_bp, url_prefix='/items')
+    app.register_blueprint(invoices_bp, url_prefix='/invoices')
+    app.register_blueprint(payments_bp, url_prefix='/payments')
+    app.register_blueprint(accounts_bp, url_prefix='/accounts')
 
     # The following blueprints were removed as they were reported as non-existent:
     # bills_bp, admin_bp, main_bp
