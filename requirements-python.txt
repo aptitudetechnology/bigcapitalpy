@@ -63,3 +63,5 @@ marshmallow-sqlalchemy==0.29.0
 # E-mail Validation
 email_validator>=1.3.1
 
+# Managing and visualising python modules
+ruff==0.4.7
