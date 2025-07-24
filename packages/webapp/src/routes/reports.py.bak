@@ -189,10 +189,6 @@ def profit_loss():
     # Initialize previous period variables to avoid UnboundLocalError
     prev_start = None
     prev_end = None
-    # Calculate previous period for comparison (always define these)
-    period_length = (end_date - start_date).days
-    prev_start = start_date - timedelta(days=period_length + 1)
-    prev_end = start_date - timedelta(days=1)
     # Get expense accounts
     expense_accounts = Account.query.filter(
         Account.organization_id == current_user.organization_id,
