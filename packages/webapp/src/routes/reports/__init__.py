@@ -8,19 +8,10 @@ reports_bp = Blueprint('reports', __name__, url_prefix='/reports')
 def index():
     """
     Default index route for the /reports URL prefix.
-    This route is defined at the module level to ensure it's available
-    when url_for('reports.index') is called early in the application lifecycle.
-    
-    It will render a generic reports dashboard or redirect to a default report
-    once all sub-blueprints are guaranteed to be registered.
-    For now, we'll render a simple placeholder or a dedicated reports index template.
+    Renders the financial reports dashboard from reports/index.html.
     """
-    # Option 1: Render a dedicated reports index template (recommended for a proper UI)
-    # You would need to create packages/webapp/src/templates/reports/index.html
-    # return render_template('reports/index.html')
-
-    # Option 2: Return a simple string placeholder for testing purposes
-    return "<h1>Reports Home Page</h1><p>Welcome to the reports section. Please navigate to a specific report from the menu.</p>"
+    # You can pass context variables if needed, e.g. report_data, recent_reports
+    return render_template('reports/index.html')
 
 
 def register_reports_blueprints(app):
