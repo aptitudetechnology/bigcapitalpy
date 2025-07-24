@@ -192,7 +192,7 @@
                     <!-- NET INCOME -->
                     <tr class="border-top border-2 table-dark">
                         <td class="fw-bold fs-5">NET INCOME</td>
-                        <td class="text-end fw-bold fs-5 {% if report_data.net_income >= 0 %}text-success{% else %}text-danger{% endif %}">
+<td class="text-end fw-bold fs-5 {% if report_data.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
                             {{ report_data.net_income | currency }}
                         </td>
                     </tr>
