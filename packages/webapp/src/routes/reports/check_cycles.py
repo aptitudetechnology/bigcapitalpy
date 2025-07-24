@@ -8,7 +8,7 @@ target_dir = os.path.dirname(os.path.abspath(__file__))
 
 try:
     result = subprocess.run(
-        ["pycycle", target_dir],
+        ["pycycle", "find", target_dir],
         capture_output=True,
         text=True,
         check=True
