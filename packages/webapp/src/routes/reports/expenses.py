@@ -1,3 +1,6 @@
+from flask import Blueprint
+expenses_bp = Blueprint('expenses', __name__)
+# You can add routes here later
 from flask import Blueprint, render_template # Keep render_template as it's used by the reports_dashboard.index route
 
 # Define the main reports blueprint
