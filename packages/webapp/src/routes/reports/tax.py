@@ -16,7 +16,9 @@ from packages.server.src.models import (
     JournalEntry, JournalLineItem, InvoiceLineItem
 )
 from packages.server.src.database import db
-from .utils import get_date_range
+# Old import path commented out: from .utils import get_date_range
+# New import path for get_date_range from the more general utils directory
+from packages.webapp.src.utils.date_utils import get_date_range 
 
 tax_bp = Blueprint('tax', __name__)
 
