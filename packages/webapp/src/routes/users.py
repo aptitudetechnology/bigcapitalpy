@@ -18,9 +18,19 @@ class ProfileForm(FlaskForm):
 @login_required
 def profile():
     user = current_user
-    form = ProfileForm(obj=user)
+    print("Type of user:", type(user))
+    print("User attributes:", dir(user))
+    # Unwrap LocalProxy if needed
+    user_real = user._get_current_object() if hasattr(user, '_get_current_object') else user
+    print("Type of user_real:", type(user_real))
+    print("User_real attributes:", dir(user_real))
+    if not hasattr(user_real, 'language'):
+        print("User object missing 'language' attribute")
+    else:
+        print("User language:", user_real.language)
+    form = ProfileForm(obj=user_real)
     if form.validate_on_submit():
-        form.populate_obj(user)
+        form.populate_obj(user_real)
         try:
             db.session.commit()
             flash('Profile updated successfully.', 'success')
@@ -28,7 +38,7 @@ def profile():
             db.session.rollback()
             flash('Error updating profile.', 'error')
         return redirect(url_for('users.profile'))
-    return render_template('system/users/profile.html', form=form, user=user)
+    return render_template('system/users/profile.html', form=form, user=user_real)
 
 class SettingsForm(FlaskForm):
     # Add settings fields as needed
