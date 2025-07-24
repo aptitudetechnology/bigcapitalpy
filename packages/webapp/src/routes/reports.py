@@ -186,6 +186,9 @@ def profit_loss():
         Account.is_active == True
     ).order_by(Account.code).all()
     
+    # Initialize previous period variables to avoid UnboundLocalError
+    prev_start = None
+    prev_end = None
     # Get expense accounts
     expense_accounts = Account.query.filter(
         Account.organization_id == current_user.organization_id,
