@@ -8,7 +8,7 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0">Settings & Preferences</h2>
-                <a href="{{ url_for('user.edit_settings') }}" class="btn btn-primary">
+                <a href="{{ url_for('users.edit_settings') }}" class="btn btn-primary">
                     <i class="fas fa-edit"></i> Edit Settings
                 </a>
             </div>
@@ -121,13 +121,13 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{{ url_for('user.edit_settings') }}" class="btn btn-outline-primary">
+                        <a href="{{ url_for('users.edit_settings') }}" class="btn btn-outline-primary">
                             <i class="fas fa-edit"></i> Edit Settings
                         </a>
-                        <a href="{{ url_for('user.profile') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('users.profile') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-user"></i> View Profile
                         </a>
-                        <a href="{{ url_for('user.change_password') }}" class="btn btn-outline-warning">
+                        <a href="{{ url_for('users.change_password') }}" class="btn btn-outline-warning">
                             <i class="fas fa-key"></i> Change Password
                         </a>
                     </div>
