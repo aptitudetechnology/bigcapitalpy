@@ -8,7 +8,7 @@ target_dir = os.path.dirname(os.path.abspath(__file__))
 
 try:
     result = subprocess.run(
-        ["pycycle", "find", target_dir],
+        ["pycycle", "--source", target_dir],
         capture_output=True,
         text=True,
         check=True
@@ -18,7 +18,7 @@ try:
 except subprocess.CalledProcessError as e:
     print(e.stdout)
     print(e.stderr)
-    print("❌ pycycle exited with an error (code {})".format(e.returncode))
+    print(f"❌ pycycle exited with an error (code {e.returncode})")
     sys.exit(1)
 except FileNotFoundError:
     print("❌ pycycle is not installed or not in PATH.")
