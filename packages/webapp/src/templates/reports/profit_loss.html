@@ -231,7 +231,7 @@
                 <div class="card bg-{% if report_data.net_profit >= 0 %}success{% else %}danger{% endif %} text-white">
                     <div class="card-body text-center">
                         <h6>Net Income</h6>
-                        <h4>{{ report_data.net_income | currency }}</h4>
+                      <h4>{{ report_data.net_profit | currency }}</h4>
                         <small>{{ report_data.net_profit_margin }}% margin</small>
                     </div>
                 </div>
