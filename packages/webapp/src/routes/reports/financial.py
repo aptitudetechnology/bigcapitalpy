@@ -1,3 +1,6 @@
+from flask import Blueprint
+financial_bp = Blueprint('financial', __name__)
+# ...existing code...
 from flask import Blueprint, render_template # Keep render_template as it's used by the reports_dashboard.index route
 
 # Define the main reports blueprint
