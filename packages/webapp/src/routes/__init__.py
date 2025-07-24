@@ -7,9 +7,8 @@ from flask import Blueprint
 
 # Import individual blueprints (adjust these based on your actual project structure)
 # Ensure ALL top-level blueprints are imported here.
-# Example:
+# Removed 'from .main import main_bp' as it caused a ModuleNotFoundError.
 from .auth import auth_bp
-from .main import main_bp
 from .admin import admin_bp
 from .vendors import vendors_bp
 from .customers import customers_bp
@@ -19,7 +18,6 @@ from .bills import bills_bp
 from .dashboard import dashboard_bp # Assuming your main dashboard blueprint is here
 
 # Import the reports blueprint registration function
-# This should remain here.
 from .reports import register_reports_blueprints
 
 
@@ -33,11 +31,8 @@ def register_blueprints(app):
     register_reports_blueprints(app)
 
     # Now, register other top-level blueprints.
-    # The order of these other blueprints generally doesn't matter unless
-    # one explicitly relies on another being registered *before* it for `url_for` calls
-    # within its *own* module or templates that are not base.html.
+    # Removed 'app.register_blueprint(main_bp)' as it caused a ModuleNotFoundError.
     app.register_blueprint(auth_bp)
-    app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(vendors_bp)
     app.register_blueprint(customers_bp)
