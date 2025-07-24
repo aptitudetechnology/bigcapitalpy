@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - BigCapital{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Settings & Preferences</h2>
+                <a href="{{ url_for('user.edit_settings') }}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edit Settings
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Language & Localization</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Language</label>
+                            <div class="fw-medium">{{ user.language.upper() }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Timezone</label>
+                            <div class="fw-medium">{{ user.get_display_timezone() }}</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Date Format</label>
+                            <div class="fw-medium">{{ user.date_format }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Currency</label>
+                            <div class="fw-medium">{{ user.currency_format }} ({{ user.get_currency_symbol() }})</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Notification Preferences</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted">Email Notifications</label>
+                            <div>
+                                {% if user.email_notifications %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check"></i> Enabled
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-times"></i> Disabled
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted">Dashboard Notifications</label>
+                            <div>
+                                {% if user.dashboard_notifications %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check"></i> Enabled
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-times"></i> Disabled
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-muted">Marketing Emails</label>
+                            <div>
+                                {% if user.marketing_emails %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check"></i> Enabled
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-times"></i> Disabled
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Preview</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Date Format Preview</h6>
+                    <p class="text-muted">Today: {{ moment().format_date() }}</p>
+                    
+                    <h6>Currency Format Preview</h6>
+                    <p class="text-muted">Sample: {{ user.get_currency_symbol() }}1,234.56</p>
+                    
+                    <h6>Timezone Preview</h6>
+                    <p class="text-muted">Current time in {{ user.timezone }}: <span id="currentTime"></span></p>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Account Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('user.edit_settings') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit"></i> Edit Settings
+                        </a>
+                        <a href="{{ url_for('user.profile') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-user"></i> View Profile
+                        </a>
+                        <a href="{{ url_for('user.change_password') }}" class="btn btn-outline-warning">
+                            <i class="fas fa-key"></i> Change Password
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update current time in user's timezone
+    function updateCurrentTime() {
+        const now = new Date();
+        const timeElement = document.getElementById('currentTime');
+        if (timeElement) {
+            const options = {
+                timeZone: '{{ user.timezone }}',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            timeElement.textContent = now.toLocaleString('en-US', options);
+        }
+    }
+    
+    // Update time immediately and then every second
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 1000);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Settings - BigCapital{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Edit Settings</h2>
+                <a href="{{ url_for('user.settings') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Settings
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <form method="POST" id="settingsForm">
+                {{ form.hidden_tag() }}
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Language & Localization</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.language.label(class="form-label") }}
+                                    {{ form.language(class="form-select" + (" is-invalid" if form.language.errors else "")) }}
+                                    {% if form.language.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.language.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.timezone.label(class="form-label") }}
+                                    {{ form.timezone(class="form-select" + (" is-invalid" if form.timezone.errors else "")) }}
+                                    {% if form.timezone.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.timezone.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.date_format.label(class="form-label") }}
+                                    {{ form.date_format(class="form-select" + (" is-invalid" if form.date_format.errors else "")) }}
+                                    {% if form.date_format.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.date_format.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Preview: <span id="datePreview"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.currency_format.label(class="form-label") }}
+                                    {{ form.currency_format(class="form-select" + (" is-invalid" if form.currency_format.errors else "")) }}
+                                    {% if form.currency_format.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.currency_format.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Preview: <span id="currencyPreview"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Notification Preferences</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.email_notifications(class="form-check-input") }}
+                                    {{ form.email_notifications.label(class="form-check-label") }}
+                                    <div class="form-text">
+                                        Receive email notifications for important account updates.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.dashboard_notifications(class="form-check-input") }}
+                                    {{ form.dashboard_notifications.label(class="form-check-label") }}
+                                    <div class="form-text">
+                                        Show notifications in the dashboard.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.marketing_emails(class="form-check-input") }}
+                                    {{ form.marketing_emails.label(class="form-check-label") }}
+                                    <div class="form-text">
+                                        Receive marketing emails and newsletters.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="saveSettingsBtn">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Live Preview</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Current Settings</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Date:</strong> <span id="liveDate"></span></li>
+                        <li><strong>Currency:</strong> <span id="liveCurrency"></span></li>
+                        <li><strong>Time:</strong> <span id="liveTime"></span></li>
+                    </ul>
+                    
+                    <div class="alert alert-info mt-3" role="alert">
+                        <i class="fas fa-info-circle"></i>
+                        Changes will take effect after saving.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Notification Settings</h6>
+                </div>
+                <div class="card-body">
+                    <div class="form-text">
+                        <strong>Email Notifications:</strong> Account security, password changes, important updates.
+                    </div>
+                    <div class="form-text mt-2">
+                        <strong>Dashboard Notifications:</strong> Real-time alerts, system messages, reminders.
+                    </div>
+                    <div class="form-text mt-2">
+                        <strong>Marketing Emails:</strong> Product updates, tips, promotional content.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('settingsForm');
+    const saveBtn = document.getElementById('saveSettingsBtn');
+    
+    // Currency symbols mapping
+    const currencySymbols = {
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£',
+        'JPY': '¥',
+        'CAD': 'C$',
+        'AUD': 'A$',
+        'CHF': 'CHF',
+        'CNY': '¥',
+        'INR': '₹',
+        'BRL': 'R$'
+    };
+    
+    // Track form changes
+    let formChanged = false;
+    const inputs = form.querySelectorAll('input, select');
+    
+    inputs.forEach(input => {
+        input.addEventListener('change', function() {
+            formChanged = true;
+            updateSaveButton();
+            updatePreviews();
+        });
+    });
+    
+    function updateSaveButton() {
+        if (formChanged) {
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Settings *';
+            saveBtn.classList.add('btn-warning');
+            saveBtn.classList.remove('btn-primary');
+        }
+    }
+    
+    function updatePreviews() {
+        const dateFormat = document.querySelector('[name="date_format"]').value;
+        const currencyFormat = document.querySelector('[name="currency_format"]').value;
+        
+        // Update date preview
+        const now = new Date();
+        let datePreview = '';
+        
+        switch(dateFormat) {
+            case 'MM/DD/YYYY':
+                datePreview = (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                             now.getDate().toString().padStart(2, '0') + '/' + 
+                             now.getFullYear();
+                break;
+            case 'DD/MM/YYYY':
+                datePreview = now.getDate().toString().padStart(2, '0') + '/' + 
+                             (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                             now.getFullYear();
+                break;
+            case 'YYYY-MM-DD':
+                datePreview = now.getFullYear() + '-' + 
+                             (now.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                             now.getDate().toString().padStart(2, '0');
+                break;
+            case 'DD-MM-YYYY':
+                datePreview = now.getDate().toString().padStart(2, '0') + '-' + 
+                             (now.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                             now.getFullYear();
+                break;
+            case 'MM-DD-YYYY':
+                datePreview = (now.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                             now.getDate().toString().padStart(2, '0') + '-' + 
+                             now.getFullYear();
+                break;
+        }
+        
+        document.getElementById('datePreview').textContent = datePreview;
+        document.getElementById('liveDate').textContent = datePreview;
+        
+        // Update currency preview
+        const currencySymbol = currencySymbols[currencyFormat] || '$';
+        const currencyPreview = currencySymbol + '1,234.56';
+        document.getElementById('currencyPreview').textContent = currencyPreview;
+        document.getElementById('liveCurrency').textContent = currencyPreview;
+    }
+    
+    function updateLiveTime() {
+        const timezone = document.querySelector('[name="timezone"]').value || 'UTC';
+        const now = new Date();
+        
+        try {
+            const timeString = now.toLocaleTimeString('en-US', {
+                timeZone: timezone,
+                hour12: true,
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('liveTime').textContent = timeString;
+        } catch (e) {
+            document.getElementById('liveTime').textContent = 'Invalid timezone';
+        }
+    }
+    
+    // Initial preview update
+    updatePreviews();
+    updateLiveTime();
+    
+    // Update time every minute
+    setInterval(updateLiveTime, 60000);
+    
+    // Timezone change handler
+    document.querySelector('[name="timezone"]').addEventListener('change', updateLiveTime);
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        // Show loading state
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Settings...';
+        saveBtn.disabled = true;
+    });
+    
+    // Warn about unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+});
+</script>
+{% endblock %}

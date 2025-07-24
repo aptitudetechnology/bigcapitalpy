@@ -1,4 +1,6 @@
 # User Management (Profile, Settings)
+#
+# Note: This section is for user self-service profile and settings management. For admin-level user/role/permission management, see `Users-Permissions.md`.
 
 ## Description
 Pages and features for user profile management and application/user settings.
@@ -9,6 +11,18 @@ Not yet implemented.
 ## Claude Implementation Instructions
 
 **Goal:** Implement user profile and settings management.
+
+**Instructions for Claude:**
+Start by generating the UI Jinja2 templates for profile and settings pages, then work backwards to implement the backend code, forms, and blueprints. Follow the order of sections below.
+
+**Scope:**
+- Users can view and update their own profile information.
+- Users can change their password and notification preferences.
+- Users can update personal settings (e.g., language, timezone).
+- No admin or role management here (see `Users-Permissions.md`).
+
+**Related:**
+- For admin user/role/permission management, see `Users-Permissions.md`.
 
 ### 1. Jinja2 Templates
 - Create `profile.html` and `settings.html` for user info and preferences.
@@ -37,3 +51,5 @@ Not yet implemented.
 
 ---
 **Tip:** Allow users to update their password and notification preferences.
+
+**Important:** Do not generate any CSS. Use Bootstrap classes only for styling.
