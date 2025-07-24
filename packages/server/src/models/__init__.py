@@ -144,6 +144,9 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    def get_display_timezone(self):
+        return getattr(self, 'timezone', None) or 'UTC'
+
 class Account(db.Model):
     __tablename__ = 'accounts'
     
