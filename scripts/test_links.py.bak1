@@ -1,3 +1,4 @@
+
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -22,46 +23,16 @@ def is_internal(url):
     """Checks if a given URL is internal to the BASE_URL."""
     return url.startswith(BASE_URL) or url.startswith("/")
 
-def is_dummy_link(href, link_element, soup):
+def is_dummy_link(href):
     """Check if a link is a dummy/placeholder link."""
     if not href:
         return True, "Empty href"
     
     href = href.strip()
     
-    # First check if this is a functional dropdown/menu toggle
-    if href == "#" or href.startswith("#"):
-        # Check for dropdown/menu functionality indicators
-        classes = link_element.get('class', [])
-        if isinstance(classes, str):
-            classes = classes.split()
-        
-        # Look for dropdown/toggle classes
-        dropdown_classes = {'dropdown-toggle', 'menu-toggle', 'submenu-toggle', 'toggle', 'accordion-toggle'}
-        if any(cls in dropdown_classes for cls in classes):
-            # Check if it has dropdown children or data attributes
-            data_attrs = [attr for attr in link_element.attrs.keys() if attr.startswith('data-')]
-            if data_attrs:
-                return False, None  # This is a functional dropdown trigger
-        
-        # Check if this link has dropdown children in the DOM
-        parent = link_element.parent
-        if parent:
-            # Look for dropdown content siblings or children
-            dropdown_indicators = parent.find_all(class_=lambda x: x and any(
-                keyword in str(x).lower() for keyword in ['dropdown-content', 'dropdown-menu', 'submenu-content', 'menu-content']
-            ))
-            if dropdown_indicators:
-                return False, None  # This is a functional dropdown with children
-            
-            # Also check for immediate siblings with dropdown-link class
-            siblings = parent.find_all('a', class_=lambda x: x and 'dropdown-link' in str(x))
-            if siblings and len(siblings) > 0:
-                return False, None  # This appears to be a dropdown parent
-    
-    # Now check for actual dummy/placeholder patterns
+    # Common dummy link patterns
     dummy_patterns = [
-        (r"^#$", "Hash-only link (no dropdown functionality)"),
+        (r"^#$", "Hash-only link"),
         (r"^javascript:void\(0\)$", "JavaScript void placeholder"),
         (r"^javascript:;$", "JavaScript semicolon placeholder"),
         (r"^javascript:$", "Empty JavaScript"),
@@ -69,7 +40,7 @@ def is_dummy_link(href, link_element, soup):
         (r"^/todo$", "TODO placeholder"),
         (r"^/placeholder$", "Placeholder URL"),
         (r"^/undefined$", "Undefined URL"),
-        (r"^#(?!$).+$", "Fragment-only link")  # Fragment links like #section but not just #
+        (r"^#.*$", "Fragment-only link")  # This catches #section links too
     ]
     
     for pattern, description in dummy_patterns:
@@ -206,7 +177,7 @@ def crawl(url):
         link_text = link.get_text(strip=True)
         
         # Check for dummy/placeholder links
-        is_dummy, dummy_reason = is_dummy_link(href, link, soup)
+        is_dummy, dummy_reason = is_dummy_link(href)
         if is_dummy:
             dummy_links.append((full_url, href, link_text, dummy_reason))
             continue  # Skip further processing for dummy links
