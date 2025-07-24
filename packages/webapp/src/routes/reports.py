@@ -233,11 +233,15 @@ def profit_loss():
         'net_profit': net_profit,
         'gross_profit': total_income,  # Simplified for now
         'cost_of_goods_sold': Decimal('0.00'),  # To be implemented
-        'total_cogs': None  # Add total_cogs placeholder
+        'total_cogs': None,  # Add total_cogs placeholder
+        'total_other_income': None  # Add total_other_income placeholder
     }
     # Ensure total_cogs is always a number (default 0.0)
     if report_data.get('total_cogs') is None:
         report_data['total_cogs'] = 0.0
+    # Ensure total_other_income is always a number (default 0.0)
+    if report_data.get('total_other_income') is None:
+        report_data['total_other_income'] = 0.0
     
     report_period = {
         'start_date': start_date,
