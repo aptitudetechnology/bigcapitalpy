@@ -1,3 +1,12 @@
+@users_bp.route('/settings/edit', methods=['GET', 'POST'])
+@login_required
+def edit_settings():
+    form = SettingsForm()
+    if form.validate_on_submit():
+        # Save settings logic here
+        flash('Settings updated.', 'success')
+        return redirect(url_for('users.settings'))
+    return render_template('system/users/edit_settings.html', form=form)
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from packages.server.src.models import User
