@@ -234,6 +234,9 @@ def profit_loss():
         'gross_profit': total_income,  # Simplified for now
         'cost_of_goods_sold': Decimal('0.00')  # To be implemented
     }
+    # Ensure cost_of_goods_sold is always a number (default 0)
+    if report_data.get('cost_of_goods_sold') is None:
+        report_data['cost_of_goods_sold'] = 0
     
     report_period = {
         'start_date': start_date,
