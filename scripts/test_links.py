@@ -1,6 +1,8 @@
+
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
+import re
 
 # Configuration
 BASE_URL = "http://simple.local:5000"  # Change to your running app's base URL
@@ -8,9 +10,11 @@ LOGIN_URL = BASE_URL + "/auth/login"     # Change to your login endpoint
 USERNAME = "admin@bigcapitalpy.com"      # Change to your username
 PASSWORD = "admin123"                    # Change to your password
 
-# Global sets to keep track of visited URLs and broken links
+# Global sets to keep track of visited URLs and issues found
 visited = set()
 broken_links = []
+dummy_links = []
+mismatch_links = []
 
 # Use a session to persist cookies (important for login)
 session = requests.Session()
@@ -18,6 +22,135 @@ session = requests.Session()
 def is_internal(url):
     """Checks if a given URL is internal to the BASE_URL."""
     return url.startswith(BASE_URL) or url.startswith("/")
+
+def is_dummy_link(href):
+    """Check if a link is a dummy/placeholder link."""
+    if not href:
+        return True, "Empty href"
+    
+    href = href.strip()
+    
+    # Common dummy link patterns
+    dummy_patterns = [
+        (r"^#$", "Hash-only link"),
+        (r"^javascript:void\(0\)$", "JavaScript void placeholder"),
+        (r"^javascript:;$", "JavaScript semicolon placeholder"),
+        (r"^javascript:$", "Empty JavaScript"),
+        (r"^$", "Empty href"),
+        (r"^/todo$", "TODO placeholder"),
+        (r"^/placeholder$", "Placeholder URL"),
+        (r"^/undefined$", "Undefined URL"),
+        (r"^#.*$", "Fragment-only link")  # This catches #section links too
+    ]
+    
+    for pattern, description in dummy_patterns:
+        if re.match(pattern, href, re.IGNORECASE):
+            return True, description
+    
+    return False, None
+
+def extract_link_keywords(text):
+    """Extract meaningful keywords from link text."""
+    if not text:
+        return set()
+    
+    # Clean and normalize text
+    text = re.sub(r'[^\w\s]', ' ', text.lower().strip())
+    words = text.split()
+    
+    # Remove common words that don't indicate purpose
+    stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', '&'}
+    keywords = {word for word in words if word not in stop_words and len(word) > 2}
+    
+    return keywords
+
+def extract_url_keywords(url):
+    """Extract meaningful keywords from URL path."""
+    if not url:
+        return set()
+    
+    try:
+        parsed = urlparse(url)
+        path = parsed.path.lower()
+        
+        # Split path and remove empty parts
+        path_parts = [part for part in path.split('/') if part]
+        
+        # Extract keywords from path parts
+        keywords = set()
+        for part in path_parts:
+            # Split on common separators
+            words = re.split(r'[-_]', part)
+            keywords.update(word for word in words if len(word) > 2)
+        
+        return keywords
+    except:
+        return set()
+
+def check_text_url_mismatch(link_text, href, full_url):
+    """Check if link text and URL destination seem mismatched."""
+    if not link_text or not href:
+        return False, None
+    
+    text_keywords = extract_link_keywords(link_text)
+    url_keywords = extract_url_keywords(full_url)
+    
+    if not text_keywords or not url_keywords:
+        return False, None
+    
+    # Define common action/page mappings
+    keyword_mappings = {
+        # Actions
+        'login': {'login', 'signin', 'auth'},
+        'logout': {'logout', 'signout', 'auth'},
+        'register': {'register', 'signup', 'auth'},
+        'create': {'create', 'new', 'add'},
+        'edit': {'edit', 'update', 'modify'},
+        'delete': {'delete', 'remove', 'destroy'},
+        'view': {'view', 'show', 'display', 'details'},
+        'list': {'list', 'index', 'all'},
+        'save': {'save', 'update', 'store'},
+        'cancel': {'cancel', 'back', 'return'},
+        
+        # Pages/Sections
+        'dashboard': {'dashboard', 'home', 'main'},
+        'users': {'users', 'user', 'people', 'accounts'},
+        'products': {'products', 'product', 'items', 'inventory'},
+        'orders': {'orders', 'order', 'purchases'},
+        'invoices': {'invoices', 'invoice', 'bills'},
+        'reports': {'reports', 'report', 'analytics'},
+        'settings': {'settings', 'config', 'preferences'},
+        'organization': {'organization', 'org', 'company'},
+        'permissions': {'permissions', 'roles', 'access'},
+        'backup': {'backup', 'restore', 'export', 'import'},
+        'sales': {'sales', 'sell', 'revenue'},
+        'accounting': {'accounting', 'finance', 'books'},
+        'inventory': {'inventory', 'stock', 'items'},
+        'system': {'system', 'admin', 'config'}
+    }
+    
+    # Check for direct contradictions
+    for text_word in text_keywords:
+        if text_word in keyword_mappings:
+            expected_keywords = keyword_mappings[text_word]
+            if not any(keyword in url_keywords for keyword in expected_keywords):
+                # Check if URL suggests a completely different action/page
+                for url_word in url_keywords:
+                    if url_word in keyword_mappings:
+                        url_expected = keyword_mappings[url_word]
+                        if not any(keyword in text_keywords for keyword in url_expected):
+                            return True, f"Text suggests '{text_word}' but URL suggests '{url_word}'"
+    
+    # Check for action mismatches (more specific)
+    action_words_text = text_keywords & {'create', 'edit', 'delete', 'view', 'save', 'cancel', 'login', 'logout'}
+    action_words_url = url_keywords & {'create', 'edit', 'delete', 'view', 'save', 'cancel', 'login', 'logout', 'new', 'update', 'destroy', 'show'}
+    
+    if action_words_text and action_words_url:
+        # Direct action contradiction
+        if not action_words_text & action_words_url:
+            return True, f"Action mismatch: text has '{', '.join(action_words_text)}' but URL has '{', '.join(action_words_url)}'"
+    
+    return False, None
 
 def crawl(url):
     """Recursively crawls internal links from a given URL."""
@@ -28,11 +161,11 @@ def crawl(url):
         return
 
     visited.add(full_url)
-    print(f"Crawling: {full_url}") # Added for better visibility during crawl
+    print(f"Crawling: {full_url}")
 
     try:
-        resp = session.get(full_url, timeout=10) # Use the session for the request
-        resp.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
+        resp = session.get(full_url, timeout=10)
+        resp.raise_for_status()
     except requests.exceptions.RequestException as e:
         broken_links.append((full_url, f"Request error: {e}"))
         return
@@ -41,18 +174,32 @@ def crawl(url):
     soup = BeautifulSoup(resp.text, "html.parser")
     for link in soup.find_all("a", href=True):
         href = link["href"]
-        # Ignore non-HTTP/HTTPS links
-        if href.startswith("mailto:") or href.startswith("tel:") or href.startswith("javascript:"):
+        link_text = link.get_text(strip=True)
+        
+        # Check for dummy/placeholder links
+        is_dummy, dummy_reason = is_dummy_link(href)
+        if is_dummy:
+            dummy_links.append((full_url, href, link_text, dummy_reason))
+            continue  # Skip further processing for dummy links
+        
+        # Ignore non-HTTP/HTTPS links for crawling but still check for issues
+        if href.startswith("mailto:") or href.startswith("tel:"):
             continue
 
         next_url = urljoin(full_url, href)
-        # Only crawl internal links (same domain as BASE_URL)
+        
+        # Check for text/URL mismatches on internal links
         if urlparse(next_url).netloc == urlparse(BASE_URL).netloc:
+            is_mismatch, mismatch_reason = check_text_url_mismatch(link_text, href, next_url)
+            if is_mismatch:
+                mismatch_links.append((full_url, next_url, link_text, mismatch_reason))
+            
+            # Continue crawling internal links
             crawl(next_url)
 
 if __name__ == "__main__":
     print(f"Attempting to log in to {LOGIN_URL}...")
-    print(f"Using Email: {USERNAME}") # Changed to Email
+    print(f"Using Email: {USERNAME}")
     print(f"Using Password: {PASSWORD}")
 
     # 1. Get the login page to extract the CSRF token
@@ -61,14 +208,13 @@ if __name__ == "__main__":
         login_page_resp.raise_for_status()
         soup = BeautifulSoup(login_page_resp.text, "html.parser")
         
-        # Find the CSRF token (common names: csrf_token, _csrf, etc.)
-        # This assumes the token is in a hidden input field named 'csrf_token'
+        # Find the CSRF token
         csrf_token_tag = soup.find("input", {"name": "csrf_token"})
         if not csrf_token_tag:
             print("Error: CSRF token not found on the login page. Check the HTML structure.")
             exit(1)
         csrf_token = csrf_token_tag["value"]
-        print(f"CSRF token obtained: {csrf_token[:10]}...") # Print first 10 chars for brevity
+        print(f"CSRF token obtained: {csrf_token[:10]}...")
 
     except requests.exceptions.RequestException as e:
         print(f"Failed to fetch login page: {e}")
@@ -79,24 +225,23 @@ if __name__ == "__main__":
 
     # 2. Prepare login data including the CSRF token
     login_data = {
-        "email": USERNAME, # CHANGED THIS KEY FROM "username" TO "email"
+        "email": USERNAME,
         "password": PASSWORD,
-        "csrf_token": csrf_token # Include the extracted CSRF token
+        "csrf_token": csrf_token
     }
 
     # 3. Perform the login POST request
     try:
         login_resp = session.post(LOGIN_URL, data=login_data, timeout=10)
-        login_resp.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
+        login_resp.raise_for_status()
 
         print(f"Login POST request completed. Final URL: {login_resp.url}")
 
-        # Check if login was successful by looking for a redirect or specific text
-        # If the final URL still contains 'login' or is the same as LOGIN_URL, it likely failed
+        # Check if login was successful
         if "login" in login_resp.url.lower() or login_resp.url == LOGIN_URL:
             print(f"Login failed! Status: {login_resp.status_code}")
             print("--- BEGIN RESPONSE CONTENT ---")
-            print(login_resp.text) # Print the full response text for debugging
+            print(login_resp.text)
             print("--- END RESPONSE CONTENT ---")
             exit(1)
         
@@ -111,12 +256,34 @@ if __name__ == "__main__":
     # 4. Start crawling from the base URL after successful login
     crawl(BASE_URL)
 
-    print("\n--- Crawl Results ---")
-    print("\nBroken links found:")
+    print("\n" + "="*60)
+    print("CRAWL RESULTS")
+    print("="*60)
+    
+    print(f"\nSummary: Checked {len(visited)} pages")
+    print(f"Found {len(broken_links)} broken links")
+    print(f"Found {len(dummy_links)} dummy/placeholder links") 
+    print(f"Found {len(mismatch_links)} text/URL mismatches")
+
     if broken_links:
+        print(f"\n--- BROKEN LINKS ({len(broken_links)}) ---")
         for url, reason in broken_links:
-            print(f"{url} -> {reason}")
-    else:
-        print("No broken links found!")
-        
-    print(f"\nSummary: Checked {len(visited)} pages, found {len(broken_links)} broken links.")
+            print(f"❌ {url}")
+            print(f"   Reason: {reason}\n")
+    
+    if dummy_links:
+        print(f"\n--- DUMMY/PLACEHOLDER LINKS ({len(dummy_links)}) ---")
+        for page_url, href, link_text, reason in dummy_links:
+            print(f"🔗 Page: {page_url}")
+            print(f"   Link: '{link_text}' -> {href}")
+            print(f"   Issue: {reason}\n")
+    
+    if mismatch_links:
+        print(f"\n--- TEXT/URL MISMATCHES ({len(mismatch_links)}) ---")
+        for page_url, link_url, link_text, reason in mismatch_links:
+            print(f"⚠️  Page: {page_url}")
+            print(f"   Link: '{link_text}' -> {link_url}")
+            print(f"   Issue: {reason}\n")
+    
+    if not broken_links and not dummy_links and not mismatch_links:
+        print("\n🎉 No issues found! All links appear to be working correctly.")
