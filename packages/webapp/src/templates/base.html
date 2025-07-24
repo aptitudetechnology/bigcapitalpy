@@ -88,17 +88,18 @@
                         <span>Chart of Accounts</span>
                     </a>
                     <div class="dropdown-submenu">
-                        <a href="#" class="dropdown-link submenu-toggle {{ 'active' if 'financial' in request.endpoint }}" data-submenu="financial">
+                        <a href="{{ url_for('reports.reports_dashboard.index') }}" class="dropdown-link submenu-toggle {{ 'active' if 'financial' in request.endpoint }}" data-submenu="financial">
                             <i class="bi bi-bank"></i>
                             <span>Financial</span>
                             <i class="bi bi-chevron-right submenu-arrow"></i>
                         </a>
                         <div class="submenu-content" id="financial">
-                            <a href="{{ url_for('reports.financial.index') }}" class="submenu-link">Financial Dashboard</a>
-                            <a href="{{ url_for('reports.financial.banking') }}" class="submenu-link">Banking</a>
-                            <a href="{{ url_for('reports.financial.manual_journals') }}" class="submenu-link">Manual Journals</a>
-                            <a href="{{ url_for('reports.financial.reconciliation') }}" class="submenu-link">Bank Reconciliation</a>
-                            <a href="{{ url_for('reports.financial.cash_flow') }}" class="submenu-link">Cash Flow</a>
+                            <!-- All these links now point to the main reports dashboard -->
+                            <a href="{{ url_for('reports.reports_dashboard.index') }}" class="submenu-link">Financial Dashboard</a>
+                            <a href="{{ url_for('reports.reports_dashboard.index') }}" class="submenu-link">Banking</a>
+                            <a href="{{ url_for('reports.reports_dashboard.index') }}" class="submenu-link">Manual Journals</a>
+                            <a href="{{ url_for('reports.reports_dashboard.index') }}" class="submenu-link">Bank Reconciliation</a>
+                            <a href="{{ url_for('reports.reports_dashboard.index') }}" class="submenu-link">Cash Flow</a>
                         </div>
                     </div>
                     <a href="{{ url_for('reports.reports_dashboard.index') }}" class="dropdown-link {{ 'active' if 'reports' in request.endpoint }}">
