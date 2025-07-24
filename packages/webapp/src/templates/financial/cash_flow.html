@@ -66,7 +66,7 @@
                         {% for flow in data.monthly_flow %}
                             {# Replace with server-side logic or JS for current month/year #}
                                 {% set current_month_flow = flow.net_flow %}
-                            {% endif %}
+                           
                         {% endfor %}
                         <div class="h5 mb-0 font-weight-bold text-gray-800 {% if current_month_flow >= 0 %}text-success{% else %}text-danger{% endif %}">
                             {{ current_month_flow | currency }}
@@ -295,8 +295,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cash Flow Chart
     const ctx = document.getElementById('cashFlowChart').getContext('2d');
     
-    // Prepare data for chart
-    const monthlyData = {{ data.monthly_flow | tojson }};
+    // Copilot might suggest something like this if the output of tojson is a string
+    // that needs explicit parsing (which is good practice anyway for security and robustness).
+    const monthlyData = JSON.parse('{{ data.monthly_flow | tojson | safe }}');
+    // The '| safe' filter is crucial here if you are using JSON.parse()
+    // because it prevents Jinja2 from re-escaping the already JSON-escaped string,
+    // which would result in double-escaped characters that JSON.parse() can't handle.
     
     const labels = monthlyData.map(item => {
         const date = new Date(item.month);
