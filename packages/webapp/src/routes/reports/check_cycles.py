@@ -1,19 +1,19 @@
 # check_cycles.py
 
+import subprocess
 import os
-import sys
 
 print("🔍 Running pycycle on this directory...")
 
+target_dir = os.path.dirname(__file__) or "."
+
 try:
-    from pycycle.cli import main
-except ImportError:
-    print("❌ pycycle is not installed. Run: pip install pycycle")
-    sys.exit(1)
-
-# Set target directory to the current directory
-target_dir = os.path.dirname(__file__) or '.'
-
-# Run pycycle on this directory
-sys.argv = ['pycycle', target_dir]
-main()
+    result = subprocess.run(
+        ["pycycle", target_dir],
+        check=True,
+        capture_output=False,  # set to True if you want to suppress output and capture it
+    )
+except FileNotFoundError:
+    print("❌ pycycle is not installed or not in PATH. Try running: pip install pycycle")
+except subprocess.CalledProcessError as e:
+    print(f"❌ pycycle exited with an error (code {e.returncode})")
