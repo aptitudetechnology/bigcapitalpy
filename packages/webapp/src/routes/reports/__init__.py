@@ -1,3 +1,11 @@
+# Add index route for /reports
+@reports_bp.route('/')
+def index():
+    """
+    Main index route for the /reports section.
+    """
+    # You can pass context variables as needed
+    return render_template('reports/index.html')
 from flask import Blueprint, render_template # Keep render_template as it's used by the reports_dashboard.index route
 
 # Define the main reports blueprint
