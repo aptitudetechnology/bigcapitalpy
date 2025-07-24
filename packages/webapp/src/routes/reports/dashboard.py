@@ -1,3 +1,12 @@
+@reports_dashboard_bp.route('/')
+def index():
+    """
+    Main index route for the /reports dashboard blueprint.
+    """
+    # Placeholder context; update as needed
+    report_data = {}
+    recent_reports = []
+    return render_template('reports/index.html', report_data=report_data, recent_reports=recent_reports)
 from flask import Blueprint
 reports_dashboard_bp = Blueprint('reports_dashboard', __name__)
 # You can add routes here later
