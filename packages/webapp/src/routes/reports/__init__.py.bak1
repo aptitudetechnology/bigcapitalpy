@@ -3,6 +3,18 @@ from flask import Blueprint, redirect, url_for # Import redirect and url_for
 # Define the main reports blueprint
 reports_bp = Blueprint('reports', __name__, url_prefix='/reports')
 
+# Define an index route for the main reports blueprint
+@reports_bp.route('/')
+def index():
+    """
+    Default index route for the /reports URL prefix.
+    Redirects to the Australian GST BAS report as a default.
+    """
+    # Redirect to a specific report, e.g., the Australian GST BAS report
+    # The endpoint name here is 'tax.australian_gst_bas' because 'tax_bp'
+    # is registered under 'reports_bp' and its name is 'tax'.
+    return redirect(url_for('reports.tax.australian_gst_bas'))
+
 
 def register_reports_blueprints(app):
     """
@@ -23,18 +35,6 @@ def register_reports_blueprints(app):
     reports_bp.register_blueprint(financial_bp)
     reports_bp.register_blueprint(expenses_bp)
     # reports_bp.register_blueprint(utils_bp) # Uncomment if utils_bp is a blueprint to be registered
-
-    # Define the index route for the main reports blueprint *after* sub-blueprints are registered
-    @reports_bp.route('/')
-    def index():
-        """
-        Default index route for the /reports URL prefix.
-        Redirects to the Australian GST BAS report as a default.
-        """
-        # Redirect to a specific report, e.g., the Australian GST BAS report
-        # The endpoint name here is 'tax.australian_gst_bas' because 'tax_bp'
-        # is registered under 'reports_bp' and its name is 'tax'.
-        return redirect(url_for('reports.tax.australian_gst_bas'))
 
     # Register the main reports_bp with the app
     app.register_blueprint(reports_bp)
