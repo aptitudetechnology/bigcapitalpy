@@ -33,6 +33,34 @@ def profile():
 class SettingsForm(FlaskForm):
     # Add settings fields as needed
     submit = SubmitField('Save Settings')
+    
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField('Current Password', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=8)])
+    confirm_password = PasswordField('Confirm New Password', validators=[DataRequired()])
+    submit = SubmitField('Change Password')
+
+@users_bp.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        user = current_user
+        # Add password validation logic here
+        if not user.check_password(form.current_password.data):
+            flash('Current password is incorrect.', 'error')
+        elif form.new_password.data != form.confirm_password.data:
+            flash('New passwords do not match.', 'error')
+        else:
+            user.set_password(form.new_password.data)
+            try:
+                db.session.commit()
+                flash('Password changed successfully.', 'success')
+                return redirect(url_for('users.change_password'))
+            except Exception as e:
+                db.session.rollback()
+                flash('Error changing password.', 'error')
+    return render_template('system/users/change_password.html', form=form)
 
 @users_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
