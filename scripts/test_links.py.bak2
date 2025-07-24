@@ -14,7 +14,6 @@ visited = set()
 broken_links = []
 dummy_links = []
 mismatch_links = []
-rendering_errors = []  # New category for template/rendering errors
 
 # Use a session to persist cookies (important for login)
 session = requests.Session()
@@ -22,95 +21,6 @@ session = requests.Session()
 def is_internal(url):
     """Checks if a given URL is internal to the BASE_URL."""
     return url.startswith(BASE_URL) or url.startswith("/")
-
-def extract_error_details(response_text, status_code):
-    """Extract detailed error information from error pages."""
-    error_info = {
-        'type': 'Unknown Error',
-        'message': '',
-        'details': ''
-    }
-    
-    # Try to parse as HTML first
-    try:
-        soup = BeautifulSoup(response_text, "html.parser")
-        
-        # Look for common error patterns in HTML
-        # Check for Flask/Werkzeug debug pages
-        werkzeug_title = soup.find('title')
-        if werkzeug_title and 'werkzeug debugger' in werkzeug_title.get_text().lower():
-            error_info['type'] = 'Werkzeug Debug Error'
-            
-            # Extract the main error message
-            error_summary = soup.find('div', class_='summary')
-            if error_summary:
-                error_info['message'] = error_summary.get_text(strip=True)
-        
-        # Check for Jinja2 errors specifically
-        if 'jinja2.exceptions' in response_text.lower():
-            error_info['type'] = 'Jinja2 Template Error'
-            
-            # Extract Jinja2 error details using regex
-            jinja_match = re.search(r'jinja2\.exceptions\.(\w+)Error:\s*(.+?)(?:\n|$)', response_text, re.IGNORECASE)
-            if jinja_match:
-                error_info['message'] = f"{jinja_match.group(1)}Error: {jinja_match.group(2).strip()}"
-        
-        # Check for other Python exceptions
-        python_exception_match = re.search(r'(\w+Error):\s*(.+?)(?:\n|<br|$)', response_text)
-        if python_exception_match and error_info['type'] == 'Unknown Error':
-            error_info['type'] = 'Python Exception'
-            error_info['message'] = f"{python_exception_match.group(1)}: {python_exception_match.group(2).strip()}"
-        
-        # Look for generic error messages in common HTML structures
-        if not error_info['message']:
-            # Check for common error message containers
-            error_containers = soup.find_all(['div', 'p', 'span'], 
-                                           class_=lambda x: x and any(keyword in x.lower() for keyword in ['error', 'exception', 'traceback']))
-            
-            for container in error_containers:
-                text = container.get_text(strip=True)
-                if text and len(text) > 10:  # Avoid empty or too-short messages
-                    error_info['message'] = text[:200] + ('...' if len(text) > 200 else '')
-                    break
-    
-    except Exception as e:
-        # If HTML parsing fails, try to extract error info from raw text
-        pass
-    
-    # Fallback: look for error patterns in raw text
-    if not error_info['message']:
-        # Common error patterns
-        error_patterns = [
-            (r'jinja2\.exceptions\.(\w+):\s*(.+?)(?:\n|$)', 'Jinja2 Error'),
-            (r'(\w+Error):\s*(.+?)(?:\n|$)', 'Python Exception'),
-            (r'Internal Server Error', 'Internal Server Error'),
-            (r'Template not found:\s*(.+?)(?:\n|$)', 'Template Missing'),
-            (r'NameError:\s*(.+?)(?:\n|$)', 'Name Error'),
-            (r'AttributeError:\s*(.+?)(?:\n|$)', 'Attribute Error'),
-        ]
-        
-        for pattern, error_type in error_patterns:
-            match = re.search(pattern, response_text, re.IGNORECASE | re.MULTILINE)
-            if match:
-                error_info['type'] = error_type
-                if len(match.groups()) > 1:
-                    error_info['message'] = f"{match.group(1)}: {match.group(2).strip()}"
-                else:
-                    error_info['message'] = match.group(1).strip() if match.group(1) else match.group(0)
-                break
-    
-    # If still no message, provide a generic one based on status code
-    if not error_info['message']:
-        if status_code == 500:
-            error_info['message'] = 'Internal Server Error (no details available)'
-        elif status_code == 502:
-            error_info['message'] = 'Bad Gateway'
-        elif status_code == 503:
-            error_info['message'] = 'Service Unavailable'
-        else:
-            error_info['message'] = f'HTTP {status_code} Error'
-    
-    return error_info
 
 def is_dummy_link(href, link_element, soup):
     """Check if a link is a dummy/placeholder link."""
@@ -284,45 +194,13 @@ def crawl(url):
 
     try:
         resp = session.get(full_url, timeout=10)
-        
-        # Check for server errors (5xx) which might be rendering errors
-        if 500 <= resp.status_code < 600:
-            error_details = extract_error_details(resp.text, resp.status_code)
-            rendering_errors.append((full_url, resp.status_code, error_details))
-            print(f"  ⚠️  Rendering error detected: {error_details['type']}")
-            return  # Don't try to parse links from error pages
-        
-        # Raise for other HTTP errors (4xx, etc.)
         resp.raise_for_status()
-        
-    except requests.exceptions.HTTPError as e:
-        # Handle HTTP errors that aren't 5xx (like 404, 403, etc.)
-        if hasattr(e, 'response') and e.response is not None:
-            if 500 <= e.response.status_code < 600:
-                # This should have been caught above, but just in case
-                error_details = extract_error_details(e.response.text, e.response.status_code)
-                rendering_errors.append((full_url, e.response.status_code, error_details))
-            else:
-                broken_links.append((full_url, f"HTTP {e.response.status_code}: {str(e)}"))
-        else:
-            broken_links.append((full_url, f"HTTP error: {str(e)}"))
-        return
-        
     except requests.exceptions.RequestException as e:
         broken_links.append((full_url, f"Request error: {e}"))
         return
 
     # Parse the HTML content to find all links
-    try:
-        soup = BeautifulSoup(resp.text, "html.parser")
-    except Exception as e:
-        rendering_errors.append((full_url, 200, {
-            'type': 'HTML Parsing Error',
-            'message': f'Could not parse HTML: {str(e)}',
-            'details': ''
-        }))
-        return
-    
+    soup = BeautifulSoup(resp.text, "html.parser")
     for link in soup.find_all("a", href=True):
         href = link["href"]
         link_text = link.get_text(strip=True)
@@ -415,18 +293,6 @@ if __name__ == "__main__":
     print(f"Found {len(broken_links)} broken links")
     print(f"Found {len(dummy_links)} dummy/placeholder links") 
     print(f"Found {len(mismatch_links)} text/URL mismatches")
-    print(f"Found {len(rendering_errors)} rendering/template errors")
-
-    if rendering_errors:
-        print(f"\n--- RENDERING/TEMPLATE ERRORS ({len(rendering_errors)}) ---")
-        for url, status_code, error_info in rendering_errors:
-            print(f"🔥 {url}")
-            print(f"   Status: HTTP {status_code}")
-            print(f"   Type: {error_info['type']}")
-            print(f"   Error: {error_info['message']}")
-            if error_info['details']:
-                print(f"   Details: {error_info['details']}")
-            print()
 
     if broken_links:
         print(f"\n--- BROKEN LINKS ({len(broken_links)}) ---")
@@ -448,5 +314,5 @@ if __name__ == "__main__":
             print(f"   Link: '{link_text}' -> {link_url}")
             print(f"   Issue: {reason}\n")
     
-    if not broken_links and not dummy_links and not mismatch_links and not rendering_errors:
+    if not broken_links and not dummy_links and not mismatch_links:
         print("\n🎉 No issues found! All links appear to be working correctly.")
