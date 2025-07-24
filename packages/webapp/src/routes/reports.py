@@ -235,6 +235,7 @@ def profit_loss():
         'cost_of_goods_sold': Decimal('0.00'),  # To be implemented
         'total_cogs': None,  # Add total_cogs placeholder
         'total_other_income': None  # Add total_other_income placeholder
+        'total_other_expenses': None  # Add total_other_expenses placeholder
     }
     # Ensure total_cogs is always a number (default 0.0)
     if report_data.get('total_cogs') is None:
@@ -242,6 +243,19 @@ def profit_loss():
     # Ensure total_other_income is always a number (default 0.0)
     if report_data.get('total_other_income') is None:
         report_data['total_other_income'] = 0.0
+    # Ensure total_other_expenses is always a number (default 0.0)
+    if report_data.get('total_other_expenses') is None:
+        report_data['total_other_expenses'] = 0.0
+    # Ensure all other currency-formatted fields are numeric
+    for key in ['total_income', 'total_expenses', 'net_profit', 'gross_profit', 'cost_of_goods_sold']:
+        if report_data.get(key) is None:
+            report_data[key] = 0.0
+        elif isinstance(report_data[key], Decimal):
+            report_data[key] = float(report_data[key])
+    # Optional: Add logging to confirm values
+    current_app.logger.debug(f"ProfitLoss: total_cogs: {report_data['total_cogs']}")
+    current_app.logger.debug(f"ProfitLoss: total_other_income: {report_data['total_other_income']}")
+    current_app.logger.debug(f"ProfitLoss: total_other_expenses: {report_data['total_other_expenses']}")
     
     report_period = {
         'start_date': start_date,
