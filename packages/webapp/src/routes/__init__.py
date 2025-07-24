@@ -29,9 +29,9 @@ def register_blueprints(app):
     register_reports_blueprints(app)
 
     # Now, register other top-level blueprints that are confirmed to exist.
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(dashboard_bp) 
-    app.register_blueprint(customers_bp, url_prefix='/customers') 
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
+    app.register_blueprint(customers_bp, url_prefix='/customers')
     app.register_blueprint(vendors_bp, url_prefix='/vendors')
     app.register_blueprint(items_bp, url_prefix='/items')
     app.register_blueprint(invoices_bp, url_prefix='/invoices')
