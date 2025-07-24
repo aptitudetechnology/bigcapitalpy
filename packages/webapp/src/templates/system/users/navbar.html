@@ -59,4 +59,26 @@
                                 <span class="dropdown-item-text">
                                     <small class="text-muted">
                                         {{ current_user.email }}<br>
-                                        Member since {{ current_user.created_at.strftime
+                                        Member since {{ current_user.created_at.strftime('%B %Y') }}
+                                    </small>
+                                </span>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

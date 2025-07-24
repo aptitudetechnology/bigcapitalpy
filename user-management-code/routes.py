@@ -1,3 +1,9 @@
+@user_bp.route('/')
+@login_required
+def index():
+    """User management index page."""
+    # You can list users, show profile, or redirect as needed
+    return render_template('system/users/index.html')
 from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
