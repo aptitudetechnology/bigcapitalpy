@@ -1,41 +1,33 @@
-"""
-Reports Dashboard blueprint for BigCapitalPy.
-Contains the main index page for all financial reports.
-"""
+from flask import Blueprint, render_template # Keep render_template as it's used by the reports_dashboard.index route
 
-from flask import Blueprint, render_template, request
-from flask_login import login_required # Assuming reports dashboard requires login
-from decimal import Decimal # Needed for placeholder data
+# Define the main reports blueprint
+reports_bp = Blueprint('reports', __name__, url_prefix='/reports')
 
-# Define the reports dashboard blueprint
-# This blueprint will contain the 'index' route for the /reports URL prefix
-reports_dashboard_bp = Blueprint('reports_dashboard', __name__)
+# The 'index' route for /reports is defined in the reports_dashboard_bp
+# and registered below.
 
-@reports_dashboard_bp.route('/')
-@login_required 
-def index():
+
+def register_reports_blueprints(app):
     """
-    Main index route for the /reports URL prefix.
-    This serves as the reports dashboard, displaying an overview and links.
+    Registers all report-related blueprints with the Flask application.
+    Imports are placed inside this function to prevent circular import issues
+    and ensure all sub-blueprints are registered before their routes are accessed.
     """
-    # Provide placeholder or empty report_data dictionary for the template
-    # In a real application, you would fetch actual summary data here.
-    report_data = {
-        'total_revenue': Decimal('0.00'),
-        'total_expenses': Decimal('0.00'),
-        'net_profit': Decimal('0.00'),
-        'total_sales_invoices': 0,
-        'total_purchase_bills': 0,
-        'cash_balance': Decimal('0.00'),
-        'unreconciled_transactions': 0,
-        'accounts_receivable': Decimal('0.00')
-    }
+    # Import sub-blueprints that are confirmed to exist and define a blueprint object.
+    from .tax import tax_bp
+    from .sales import sales_bp
+    from .financial import financial_bp
+    from .expenses import expenses_bp # This file will be updated to define expenses_bp
+    from .dashboard import reports_dashboard_bp 
+    
+    # Register sub-blueprints to the main reports_bp
+    reports_bp.register_blueprint(tax_bp)
+    reports_bp.register_blueprint(sales_bp)
+    reports_bp.register_blueprint(financial_bp)
+    reports_bp.register_blueprint(expenses_bp) # Register expenses_bp
+    reports_bp.register_blueprint(reports_dashboard_bp)
+    
+    # utils_bp was removed as it's not a Flask Blueprint.
 
-    # You might also want to fetch some recent reports data here
-    recent_reports = [] # Placeholder for now
-
-    return render_template('reports/index.html', 
-                           report_data=report_data,
-                           recent_reports=recent_reports)
-
-# You can add other reports-specific dashboard routes here if needed
+    # Register the main reports_bp with the app
+    app.register_blueprint(reports_bp)
