@@ -7,12 +7,13 @@ from flask import Blueprint
 
 # Import individual blueprints (adjust these based on your actual project structure)
 # Only keep imports for blueprints that genuinely exist in your project.
-# Removed 'main_bp', 'admin_bp', 'vendors_bp', 'items_bp',
+# Removed 'main_bp', 'admin_bp', 'items_bp',
 # 'invoices_bp', 'bills_bp' to resolve ModuleNotFoundErrors.
 
 from .auth import auth_bp # Keep this if auth_bp exists
 from .dashboard import dashboard_bp # Keep this if dashboard_bp exists
-from .customers import customers_bp # RE-ADDED: Ensure packages/webapp/src/routes/customers.py exists and defines 'customers_bp'
+from .customers import customers_bp # Already re-added
+from .vendors import vendors_bp # RE-ADDED: Ensure packages/webapp/src/routes/vendors.py exists and defines 'vendors_bp'
 
 # Import the reports blueprint registration function
 from .reports import register_reports_blueprints
@@ -28,17 +29,16 @@ def register_blueprints(app):
     register_reports_blueprints(app)
 
     # Now, register other top-level blueprints.
-    # Registering auth_bp, dashboard_bp, and customers_bp.
+    # Registering auth_bp, dashboard_bp, customers_bp, and vendors_bp.
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp) 
-    app.register_blueprint(customers_bp) # RE-ADDED: Register the customers_bp
+    app.register_blueprint(customers_bp) 
+    app.register_blueprint(vendors_bp) # RE-ADDED: Register the vendors_bp
 
-    # If you have other top-level blueprints (e.g., for vendors, items,
-    # invoices, bills, admin, main) and their files *do* exist, you will need to
+    # If you have other top-level blueprints (e.g., for items, invoices, bills,
+    # admin, main) and their files *do* exist, you will need to
     # re-add their imports and app.register_blueprint() calls here.
     # Example (uncomment and verify existence before adding):
-    # from .vendors import vendors_bp
-    # app.register_blueprint(vendors_bp)
     # from .items import items_bp
     # app.register_blueprint(items_bp)
     # from .invoices import invoices_bp
