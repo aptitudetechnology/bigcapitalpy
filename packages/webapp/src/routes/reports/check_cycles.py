@@ -1,16 +1,26 @@
+import subprocess
 import os
-from pycycle import analyze
+import sys
 
-print("🔍 Running pycycle on this directory...\n")
+print("🔍 Running pycycle on this directory...")
 
-target_dir = os.path.dirname(__file__) or "."
+target_dir = os.path.dirname(os.path.abspath(__file__))
 
-cycles = analyze(target_dir)
-
-if cycles:
-    print("🔁 Circular imports detected:\n")
-    for cycle in cycles:
-        print(" → ".join(cycle))
-    print("\n❌ Please resolve these cycles.")
-else:
-    print("✅ No circular imports detected.")
+try:
+    result = subprocess.run(
+        ["pycycle", target_dir],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    print(result.stdout)
+    print("✅ pycycle finished without error.")
+except subprocess.CalledProcessError as e:
+    print(e.stdout)
+    print(e.stderr)
+    print("❌ pycycle exited with an error (code {})".format(e.returncode))
+    sys.exit(1)
+except FileNotFoundError:
+    print("❌ pycycle is not installed or not in PATH.")
+    print("💡 Try running: pip install pycycle")
+    sys.exit(1)
