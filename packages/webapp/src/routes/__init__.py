@@ -30,4 +30,8 @@ def register_blueprints(app):
     app.register_blueprint(payments_bp, url_prefix='/payments')
     app.register_blueprint(financial_bp, url_prefix='/financial')
     
+    # User management routes
+    from .users import users_bp
+    app.register_blueprint(users_bp)
+    
     print("✅ All blueprints registered successfully")
