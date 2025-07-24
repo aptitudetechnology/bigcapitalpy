@@ -1,29 +1,27 @@
 #!/usr/bin/env python3
+
 """
-Check for circular imports in the reports module using pycycle.
+Run pycycle to detect circular imports in this directory.
 """
 
 import sys
-from pathlib import Path
+import subprocess
 
-# Ensure pycycle is installed
-try:
-    from pycycle import find_cycles
-except ImportError:
-    print("❌ pycycle is not installed. Run: pip install pycycle")
-    sys.exit(1)
+def main():
+    try:
+        import pycycle  # noqa: F401
+    except ImportError:
+        print("❌ pycycle is not installed in this environment. Run: pip install pycycle")
+        sys.exit(1)
 
-# Set the base directory
-BASE_DIR = Path(__file__).resolve().parent
+    print("🔍 Running pycycle on this directory...")
+    try:
+        subprocess.run([
+            sys.executable, "-m", "pycycle.cli", "check", "."
+        ], check=True)
+    except subprocess.CalledProcessError as e:
+        print("⚠️ Circular import(s) found.")
+        sys.exit(e.returncode)
 
-# Run cycle detection
-print(f"🔍 Checking for circular imports under: {BASE_DIR}")
-
-cycles = find_cycles(str(BASE_DIR))
-
-if not cycles:
-    print("✅ No circular import cycles detected.")
-else:
-    print("🚨 Circular import cycles found:")
-    for cycle in cycles:
-        print(" -> ".join(cycle))
+if __name__ == "__main__":
+    main()
