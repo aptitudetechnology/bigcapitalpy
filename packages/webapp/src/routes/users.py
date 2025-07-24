@@ -7,7 +7,6 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Email, Length
 
-users_bp = Blueprint('users', __name__, url_prefix='/system/user')
 
 @users_bp.route('/settings/edit', methods=['GET', 'POST'])
 @login_required
