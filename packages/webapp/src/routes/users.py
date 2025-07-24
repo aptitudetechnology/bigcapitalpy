@@ -1,3 +1,14 @@
+
+from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask_login import login_required, current_user
+from packages.server.src.models import User
+from packages.server.src.database import db
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Email, Length
+
+users_bp = Blueprint('users', __name__, url_prefix='/system/user')
+
 @users_bp.route('/settings/edit', methods=['GET', 'POST'])
 @login_required
 def edit_settings():
@@ -7,13 +18,6 @@ def edit_settings():
         flash('Settings updated.', 'success')
         return redirect(url_for('users.settings'))
     return render_template('system/users/edit_settings.html', form=form)
-from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import login_required, current_user
-from packages.server.src.models import User
-from packages.server.src.database import db
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Email, Length
 
 users_bp = Blueprint('users', __name__, url_prefix='/system/user')
 
