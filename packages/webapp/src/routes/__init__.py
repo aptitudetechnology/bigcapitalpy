@@ -6,16 +6,12 @@ This file registers all top-level blueprints with the Flask app instance.
 from flask import Blueprint
 
 # Import individual blueprints (adjust these based on your actual project structure)
-# Ensure ALL top-level blueprints are imported here.
-# Removed 'from .main import main_bp' as it caused a ModuleNotFoundError.
-from .auth import auth_bp
-from .admin import admin_bp
-from .vendors import vendors_bp
-from .customers import customers_bp
-from .items import items_bp
-from .invoices import invoices_bp
-from .bills import bills_bp
-from .dashboard import dashboard_bp # Assuming your main dashboard blueprint is here
+# Only keep imports for blueprints that genuinely exist in your project.
+# Removed 'main_bp', 'admin_bp', 'vendors_bp', 'customers_bp', 'items_bp',
+# 'invoices_bp', 'bills_bp' to resolve ModuleNotFoundErrors.
+
+from .auth import auth_bp # Keep this if auth_bp exists
+from .dashboard import dashboard_bp # Keep this if dashboard_bp exists
 
 # Import the reports blueprint registration function
 from .reports import register_reports_blueprints
@@ -31,14 +27,27 @@ def register_blueprints(app):
     register_reports_blueprints(app)
 
     # Now, register other top-level blueprints.
-    # Removed 'app.register_blueprint(main_bp)' as it caused a ModuleNotFoundError.
+    # Only registering auth_bp and dashboard_bp for now.
     app.register_blueprint(auth_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(vendors_bp)
-    app.register_blueprint(customers_bp)
-    app.register_blueprint(items_bp)
-    app.register_blueprint(invoices_bp)
-    app.register_blueprint(bills_bp)
     app.register_blueprint(dashboard_bp) 
+
+    # If you have other top-level blueprints (e.g., for vendors, customers, items,
+    # invoices, bills, admin, main) and their files *do* exist, you will need to
+    # re-add their imports and app.register_blueprint() calls here.
+    # Example (uncomment and verify existence before adding):
+    # from .vendors import vendors_bp
+    # app.register_blueprint(vendors_bp)
+    # from .customers import customers_bp
+    # app.register_blueprint(customers_bp)
+    # from .items import items_bp
+    # app.register_blueprint(items_bp)
+    # from .invoices import invoices_bp
+    # app.register_blueprint(invoices_bp)
+    # from .bills import bills_bp
+    # app.register_blueprint(bills_bp)
+    # from .admin import admin_bp
+    # app.register_blueprint(admin_bp)
+    # from .main import main_bp
+    # app.register_blueprint(main_bp)
 
     # Add any other top-level blueprint registrations here if you have them.
