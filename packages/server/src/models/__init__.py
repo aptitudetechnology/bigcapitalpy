@@ -116,6 +116,20 @@ class Organization(db.Model):
     accounts = db.relationship('Account', backref='organization', lazy=True)
 
 class User(UserMixin, db.Model):
+    def get_currency_symbol(self):
+        currency_map = {
+            'USD': '$',
+            'EUR': '€',
+            'GBP': '£',
+            'JPY': '¥',
+            'CAD': 'C$',
+            'AUD': 'A$',
+            'CHF': 'CHF',
+            'CNY': '¥',
+            'INR': '₹',
+            # Add more as needed
+        }
+        return currency_map.get(getattr(self, 'currency_format', None), '')
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
