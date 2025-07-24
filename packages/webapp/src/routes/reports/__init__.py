@@ -17,15 +17,13 @@ def register_reports_blueprints(app):
     from .tax import tax_bp
     from .sales import sales_bp
     from .financial import financial_bp
-    from .expenses import expenses_bp # This file will be updated to define expenses_bp
-    from .dashboard import reports_dashboard_bp 
-    
+    from .expenses import expenses_bp
+    # reports_dashboard_bp import and registration removed
     # Register sub-blueprints to the main reports_bp
     reports_bp.register_blueprint(tax_bp)
     reports_bp.register_blueprint(sales_bp)
     reports_bp.register_blueprint(financial_bp)
-    reports_bp.register_blueprint(expenses_bp) # Register expenses_bp
-    reports_bp.register_blueprint(reports_dashboard_bp)
+    reports_bp.register_blueprint(expenses_bp)
     
     # utils_bp was removed as it's not a Flask Blueprint.
 
