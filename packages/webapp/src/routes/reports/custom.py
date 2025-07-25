@@ -5,4 +5,4 @@ custom_bp = Blueprint('custom', __name__)
 @custom_bp.route('/custom-report-builder')
 def custom_report_builder():
     # TODO: Replace with real data and template
-    return render_template('reports/custom/custom_report_builder.html')
+    return render_template('reports/custom-advanced/custom.html')
