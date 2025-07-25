@@ -35,7 +35,16 @@ def index():
     account_summary.income = Summary(count=1, balance=10000.00)
     account_summary.expense = Summary(count=0, balance=0)
 
-    return render_template('accounts/index.html', accounts=accounts, account_summary=account_summary)
+    # Group accounts by type for template (robust fallback)
+    accounts_by_type = {
+        'asset': [a for a in accounts if a['type'] == 'asset'],
+        'liability': [a for a in accounts if a['type'] == 'liability'],
+        'equity': [a for a in accounts if a['type'] == 'equity'],
+        'income': [a for a in accounts if a['type'] == 'income'],
+        'expense': [a for a in accounts if a['type'] == 'expense'],
+    }
+
+    return render_template('accounts/index.html', accounts=accounts, account_summary=account_summary, accounts_by_type=accounts_by_type)
 
 @accounts_bp.route('/new', methods=['GET', 'POST'])
 @login_required
