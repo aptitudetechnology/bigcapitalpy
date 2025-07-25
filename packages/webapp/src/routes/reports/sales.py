@@ -5,6 +5,7 @@ Handles various sales-related insights.
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
+from packages.server.src.models import db, Invoice, Customer
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from sqlalchemy import func, and_
@@ -45,16 +46,89 @@ def customer_aging():
     """
     Customer Aging Report.
     """
-    # Placeholder for customer aging data
-    aging_data = {
-        'current': Decimal('0.00'),
-        '1-30_days': Decimal('0.00'),
-        '31-60_days': Decimal('0.00'),
-        '61-90_days': Decimal('0.00'),
-        'over_90_days': Decimal('0.00'),
-        'customers': []
+    today = date.today()
+    as_of_date = request.args.get('as_of_date')
+    if as_of_date:
+        try:
+            as_of_date = datetime.strptime(as_of_date, '%Y-%m-%d').date()
+        except Exception:
+            as_of_date = today
+    else:
+        as_of_date = today
+
+    # Query all open (unpaid) invoices as of the date
+    invoices = (
+        db.session.query(Invoice, Customer)
+        .join(Customer, Invoice.customer_id == Customer.id)
+        .filter(Invoice.balance > 0)
+        .filter(Invoice.due_date <= as_of_date)
+        .all()
+    )
+
+    # Prepare aging buckets
+    buckets = {
+        'current': 0.0,
+        '1_30': 0.0,
+        '31_60': 0.0,
+        '61_90': 0.0,
+        'over_90': 0.0,
+        'total': 0.0
     }
-    return render_template('reports/customer_aging.html', aging_data=aging_data)
+    aging_data = []
+    customer_map = {}
+    for invoice, customer in invoices:
+        days_past_due = (as_of_date - invoice.due_date).days
+        amt = float(invoice.balance)
+        # Assign to bucket
+        if days_past_due <= 0:
+            bucket = 'current'
+        elif days_past_due <= 30:
+            bucket = '1_30'
+        elif days_past_due <= 60:
+            bucket = '31_60'
+        elif days_past_due <= 90:
+            bucket = '61_90'
+        else:
+            bucket = 'over_90'
+
+        # Group by customer
+        cid = customer.id
+        if cid not in customer_map:
+            customer_map[cid] = {
+                'customer_id': cid,
+                'customer_name': customer.display_name,
+                'current': 0.0,
+                '1_30': 0.0,
+                '31_60': 0.0,
+                '61_90': 0.0,
+                'over_90': 0.0,
+                'total': 0.0
+            }
+        customer_map[cid][bucket] += amt
+        customer_map[cid]['total'] += amt
+        buckets[bucket] += amt
+        buckets['total'] += amt
+
+    aging_data = list(customer_map.values())
+
+    report_data = {
+        'as_of_date': as_of_date,
+        'report_date': as_of_date,
+        'aging_data': aging_data,
+        'totals': buckets
+    }
+    # If no data, ensure template gets zeros/empty lists
+    if not aging_data:
+        report_data['aging_data'] = []
+        report_data['totals'] = {
+            'current': 0.0,
+            '1_30': 0.0,
+            '31_60': 0.0,
+            '61_90': 0.0,
+            'over_90': 0.0,
+            'total': 0.0
+        }
+    return render_template('reports/customer-sales/customer_aging.html', report_data=report_data)
 
 @sales_bp.route('/invoice-summary')
 @login_required
