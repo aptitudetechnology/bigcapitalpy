@@ -35,7 +35,65 @@ def cash_flow(format=None):
     elif format == 'csv':
         # TODO: Implement CSV export
         pass
-    return render_template('reports/financial/cash_flow.html', report_period=report_period)
+    report_data = generate_cash_flow_data(report_period['start_date'], report_period['end_date'])
+    return render_template('reports/financial/cash_flow.html', report_period=report_period, report_data=report_data)
+# --- Cash Flow Data Generation ---
+def generate_cash_flow_data(start_date, end_date):
+    """Generate cash flow statement data from database, fallback to zeros if no data."""
+    # Structure: operating, investing, financing, net_cash_flow
+    report_data = {
+        'operating_activities': [],
+        'investing_activities': [],
+        'financing_activities': [],
+        'net_cash_flow': 0.0,
+        'total_operating': 0.0,
+        'total_investing': 0.0,
+        'total_financing': 0.0
+    }
+    try:
+        # Example: Query cash/bank accounts and related journal entries
+        # This is a placeholder; real logic should classify by activity type
+        from packages.server.src.models import Account, AccountType, JournalEntry, JournalLineItem, db
+        from sqlalchemy import func
+        # Get all cash/bank accounts
+        cash_accounts = Account.query.filter(Account.type.in_([AccountType.BANK, AccountType.CASH])).all()
+        cash_account_ids = [a.id for a in cash_accounts]
+        # Query all cash-related journal line items in date range
+        q = db.session.query(
+            JournalLineItem.account_id,
+            func.sum(JournalLineItem.amount).label('amount')
+        ).join(JournalEntry, JournalLineItem.journal_entry_id == JournalEntry.id)
+        q = q.filter(JournalLineItem.account_id.in_(cash_account_ids))
+        q = q.filter(JournalEntry.date >= start_date, JournalEntry.date <= end_date)
+        q = q.group_by(JournalLineItem.account_id)
+        cash_movements = q.all()
+        # For now, treat all as operating activities
+        report_data['operating_activities'] = [
+            {
+                'account_id': row.account_id,
+                'amount': float(row.amount) if row.amount else 0.0
+            } for row in cash_movements
+        ]
+        report_data['total_operating'] = sum(item['amount'] for item in report_data['operating_activities'])
+        # No data for investing/financing in this placeholder
+        report_data['total_investing'] = 0.0
+        report_data['total_financing'] = 0.0
+        report_data['net_cash_flow'] = report_data['total_operating']
+        # Fallbacks if no data
+        if not report_data['operating_activities']:
+            report_data['operating_activities'] = [{'account_id': None, 'amount': 0.0}]
+    except Exception as e:
+        print(f"Error generating cash flow data: {e}")
+        report_data = {
+            'operating_activities': [{'account_id': None, 'amount': 0.0}],
+            'investing_activities': [],
+            'financing_activities': [],
+            'net_cash_flow': 0.0,
+            'total_operating': 0.0,
+            'total_investing': 0.0,
+            'total_financing': 0.0
+        }
+    return report_data
 
 # Balance Sheet route (for reports.financial.balance_sheet endpoint)
 from datetime import date
