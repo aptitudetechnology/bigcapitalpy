@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Organization{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Edit Organization</h1>
+        <a href="{{ url_for('organization.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Details
+        </a>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="row">
+        <div class="col-lg-8 col-md-10">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Organization Information</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('organization.edit') }}" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Organization Name -->
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label fw-semibold") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">The official name of your organization.</div>
+                        </div>
+
+                        <!-- Tax Number -->
+                        <div class="mb-3">
+                            {{ form.tax_number.label(class="form-label") }}
+                            {{ form.tax_number(class="form-control" + (" is-invalid" if form.tax_number.errors else "")) }}
+                            {% if form.tax_number.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.tax_number.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Business registration number, ABN, or tax ID.</div>
+                        </div>
+
+                        <!-- Industry -->
+                        <div class="mb-3">
+                            {{ form.industry.label(class="form-label") }}
+                            {{ form.industry(class="form-control" + (" is-invalid" if form.industry.errors else "")) }}
+                            {% if form.industry.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.industry.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">The primary industry or business sector.</div>
+                        </div>
+
+                        <!-- Address -->
+                        <div class="mb-3">
+                            {{ form.address.label(class="form-label") }}
+                            {{ form.address(class="form-control" + (" is-invalid" if form.address.errors else ""), rows="3") }}
+                            {% if form.address.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.address.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Complete business address including street, city, state, and postal code.</div>
+                        </div>
+
+                        <!-- Language -->
+                        <div class="mb-3">
+                            {{ form.language.label(class="form-label") }}
+                            {{ form.language(class="form-select" + (" is-invalid" if form.language.errors else "")) }}
+                            {% if form.language.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.language.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Default language for reports and communications.</div>
+                        </div>
+
+                        <!-- Phone (Optional) -->
+                        {% if form.phone %}
+                        <div class="mb-3">
+                            {{ form.phone.label(class="form-label") }}
+                            {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else "")) }}
+                            {% if form.phone.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.phone.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Primary contact phone number.</div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Email (Optional) -->
+                        {% if form.email %}
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), type="email") }}
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Primary contact email address.</div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Website (Optional) -->
+                        {% if form.website %}
+                        <div class="mb-4">
+                            {{ form.website.label(class="form-label") }}
+                            {{ form.website(class="form-control" + (" is-invalid" if form.website.errors else ""), type="url") }}
+                            {% if form.website.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.website.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Organization website URL (include https://).</div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>Save Changes
+                            </button>
+                            <a href="{{ url_for('organization.index') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-lg me-1"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="col-lg-4 col-md-10">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-info-circle me-1"></i>Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="fw-semibold">Required Fields</h6>
+                        <p class="small text-muted mb-0">
+                            Organization name is required. All other fields are optional but recommended for complete business records.
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-semibold">Tax Number</h6>
+                        <p class="small text-muted mb-0">
+                            Enter your ABN (Australia), EIN (US), or equivalent business registration number for your country.
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="fw-semibold">Industry</h6>
+                        <p class="small text-muted mb-0">
+                            Specify your primary business sector. This helps with industry-specific reporting and compliance.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h6 class="fw-semibold">Data Privacy</h6>
+                        <p class="small text-muted mb-0">
+                            Your organization information is stored securely and is only used for accounting and reporting purposes.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Client-side validation enhancement -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const nameField = document.getElementById('name');
+    
+    // Real-time validation feedback
+    if (nameField) {
+        nameField.addEventListener('blur', function() {
+            if (this.value.trim() === '') {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    }
+
+    // Form submission confirmation
+    form.addEventListener('submit', function(e) {
+        const requiredFields = form.querySelectorAll('input[required], select[required], textarea[required]');
+        let hasErrors = false;
+
+        requiredFields.forEach(field => {
+            if (field.value.trim() === '') {
+                field.classList.add('is-invalid');
+                hasErrors = true;
+            }
+        });
+
+        if (hasErrors) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}
