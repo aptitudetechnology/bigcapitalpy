@@ -1,3 +1,8 @@
+# Balance Sheet route (for reports.financial.balance_sheet endpoint)
+@financial_bp.route('/balance-sheet')
+def balance_sheet():
+    # TODO: Replace with real data and template
+    return render_template('reports/financial/balance_sheet.html')
 from flask import Blueprint, render_template
 financial_bp = Blueprint('financial', __name__)
 
