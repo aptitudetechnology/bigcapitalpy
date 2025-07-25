@@ -1,3 +1,99 @@
+# Missing Functionality Report: Accounting & Reporting Sidebar (base.html)
+
+This report summarizes the missing or incomplete user-facing functionality in the accounting and reporting sections of the sidebar, as defined in `base.html`.
+
+---
+
+## 1. Financial Submenu Links
+- **Current State:**
+  - All submenu links under "Financial" (Financial Dashboard, Banking, Manual Journals, Bank Reconciliation, Cash Flow) point to the same route: `reports.index` (the main reports dashboard).
+- **Missing:**
+  - Dedicated pages/routes for each feature. Users cannot access specific banking, manual journals, reconciliation, or cash flow pages—they all go to the main reports dashboard.
+
+## 2. Direct Access to Core Financial Reports
+- **Missing Links:**
+  - Trial Balance
+  - Balance Sheet
+  - Profit & Loss (Income Statement)
+  - Tax/BAS Reports
+  - Custom Reports
+- **Impact:**
+  - Users cannot directly navigate to these essential accounting reports from the sidebar.
+
+## 3. Manual Journals
+- **Current State:**
+  - Link exists, but points to the reports dashboard.
+- **Missing:**
+  - Actual manual journal entry/listing functionality.
+
+## 4. Banking
+- **Current State:**
+  - Link exists, but points to the reports dashboard.
+- **Missing:**
+  - Banking dashboard, bank account management, or transaction import features.
+
+## 5. Bank Reconciliation
+- **Current State:**
+  - Link exists, but points to the reports dashboard.
+- **Missing:**
+  - Actual reconciliation workflow/page.
+
+## 6. Cash Flow
+- **Current State:**
+  - Link exists, but points to the reports dashboard.
+- **Missing:**
+  - Dedicated cash flow report or forecast.
+
+## 7. Reports Section
+- **Current State:**
+  - Only a general "Reports" link is present.
+- **Missing:**
+  - Submenu or links for different report types (e.g., financial, tax, management, custom).
+
+## 8. Quick Actions
+- **Missing:**
+  - No "New Journal", "New Account", or "Export" actions in the sidebar.
+
+## 9. Recent/Favorite Reports
+- **Missing:**
+  - No section for recent reports, favorite reports, or quick links.
+
+## 10. Role-based Visibility
+- **Missing:**
+  - All links are visible; no logic for hiding/showing based on user role or permissions.
+
+---
+
+## Summary Table
+
+| Feature/Section                | Link Present | Dedicated Page/Route | Missing/Incomplete |
+|------------------------------- |:------------:|:-------------------:|:------------------|
+| Chart of Accounts              |      ✔       |         ✔           |        –          |
+| Financial Dashboard            |      ✔       |         ✖           |   All point to reports.index |
+| Banking                        |      ✔       |         ✖           |   All point to reports.index |
+| Manual Journals                |      ✔       |         ✖           |   All point to reports.index |
+| Bank Reconciliation            |      ✔       |         ✖           |   All point to reports.index |
+| Cash Flow                      |      ✔       |         ✖           |   All point to reports.index |
+| Reports (General)              |      ✔       |         ✔           |   No sub-reports/filters    |
+| Trial Balance                  |      ✖       |         ✖           |   No link                   |
+| Balance Sheet                  |      ✖       |         ✖           |   No link                   |
+| Profit & Loss                  |      ✖       |         ✖           |   No link                   |
+| Tax/BAS                        |      ✖       |         ✖           |   No link                   |
+| Custom Reports                 |      ✖       |         ✖           |   No link                   |
+| Quick Actions (New/Export)     |      ✖       |         ✖           |   No link                   |
+| Recent/Favorite Reports        |      ✖       |         ✖           |   No link                   |
+| Role-based Visibility          |      ✖       |         ✖           |   No logic                  |
+
+---
+
+**In summary:**
+- The sidebar/menu provides the main accounting/reporting sections. All financial submenu links currently go to the dashboard, but the dashboard itself offers direct access to core financial reports (trial balance, P&L, balance sheet, tax/BAS, custom reports) and dedicated pages for banking, journals, and reconciliation.
+- The navigation flow is functional. For improved user experience, consider adding direct sidebar links to these specific reports and features in the future.
+- Quick actions, recent/favorite reports, and role-based visibility are also missing.
+
+---
+
+_Last updated: 2025-07-25_
 # BigCapitalPy Missing Functionality Report
 
 ## Executive Summary
