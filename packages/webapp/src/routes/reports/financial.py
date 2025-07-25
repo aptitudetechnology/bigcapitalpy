@@ -1,3 +1,8 @@
+# Cash Flow Statement route (for reports.financial.cash_flow endpoint)
+@financial_bp.route('/cash-flow')
+def cash_flow():
+    # TODO: Replace with real data and template
+    return render_template('reports/financial/cash_flow.html')
 from flask import Blueprint, render_template
 financial_bp = Blueprint('financial', __name__)
 
