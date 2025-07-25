@@ -49,7 +49,7 @@ def create_app(config_name='development'):
             return value.strftime(format)
         except Exception:
             return str(value)
-    app.add_template_filter(datetimeformat, 'datetimeformat')
+    #app.add_template_filter(datetimeformat, 'datetimeformat')
     """Application factory pattern"""
     app = Flask(__name__, 
                 template_folder='packages/webapp/src/templates',
