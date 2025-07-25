@@ -37,7 +37,7 @@ def sales_summary():
         'sales_by_customer': [],
         'sales_by_item': []
     }
-    return render_template('reports/sales_summary.html', summary_data=summary_data)
+    return render_template('reports/customer-sales/sales_summary.html', summary_data=summary_data)
 
 @sales_bp.route('/customer-aging')
 @login_required
