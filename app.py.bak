@@ -26,7 +26,6 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash
 from datetime import datetime
-from jinja2 import Undefined
 
 
 print("Current working directory:", os.getcwd())
@@ -83,22 +82,10 @@ def create_app(config_name='development'):
     
     @app.template_filter('currency')
     def currency_filter(amount):
-        """Format currency amounts, handling None, empty values, and Jinja2 Undefined objects"""
-        # Check for Jinja2 Undefined objects
-        if isinstance(amount, Undefined):
+        """Format currency amounts"""
+        if amount is None:
             return '$0.00'
-        
-        # Handle None, empty string, or other falsy values
-        if amount is None or amount == '' or amount == 0:
-            return '$0.00'
-        
-        try:
-            # Convert to float and format with thousands separator
-            amount_float = float(amount)
-            return f'${amount_float:,.2f}'
-        except (ValueError, TypeError, AttributeError):
-            # If conversion fails, return default value
-            return '$0.00'
+        return f'${amount:,.2f}'
     
     @app.template_filter('nl2br')
     def nl2br_filter(text):
