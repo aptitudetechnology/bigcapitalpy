@@ -18,7 +18,12 @@ def vendor_aging():
 @expenses_bp.route('/expense-summary')
 def expense_summary():
     # TODO: Replace with real data and template
-    return render_template('reports/expenses/expense_summary.html')
+    from datetime import datetime, timedelta
+    report_period = {
+        'start_date': datetime.now() - timedelta(days=30),
+        'end_date': datetime.now()
+    }
+    return render_template('reports/expenses/expense_summary.html', report_period=report_period)
 
 # Define the main reports blueprint
 reports_bp = Blueprint('reports', __name__, url_prefix='/reports')
