@@ -1,30 +1,53 @@
 {
-    "eslint.validate": [  
-        {  
-            "language":"vue",
-            "autoFix":true
-        },
-        {  
-            "language":"html",
-            "autoFix":true
-        },
-        {  
-            "language":"javascript",
-            "autoFix":true
-        },
-        {  
-            "language":"typescript",
-            "autoFix":true
-        }
-    ],
-    "eslint.alwaysShowStatus": true,
-    "eslint.workingDirectories": [
-        "./client",
-        "./server"
-    ],
-    "editor.useTabStops": false,
-    "editor.tabSize": 2,
-    "editor.insertSpaces": true,
-    "git.ignoreLimitWarning": true,
-    "god.tsconfig": "./server/tsconfig.json",
+  "eslint.validate": [
+    {
+      "language": "vue",
+      "autoFix": true
+    },
+    {
+      "language": "html",
+      "autoFix": true
+    },
+    {
+      "language": "javascript",
+      "autoFix": true
+    },
+    {
+      "language": "typescript",
+      "autoFix": true
+    }
+  ],
+  "eslint.alwaysShowStatus": true,
+  "eslint.workingDirectories": [
+    "./client",
+    "./server"
+  ],
+  "editor.useTabStops": false,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "git.ignoreLimitWarning": true,
+  "god.tsconfig": "./server/tsconfig.json",
+  
+  // Flask/Jinja2 Configuration
+  "files.associations": {
+    "*.html": "jinja-html",
+    "*.j2": "jinja-html",
+    "templates/*.html": "jinja-html"
+  },
+  "emmet.includeLanguages": {
+    "jinja-html": "html"
+  },
+  "html.validate.styles": false,
+  "html.validate.scripts": false,
+  "[jinja-html]": {
+    "editor.quickSuggestions": {
+      "other": true,
+      "comments": false,
+      "strings": true
+    }
+  },
+  
+  // Python/Flask specific settings
+  "python.defaultInterpreterPath": "./venv/bin/python",
+  "python.terminal.activateEnvironment": true
 }
