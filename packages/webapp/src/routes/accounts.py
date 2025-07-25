@@ -1,4 +1,3 @@
-
 """
 Accounts blueprint for BigCapitalPy.
 Handles Chart of Accounts and related operations.
@@ -38,4 +37,17 @@ def index():
 
     return render_template('accounts/index.html', accounts=accounts, account_summary=account_summary)
 
-# Add other account-related routes as needed (e.g., /new, /<int:id>, /edit, /delete)
+@accounts_bp.route('/new', methods=['GET', 'POST'])
+@login_required
+def new():
+    """
+    Create a new account (Chart of Accounts).
+    """
+    # Placeholder form logic. Replace with WTForms and database logic as needed.
+    if request.method == 'POST':
+        # Here you would process form data and create the account
+        flash('Account created (placeholder)', 'success')
+        return redirect(url_for('accounts.index'))
+    return render_template('accounts/new.html')
+
+# Add other account-related routes as needed (e.g., /<int:id>, /edit, /delete)
