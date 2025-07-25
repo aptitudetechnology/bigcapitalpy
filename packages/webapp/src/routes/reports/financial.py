@@ -26,11 +26,32 @@ def balance_sheet():
     # TODO: Replace with real data and template
     return render_template('reports/financial/balance_sheet.html')
 
+
 # Profit & Loss Statement route (for reports.financial.profit_loss endpoint)
+from flask import request
+from datetime import datetime, timedelta
+
 @financial_bp.route('/profit-loss')
 def profit_loss():
-    # TODO: Replace with real data and template
-    return render_template('reports/financial/profit_loss.html')
+    # Get dates from request parameters or use defaults
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    if start_date_str and end_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+        except ValueError:
+            # Fallback to last 30 days if parsing fails
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=30)
+    else:
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=30)
+    report_period = {
+        'start_date': start_date,
+        'end_date': end_date
+    }
+    return render_template('reports/financial/profit_loss.html', report_period=report_period)
 
 # Define the main reports blueprint
 reports_bp = Blueprint('reports', __name__, url_prefix='/reports')
