@@ -419,7 +419,7 @@ def australian_gst_bas():
         is_active=True
     ).order_by(TaxCode.tax_type, TaxCode.code).all()
     
-    return render_template('reports/australian_gst_bas.html', 
+    return render_template('reports/tax-compliance/australian_gst_bas.html', 
                          bas_data=bas_data,
                          tax_codes=tax_codes,
                          period=period,
