@@ -24,19 +24,54 @@ def cash_flow():
 from datetime import date
 @financial_bp.route('/balance-sheet')
 def balance_sheet():
-    # Example: Use today's date as the report period end date
+    # Use today's date as the report period end date
     report_period = {
         'end_date': date.today()
     }
-    # Provide a minimal report_data dict to avoid Jinja2 UndefinedError
-    report_data = {
-        'assets': [],
-        'liabilities': [],
-        'equity': [],
-        'total_assets': 0.0,
-        'total_liabilities': 0.0,
-        'total_equity': 0.0
-    }
+    # Query the database for assets, liabilities, and equity accounts and balances
+    try:
+        assets = get_accounts_with_balances(AccountType.ASSET, None, None)
+        liabilities = get_accounts_with_balances(AccountType.LIABILITY, None, None)
+        equity = get_accounts_with_balances(AccountType.EQUITY, None, None)
+        report_data = {
+            'assets': [
+                {
+                    'id': a.id,
+                    'name': a.name,
+                    'code': getattr(a, 'code', ''),
+                    'balance': float(a.balance) if a.balance else 0.0
+                } for a in assets
+            ],
+            'liabilities': [
+                {
+                    'id': l.id,
+                    'name': l.name,
+                    'code': getattr(l, 'code', ''),
+                    'balance': float(l.balance) if l.balance else 0.0
+                } for l in liabilities
+            ],
+            'equity': [
+                {
+                    'id': e.id,
+                    'name': e.name,
+                    'code': getattr(e, 'code', ''),
+                    'balance': float(e.balance) if e.balance else 0.0
+                } for e in equity
+            ],
+            'total_assets': sum(a['balance'] for a in assets) if assets else 0.0,
+            'total_liabilities': sum(l['balance'] for l in liabilities) if liabilities else 0.0,
+            'total_equity': sum(e['balance'] for e in equity) if equity else 0.0
+        }
+    except Exception as ex:
+        print(f"Error generating balance sheet data: {ex}")
+        report_data = {
+            'assets': [],
+            'liabilities': [],
+            'equity': [],
+            'total_assets': 0.0,
+            'total_liabilities': 0.0,
+            'total_equity': 0.0
+        }
     return render_template('reports/financial/balance_sheet.html', report_period=report_period, report_data=report_data)
 
 
