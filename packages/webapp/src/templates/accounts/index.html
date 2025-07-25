@@ -132,7 +132,7 @@
                 <div class="account-type-content" id="content-{{ account_type }}">
                     {% for account in type_accounts %}
                         {% if not account.parent_id %}
-                            {{ render_account_tree(account, type_accounts, 0) }}
+                            {{ self.render_account_tree(account, type_accounts, 0) }}
                         {% endif %}
                     {% endfor %}
                 </div>
