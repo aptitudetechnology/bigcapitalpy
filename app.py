@@ -41,6 +41,14 @@ from packages.webapp.src.routes import register_blueprints
 from packages.webapp.src.api import register_api_blueprints
 
 def create_app(config_name='development'):
+    @app.template_filter('datetimeformat')
+    def datetimeformat(value, format='%Y-%m-%d %H:%M'):
+        if value is None:
+            return ''
+        try:
+            return value.strftime(format)
+        except Exception:
+            return str(value)
     """Application factory pattern"""
     app = Flask(__name__, 
                 template_folder='packages/webapp/src/templates',
