@@ -33,6 +33,9 @@ def balance_sheet():
         assets = get_accounts_with_balances(AccountType.ASSET, None, None)
         liabilities = get_accounts_with_balances(AccountType.LIABILITY, None, None)
         equity = get_accounts_with_balances(AccountType.EQUITY, None, None)
+        total_assets = sum(a['balance'] for a in assets) if assets else 0.0
+        total_liabilities = sum(l['balance'] for l in liabilities) if liabilities else 0.0
+        total_equity = sum(e['balance'] for e in equity) if equity else 0.0
         report_data = {
             'assets': [
                 {
@@ -58,10 +61,11 @@ def balance_sheet():
                     'balance': float(e.balance) if e.balance else 0.0
                 } for e in equity
             ],
-            'total_assets': sum(a['balance'] for a in assets) if assets else 0.0,
-            'total_liabilities': sum(l['balance'] for l in liabilities) if liabilities else 0.0,
-            'total_equity': sum(e['balance'] for e in equity) if equity else 0.0,
-            'retained_earnings': 0.0  # Add this field to prevent Jinja2 UndefinedError
+            'total_assets': total_assets,
+            'total_liabilities': total_liabilities,
+            'total_equity': total_equity,
+            'retained_earnings': 0.0,
+            'total_liabilities_equity': total_liabilities + total_equity
         }
     except Exception as ex:
         print(f"Error generating balance sheet data: {ex}")
@@ -72,7 +76,8 @@ def balance_sheet():
             'total_assets': 0.0,
             'total_liabilities': 0.0,
             'total_equity': 0.0,
-            'retained_earnings': 0.0
+            'retained_earnings': 0.0,
+            'total_liabilities_equity': 0.0
         }
     return render_template('reports/financial/balance_sheet.html', report_period=report_period, report_data=report_data)
 
