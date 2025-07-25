@@ -6,7 +6,7 @@ financial_bp = Blueprint('financial', __name__)
 @financial_bp.route('/trial-balance')
 def trial_balance():
     # TODO: Replace with real data and template
-    return render_template('reports/financial/trial_balance.html')
+    return render_template('reports/tax-compliance/trial_balance.html')
 
 
 # General Ledger route (for reports.financial.general_ledger endpoint)
