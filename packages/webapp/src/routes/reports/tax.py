@@ -509,7 +509,16 @@ def tax_codes_report():
         organization_id=current_user.organization_id,
         is_active=True
     ).order_by(TaxCode.tax_type, TaxCode.code).all()
-    return render_template('reports/tax_codes.html', tax_codes=tax_codes)
+
+    # Group tax codes by type for template
+    tax_codes_by_type = {}
+    for tc in tax_codes:
+        key = tc.tax_type.value if hasattr(tc.tax_type, 'value') else str(tc.tax_type)
+        if key not in tax_codes_by_type:
+            tax_codes_by_type[key] = []
+        tax_codes_by_type[key].append(tc)
+
+    return render_template('reports/tax_codes.html', tax_codes=tax_codes, tax_codes_by_type=tax_codes_by_type)
 
 # Tax Summary Report
 @tax_bp.route('/tax-summary')
