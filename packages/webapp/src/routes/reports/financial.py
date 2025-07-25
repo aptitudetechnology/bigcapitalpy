@@ -28,7 +28,16 @@ def balance_sheet():
     report_period = {
         'end_date': date.today()
     }
-    return render_template('reports/financial/balance_sheet.html', report_period=report_period)
+    # Provide a minimal report_data dict to avoid Jinja2 UndefinedError
+    report_data = {
+        'assets': [],
+        'liabilities': [],
+        'equity': [],
+        'total_assets': 0.0,
+        'total_liabilities': 0.0,
+        'total_equity': 0.0
+    }
+    return render_template('reports/financial/balance_sheet.html', report_period=report_period, report_data=report_data)
 
 
 # Profit & Loss Statement route (for reports.financial.profit_loss endpoint)
