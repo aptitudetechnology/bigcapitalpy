@@ -1,6 +1,11 @@
-from flask import Blueprint
+from flask import Blueprint, render_template
 expenses_bp = Blueprint('expenses', __name__)
-# You can add routes here later
+
+# Expense Summary route (for reports.expenses.expense_summary endpoint)
+@expenses_bp.route('/expense-summary')
+def expense_summary():
+    # TODO: Replace with real data and template
+    return render_template('reports/expenses/expense_summary.html')
 from flask import Blueprint, render_template # Keep render_template as it's used by the reports_dashboard.index route
 
 # Define the main reports blueprint
