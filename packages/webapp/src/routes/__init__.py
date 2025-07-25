@@ -37,7 +37,6 @@ def register_blueprints(app):
     app.register_blueprint(invoices_bp, url_prefix='/invoices')
     app.register_blueprint(payments_bp, url_prefix='/payments')
     app.register_blueprint(accounts_bp, url_prefix='/accounts')
-    app.register_blueprint(reports_bp, url_prefix='/reports')
 
     # The following blueprints were removed as they were reported as non-existent:
     # bills_bp, admin_bp, main_bp
