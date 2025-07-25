@@ -1,11 +1,12 @@
+
+from flask import Blueprint, render_template
+financial_bp = Blueprint('financial', __name__)
+
 # Trial Balance route (for reports.financial.trial_balance endpoint)
 @financial_bp.route('/trial-balance')
 def trial_balance():
     # TODO: Replace with real data and template
     return render_template('reports/financial/trial_balance.html')
-
-from flask import Blueprint, render_template
-financial_bp = Blueprint('financial', __name__)
 
 # General Ledger route (for reports.financial.general_ledger endpoint)
 @financial_bp.route('/general-ledger')
