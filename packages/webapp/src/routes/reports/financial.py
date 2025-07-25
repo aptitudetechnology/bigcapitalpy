@@ -21,10 +21,14 @@ def cash_flow():
     return render_template('reports/financial/cash_flow.html')
 
 # Balance Sheet route (for reports.financial.balance_sheet endpoint)
+from datetime import date
 @financial_bp.route('/balance-sheet')
 def balance_sheet():
-    # TODO: Replace with real data and template
-    return render_template('reports/financial/balance_sheet.html')
+    # Example: Use today's date as the report period end date
+    report_period = {
+        'end_date': date.today()
+    }
+    return render_template('reports/financial/balance_sheet.html', report_period=report_period)
 
 
 # Profit & Loss Statement route (for reports.financial.profit_loss endpoint)
