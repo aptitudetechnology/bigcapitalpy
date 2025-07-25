@@ -41,7 +41,7 @@ from packages.webapp.src.routes import register_blueprints
 from packages.webapp.src.api import register_api_blueprints
 
 def create_app(config_name='development'):
-    @app.template_filter('datetimeformat')
+    # Register custom Jinja2 filter after app is created
     def datetimeformat(value, format='%Y-%m-%d %H:%M'):
         if value is None:
             return ''
@@ -49,6 +49,7 @@ def create_app(config_name='development'):
             return value.strftime(format)
         except Exception:
             return str(value)
+    app.add_template_filter(datetimeformat, 'datetimeformat')
     """Application factory pattern"""
     app = Flask(__name__, 
                 template_folder='packages/webapp/src/templates',
