@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}Preferences - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Preferences</h1>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Company Profile</h6>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="companyName" class="form-label">Company Name</label>
+                        <input type="text" class="form-control" id="companyName" placeholder="Enter company name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="legalName" class="form-label">Legal Name</label>
+                        <input type="text" class="form-control" id="legalName" placeholder="Enter legal name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="addressStreet" class="form-label">Address</label>
+                        <input type="text" class="form-control mb-2" id="addressStreet" placeholder="Street">
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" id="addressCity" placeholder="City">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" id="addressState" placeholder="State/Province">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" id="addressZip" placeholder="Zip/Postal Code">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <input type="text" class="form-control" id="addressCountry" placeholder="Country">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="companyLogo" class="form-label">Company Logo</label>
+                        <input class="form-control" type="file" id="companyLogo">
+                    </div>
+                    <div class="mb-3">
+                        <label for="contactEmail" class="form-label">Contact Email</label>
+                        <input type="email" class="form-control" id="contactEmail" placeholder="Enter contact email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="phoneNumber" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phoneNumber" placeholder="Enter phone number">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Fiscal Year & Accounting</h6>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="fiscalYearStartMonth" class="form-label">Fiscal Year Start Month</label>
+                        <select class="form-select" id="fiscalYearStartMonth">
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="accountingMethod" class="form-label">Accounting Method</label>
+                        <select class="form-select" id="accountingMethod">
+                            <option value="accrual">Accrual</option>
+                            <option value="cash">Cash</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="defaultTaxYear" class="form-label">Default Tax Year</label>
+                        <input type="number" class="form-control" id="defaultTaxYear" value="{{ 'now' | strftime('%Y') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="defaultAccountCurrency" class="form-label">Default Account Currency</label>
+                        <select class="form-select" id="defaultAccountCurrency">
+                            <option value="AUD">Australian Dollar (AUD)</option>
+                            <option value="USD">US Dollar (USD)</option>
+                            <option value="EUR">Euro (EUR)</option>
+                            {# Add more currencies as needed #}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Currency & Locale</h6>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="baseCurrency" class="form-label">Base Currency</label>
+                        <select class="form-select" id="baseCurrency">
+                            <option value="AUD">Australian Dollar (AUD)</option>
+                            <option value="USD">US Dollar (USD)</option>
+                            <option value="EUR">Euro (EUR)</option>
+                            {# Add more currencies #}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="additionalCurrencies" class="form-label">Additional Currencies</label>
+                        <p class="text-muted small">Manage additional currencies for multi-currency transactions.</p>
+                        <a href="#" class="btn btn-outline-secondary btn-sm">Manage Currencies</a>
+                    </div>
+                    <div class="mb-3">
+                        <label for="numberFormat" class="form-label">Number Format</label>
+                        <select class="form-select" id="numberFormat">
+                            <option value="1,000.00">1,000.00 (e.g., USD)</option>
+                            <option value="1.000,00">1.000,00 (e.g., EUR)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dateFormat" class="form-label">Date Format</label>
+                        <select class="form-select" id="dateFormat">
+                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="timezone" class="form-label">Timezone</label>
+                        <select class="form-select" id="timezone">
+                            <option value="AWST">AWST (UTC+8)</option>
+                            <option value="AEST">AEST (UTC+10)</option>
+                            {# Add more timezones, possibly dynamically generated #}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="language" class="form-label">Language</label>
+                        <select class="form-select" id="language">
+                            <option value="en">English</option>
+                            {# Add more languages #}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Invoice & Estimate Templates</h6>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="defaultInvoiceTemplate" class="form-label">Default Invoice Template</label>
+                        <select class="form-select" id="defaultInvoiceTemplate">
+                            <option value="template1">Basic Template</option>
+                            <option value="template2">Modern Template</option>
+                            {# Add more templates #}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="defaultEstimateTemplate" class="form-label">Default Estimate Template</label>
+                        <select class="form-select" id="defaultEstimateTemplate">
+                            <option value="template1">Basic Template</option>
+                            <option value="template2">Modern Template</option>
+                            {# Add more templates #}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customLogoBranding" class="form-label">Custom Logo/Branding</label>
+                        <input class="form-control" type="file" id="customLogoBranding">
+                    </div>
+                    <div class="mb-3">
+                        <label for="defaultNotesTerms" class="form-label">Default Notes/Terms</label>
+                        <textarea class="form-control" id="defaultNotesTerms" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="footerText" class="form-label">Footer Text</label>
+                        <input type="text" class="form-control" id="footerText" placeholder="Enter footer text">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="invoicePrefix" class="form-label">Invoice Prefix</label>
+                            <input type="text" class="form-control" id="invoicePrefix" placeholder="INV-">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="invoiceSuffix" class="form-label">Invoice Suffix</label>
+                            <input type="text" class="form-control" id="invoiceSuffix" placeholder="-2025">
+                        </div>
+                    </div>
+                     <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="estimatePrefix" class="form-label">Estimate Prefix</label>
+                            <input type="text" class="form-control" id="estimatePrefix" placeholder="EST-">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="estimateSuffix" class="form-label">Estimate Suffix</label>
+                            <input type="text" class="form-control" id="estimateSuffix" placeholder="-2025">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="defaultDueDays" class="form-label">Default Due Days</label>
+                        <input type="number" class="form-control" id="defaultDueDays" value="30">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Tax Settings</h6>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableTaxes" checked>
+                        <label class="form-check-label" for="enableTaxes">Enable Taxes</label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="defaultTaxRates" class="form-label">Default Tax Rates</label>
+                        <p class="text-muted small">Configure and manage your default tax rates.</p>
+                        <a href="#" class="btn btn-outline-secondary btn-sm">Manage Tax Rates</a>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="compoundTaxes">
+                        <label class="form-check-label" for="compoundTaxes">Enable Compound Taxes</label>
+                    </div>
+                    <div class="mb-3">
+                        <label for="taxRegistrationNumber" class="form-label">Tax Registration Number</label>
+                        <input type="text" class="form-control" id="taxRegistrationNumber" placeholder="e.g., ABN, VAT ID">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Notification Preferences</h6>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                        <label class="form-check-label" for="emailNotifications">Enable Email Notifications</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="paymentReceivedNotification" checked>
+                        <label class="form-check-label" for="paymentReceivedNotification">
+                            Payment Received Notification
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="invoiceDueOverdueNotification" checked>
+                        <label class="form-check-label" for="invoiceDueOverdueNotification">
+                            Invoice Due/Overdue Notification
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="systemAnnouncements" checked>
+                        <label class="form-check-label" for="systemAnnouncements">
+                            System Announcements
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">User Preferences</h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-key me-2 text-primary"></i>
+                            <strong>Change Password</strong>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-shield-lock me-2 text-info"></i>
+                            <strong>Two-Factor Authentication (2FA)</strong>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-person-circle me-2 text-success"></i>
+                            <strong>User Profile</strong>
+                            <br><small class="text-muted">Name, Email, Avatar</small>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-bell me-2 text-warning"></i>
+                            <strong>Notification Settings</strong>
+                            <br><small class="text-muted">Individual notification preferences</small>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Data Import/Export</h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-upload me-2 text-success"></i>
+                            <strong>Import Data</strong>
+                            <br><small class="text-muted">CSV, Excel</small>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-download me-2 text-primary"></i>
+                            <strong>Export Data</strong>
+                            <br><small class="text-muted">CSV, Excel, PDF</small>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-box-seam me-2 text-info"></i>
+                            <strong>Backup & Restore</strong>
+                            <br><small class="text-muted">Create or restore data backups</small>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Integrations</h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-envelope me-2 text-primary"></i>
+                            <strong>Email Integration</strong>
+                            <br><small class="text-muted">SMTP, SendGrid, etc.</small>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-credit-card me-2 text-success"></i>
+                            <strong>Payment Gateway Integration</strong>
+                            <br><small class="text-muted">Stripe, PayPal, etc.</small>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-link-45deg me-2 text-info"></i>
+                            <strong>Webhooks/API Keys</strong>
+                            <br><small class="text-muted">Connect with other applications</small>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add any interactive functionality for the preferences dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    // Example: Add tooltips to elements if needed
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}
