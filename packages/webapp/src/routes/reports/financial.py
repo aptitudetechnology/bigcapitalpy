@@ -8,11 +8,28 @@ def trial_balance():
     # TODO: Replace with real data and template
     return render_template('reports/financial/trial_balance.html')
 
+
 # General Ledger route (for reports.financial.general_ledger endpoint)
 @financial_bp.route('/general-ledger')
 def general_ledger():
     # TODO: Replace with real data and template
-    return render_template('reports/tax-compliance/general_ledger.html')
+    # Provide safe fallbacks for required context variables
+    from datetime import date
+    report_period = {
+        'start_date': date.today(),
+        'end_date': date.today()
+    }
+    report_data = {
+        'account': None,
+        'accounts': [],
+        'ledger_entries': [],
+        'opening_balance': 0.0,
+        'closing_balance': 0.0,
+        'total_debits': 0.0,
+        'total_credits': 0.0,
+        'net_change': 0.0
+    }
+    return render_template('reports/tax-compliance/general_ledger.html', report_period=report_period, report_data=report_data)
 
 # Cash Flow Statement route (for reports.financial.cash_flow endpoint)
 from datetime import date
@@ -41,18 +58,7 @@ def cash_flow(format=None):
 def generate_cash_flow_data(start_date, end_date):
     """Generate cash flow statement data from database, fallback to zeros if no data."""
     # Structure: operating, investing, financing, net_cash_flow
-    report_data = {
-        'operating_activities': [],
-        'investing_activities': [],
-        'financing_activities': [],
-        'net_cash_flow': 0.0,
-        'total_operating': 0.0,
-        'total_investing': 0.0,
-        'total_financing': 0.0
-    }
     try:
-        # Example: Query cash/bank accounts and related journal entries
-        # This is a placeholder; real logic should classify by activity type
         from packages.server.src.models import Account, AccountType, JournalEntry, JournalLineItem, db
         from sqlalchemy import func
         # Get all cash/bank accounts
@@ -68,23 +74,32 @@ def generate_cash_flow_data(start_date, end_date):
         q = q.group_by(JournalLineItem.account_id)
         cash_movements = q.all()
         # For now, treat all as operating activities
-        report_data['operating_activities'] = [
+        operating_activities = [
             {
                 'account_id': row.account_id,
                 'amount': float(row.amount) if row.amount else 0.0
             } for row in cash_movements
         ]
-        report_data['total_operating'] = sum(item['amount'] for item in report_data['operating_activities'])
+        total_operating = sum(item['amount'] for item in operating_activities)
         # No data for investing/financing in this placeholder
-        report_data['total_investing'] = 0.0
-        report_data['total_financing'] = 0.0
-        report_data['net_cash_flow'] = report_data['total_operating']
+        total_investing = 0.0
+        total_financing = 0.0
+        net_cash_flow = total_operating
         # Fallbacks if no data
-        if not report_data['operating_activities']:
-            report_data['operating_activities'] = [{'account_id': None, 'amount': 0.0}]
+        if not operating_activities:
+            operating_activities = [{'account_id': None, 'amount': 0.0}]
+        return {
+            'operating_activities': operating_activities,
+            'investing_activities': [],
+            'financing_activities': [],
+            'net_cash_flow': net_cash_flow,
+            'total_operating': total_operating,
+            'total_investing': total_investing,
+            'total_financing': total_financing
+        }
     except Exception as e:
         print(f"Error generating cash flow data: {e}")
-        report_data = {
+        return {
             'operating_activities': [{'account_id': None, 'amount': 0.0}],
             'investing_activities': [],
             'financing_activities': [],
@@ -93,7 +108,6 @@ def generate_cash_flow_data(start_date, end_date):
             'total_investing': 0.0,
             'total_financing': 0.0
         }
-    return report_data
 
 # Balance Sheet route (for reports.financial.balance_sheet endpoint)
 from datetime import date
