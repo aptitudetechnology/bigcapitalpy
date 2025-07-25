@@ -12,7 +12,7 @@ def trial_balance():
 @financial_bp.route('/general-ledger')
 def general_ledger():
     # TODO: Replace with real data and template
-    return render_template('reports/financial/general_ledger.html')
+    return render_template('reports/tax-compliance/general_ledger.html')
 
 # Cash Flow Statement route (for reports.financial.cash_flow endpoint)
 from datetime import date

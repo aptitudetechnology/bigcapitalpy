@@ -85,7 +85,7 @@
                     <tr>
                         <td class="fw-bold">{{ account.account_code }}</td>
                         <td>
-                            <a href="{{ url_for('reports.general_ledger', account_id=account.account_id, as_of_date=report_data.as_of_date) }}" 
+                            <a href="{{ url_for('reports.financial.general_ledger', account_id=account.account_id, as_of_date=report_data.as_of_date) }}" 
                                class="text-decoration-none">
                                 {{ account.account_name }}
                             </a>
