@@ -44,7 +44,8 @@ def index():
         'expense': [a for a in accounts if a['type'] == 'expense'],
     }
 
-    return render_template('accounts/index.html', accounts=accounts, account_summary=account_summary, accounts_by_type=accounts_by_type)
+    # Pass the macro to the template context for recursive rendering
+    return render_template('accounts/index.html', accounts=accounts, account_summary=account_summary, accounts_by_type=accounts_by_type, render_account_tree=None)
 
 @accounts_bp.route('/new', methods=['GET', 'POST'])
 @login_required
