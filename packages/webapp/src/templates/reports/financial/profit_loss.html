@@ -17,9 +17,9 @@
                 <i class="bi bi-download"></i> Export
             </button>
             <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{{ url_for('reports.profit_loss', format='pdf') }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('reports.profit_loss', format='excel') }}"><i class="bi bi-file-earmark-excel"></i> Excel</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('reports.profit_loss', format='csv') }}"><i class="bi bi-file-earmark-text"></i> CSV</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.financial.profit_loss', format='pdf') }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.financial.profit_loss', format='excel') }}"><i class="bi bi-file-earmark-excel"></i> Excel</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.financial.profit_loss', format='csv') }}"><i class="bi bi-file-earmark-text"></i> CSV</a></li>
             </ul>
         </div>
     </div>
