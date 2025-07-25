@@ -10,6 +10,7 @@ def trial_balance():
     report_data = {
         'as_of_date': date.today().isoformat(),
         'accounts': [],
+        'trial_balance_data': [],
         'total_debits': 0.0,
         'total_credits': 0.0,
         'is_balanced': True
