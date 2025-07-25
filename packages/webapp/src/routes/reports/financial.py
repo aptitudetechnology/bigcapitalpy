@@ -15,14 +15,25 @@ def general_ledger():
     return render_template('reports/financial/general_ledger.html')
 
 # Cash Flow Statement route (for reports.financial.cash_flow endpoint)
+from datetime import date
 @financial_bp.route('/cash-flow')
-def cash_flow():
+@financial_bp.route('/cash-flow/<format>')
+def cash_flow(format=None):
     # TODO: Replace with real data and template
-    from datetime import date
     report_period = {
         'start_date': None,
         'end_date': date.today()
     }
+    # Placeholder for export logic
+    if format == 'pdf':
+        # TODO: Implement PDF export
+        pass
+    elif format == 'excel':
+        # TODO: Implement Excel export
+        pass
+    elif format == 'csv':
+        # TODO: Implement CSV export
+        pass
     return render_template('reports/financial/cash_flow.html', report_period=report_period)
 
 # Balance Sheet route (for reports.financial.balance_sheet endpoint)
