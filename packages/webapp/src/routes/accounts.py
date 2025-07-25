@@ -1,3 +1,16 @@
+# Add Account - Create form
+@accounts_bp.route('/new', methods=['GET', 'POST'])
+@login_required
+def new():
+    """
+    Create a new account (Chart of Accounts).
+    """
+    # Placeholder form logic. Replace with WTForms and database logic as needed.
+    if request.method == 'POST':
+        # Here you would process form data and create the account
+        flash('Account created (placeholder)', 'success')
+        return redirect(url_for('accounts.index'))
+    return render_template('accounts/new.html')
 """
 Accounts blueprint for BigCapitalPy.
 Handles Chart of Accounts and related operations.
@@ -19,9 +32,22 @@ def index():
     """
     # Placeholder data for now. You'll replace this with actual database queries.
     accounts = [
-        {'id': 1, 'code': '1000', 'name': 'Cash on Hand', 'type': 'Asset', 'balance': 1500.00},
-        {'id': 2, 'code': '4000', 'name': 'Sales Revenue', 'type': 'Income', 'balance': 10000.00},
+        {'id': 1, 'code': '1000', 'name': 'Cash on Hand', 'type': 'asset', 'balance': 1500.00, 'parent_id': None},
+        {'id': 2, 'code': '4000', 'name': 'Sales Revenue', 'type': 'income', 'balance': 10000.00, 'parent_id': None},
     ]
-    return render_template('accounts/index.html', accounts=accounts)
+
+    class Summary:
+        def __init__(self, count=0, balance=0):
+            self.count = count
+            self.balance = balance
+
+    account_summary = type('AccountSummary', (), {})()
+    account_summary.assets = Summary(count=1, balance=1500.00)
+    account_summary.liabilities = Summary(count=0, balance=0)
+    account_summary.equity = Summary(count=0, balance=0)
+    account_summary.income = Summary(count=1, balance=10000.00)
+    account_summary.expense = Summary(count=0, balance=0)
+
+    return render_template('accounts/index.html', accounts=accounts, account_summary=account_summary)
 
 # Add other account-related routes as needed (e.g., /new, /<int:id>, /edit, /delete)
