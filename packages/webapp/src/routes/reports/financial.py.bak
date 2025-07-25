@@ -62,6 +62,8 @@ def calculate_accounts_receivable():
     return total
 
 
+financial_bp = Blueprint('financial', __name__)
+
 @financial_bp.route('/profit-loss')
 @login_required
 def profit_loss():
