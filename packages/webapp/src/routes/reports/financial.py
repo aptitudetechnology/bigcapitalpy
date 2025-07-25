@@ -70,9 +70,19 @@ def generate_profit_loss_data(start_date, end_date):
     report_data = {
         'income_accounts': [],
         'expense_accounts': [],
+        'cogs_accounts': [],
+        'expense_categories': [],
+        'other_income_accounts': [],
+        'other_expense_accounts': [],
         'total_income': 0.0,
         'total_expenses': 0.0,
-        'net_profit': 0.0
+        'total_cogs': 0.0,
+        'gross_profit': 0.0,
+        'total_other_income': 0.0,
+        'total_other_expenses': 0.0,
+        'net_profit': 0.0,
+        'gross_profit_margin': 0.0,
+        'net_profit_margin': 0.0
     }
     try:
         income_results = get_accounts_with_balances(AccountType.INCOME, start_date, end_date)
@@ -97,7 +107,21 @@ def generate_profit_loss_data(start_date, end_date):
         ]
         report_data['total_income'] = sum(account['balance'] for account in report_data['income_accounts'])
         report_data['total_expenses'] = sum(account['balance'] for account in report_data['expense_accounts'])
-        report_data['net_profit'] = report_data['total_income'] - report_data['total_expenses']
+        # TODO: Implement actual COGS, categories, and other income/expense logic
+        report_data['total_cogs'] = 0.0
+        report_data['gross_profit'] = report_data['total_income'] - report_data['total_cogs']
+        report_data['total_other_income'] = 0.0
+        report_data['total_other_expenses'] = 0.0
+        report_data['net_profit'] = report_data['gross_profit'] - report_data['total_expenses']
+        # Margins (avoid division by zero)
+        report_data['gross_profit_margin'] = (
+            (report_data['gross_profit'] / report_data['total_income'] * 100)
+            if report_data['total_income'] else 0.0
+        )
+        report_data['net_profit_margin'] = (
+            (report_data['net_profit'] / report_data['total_income'] * 100)
+            if report_data['total_income'] else 0.0
+        )
         if not report_data['income_accounts']:
             report_data['income_accounts'] = [
                 {'name': 'No income accounts found for this period', 'code': '', 'balance': 0.0}
