@@ -1,6 +1,11 @@
-from flask import Blueprint
+from flask import Blueprint, render_template
 financial_bp = Blueprint('financial', __name__)
-# ...existing code...
+
+# Profit & Loss Statement route (for reports.financial.profit_loss endpoint)
+@financial_bp.route('/profit-loss')
+def profit_loss():
+    # TODO: Replace with real data and template
+    return render_template('reports/financial/profit_loss.html')
 from flask import Blueprint, render_template # Keep render_template as it's used by the reports_dashboard.index route
 
 # Define the main reports blueprint
