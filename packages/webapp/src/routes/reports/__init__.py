@@ -37,6 +37,7 @@ def register_reports_blueprints(app):
     from .financial import financial_bp
     from .expenses import expenses_bp
     from .custom import custom_bp
+    from .advanced import advanced_bp
     # reports_dashboard_bp import and registration removed
     # Register sub-blueprints to the main reports_bp
     reports_bp.register_blueprint(tax_bp)
@@ -44,6 +45,7 @@ def register_reports_blueprints(app):
     reports_bp.register_blueprint(financial_bp)
     reports_bp.register_blueprint(expenses_bp)
     reports_bp.register_blueprint(custom_bp)
+    reports_bp.register_blueprint(advanced_bp)
     
     # utils_bp was removed as it's not a Flask Blueprint.
 
