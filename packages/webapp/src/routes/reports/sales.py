@@ -5,7 +5,7 @@ Handles various sales-related insights.
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
-from packages.server.src.models import db, Invoice, Customer
+from packages.server.src.models import db, Invoice, Customer, InvoiceStatus
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 from sqlalchemy import func, and_
@@ -134,16 +134,43 @@ def customer_aging():
 @login_required
 def invoice_summary():
     """
-    Invoice Summary Report.
+    Invoice Summary Report (database-driven).
     """
-    # Placeholder for invoice summary data
+    today = date.today()
+    # Query all invoices for the current organization (if multi-tenant)
+    invoices = db.session.query(Invoice).all()
+    total_invoices = len(invoices)
+    paid_invoices = 0
+    unpaid_invoices = 0
+    overdue_invoices = 0
+    invoice_list = []
+    for inv in invoices:
+        status = inv.status.name if hasattr(inv.status, 'name') else str(inv.status)
+        is_paid = status == 'PAID'
+        is_overdue = (status != 'PAID' and inv.due_date < today and float(inv.balance) > 0)
+        if is_paid:
+            paid_invoices += 1
+        else:
+            unpaid_invoices += 1
+        if is_overdue:
+            overdue_invoices += 1
+        invoice_list.append({
+            'id': inv.id,
+            'invoice_number': inv.invoice_number,
+            'customer_id': inv.customer_id,
+            'due_date': inv.due_date,
+            'status': status,
+            'total': float(inv.total),
+            'paid_amount': float(inv.paid_amount),
+            'balance': float(inv.balance)
+        })
     invoice_data = {
-        'total_invoices': 0,
-        'paid_invoices': 0,
-        'unpaid_invoices': 0,
-        'overdue_invoices': 0,
-        'invoices': []
+        'total_invoices': total_invoices,
+        'paid_invoices': paid_invoices,
+        'unpaid_invoices': unpaid_invoices,
+        'overdue_invoices': overdue_invoices,
+        'invoices': invoice_list
     }
-    return render_template('reports/invoice_summary.html', invoice_data=invoice_data)
+    return render_template('reports/customer-sales/invoice_summary.html', invoice_data=invoice_data)
 
 # Add other sales-related routes as needed
