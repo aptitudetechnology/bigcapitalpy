@@ -69,6 +69,16 @@ def create_app(config_name='development'):
     login_manager.login_view = 'auth.login'
     csrf = CSRFProtect(app)
     
+    # Register custom Jinja2 filter after app is created
+    def datetimeformat(value, format='%Y-%m-%d %H:%M'):
+        if value is None:
+            return ''
+        try:
+            return value.strftime(format)
+        except Exception:
+            return str(value)
+    app.add_template_filter(datetimeformat, 'datetimeformat')
+    
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
