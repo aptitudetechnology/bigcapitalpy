@@ -1,3 +1,8 @@
+# Purchase Summary route (for reports.expenses.purchase_summary endpoint)
+@expenses_bp.route('/purchase-summary')
+def purchase_summary():
+    # TODO: Replace with real data and template
+    return render_template('reports/expenses/purchase_summary.html')
 
 from flask import Blueprint, render_template
 expenses_bp = Blueprint('expenses', __name__)
