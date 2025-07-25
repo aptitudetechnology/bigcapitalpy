@@ -28,7 +28,7 @@ Most financial report routes (13+) fail with `TemplateNotFound`, while only Invo
 
 - **Expected:**  
   ```
-  templates/
+  bigcapitalpy/packages/webapp/src/templates/
     reports/
       financial/
         profit_loss.html
@@ -164,12 +164,12 @@ sales_bp = Blueprint('sales', __name__)
 
 **Directory Structure Command:**
 ```bash
-find packages/webapp/src/templates/reports -type f
+find bigcapitalpy/packages/webapp/src/templates/reports -type f
 ```
 
 **Template Stub Example:**
 ```html
-<!-- packages/webapp/src/templates/reports/financial/profit_loss.html -->
+<!-- bigcapitalpy/packages/webapp/src/templates/reports/financial/profit_loss.html -->
 {% extends "base.html" %}
 {% block content %}
 <h1>Profit & Loss Statement</h1>

@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Trial Balance - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Trial Balance</h1>
+    <div class="btn-group">
+        <a href="{{ url_for('reports.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Reports
+        </a>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-download"></i> Export
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="?format=csv&as_of_date={{ report_data.as_of_date }}"><i class="bi bi-file-earmark-text"></i> CSV</a></li>
+                <li><a class="dropdown-item" href="?format=pdf&as_of_date={{ report_data.as_of_date }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a></li>
+                <li><a class="dropdown-item" href="?format=excel&as_of_date={{ report_data.as_of_date }}"><i class="bi bi-file-earmark-excel"></i> Excel</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Date Filter -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="GET" class="d-flex align-items-end gap-2">
+                    <div class="flex-grow-1">
+                        <label for="as_of_date" class="form-label">As of Date</label>
+                        <input type="date" class="form-control" id="as_of_date" name="as_of_date" 
+                               value="{{ report_data.as_of_date }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-arrow-clockwise"></i> Update
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Balance Status -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert {% if report_data.is_balanced %}alert-success{% else %}alert-danger{% endif %}" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi {% if report_data.is_balanced %}bi-check-circle{% else %}bi-exclamation-triangle{% endif %} me-2"></i>
+                <strong>
+                    {% if report_data.is_balanced %}
+                        Trial Balance is balanced - Total Debits equal Total Credits
+                    {% else %}
+                        Trial Balance is OUT OF BALANCE - Please review your entries
+                    {% endif %}
+                </strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trial Balance Table -->
+<div class="card shadow">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">
+            Trial Balance as of {{ report_data.as_of_date | dateformat }}
+        </h6>
+        <span class="badge bg-info">{{ report_data.trial_balance_data | length }} accounts</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Account Code</th>
+                        <th>Account Name</th>
+                        <th>Account Type</th>
+                        <th class="text-end">Debit Balance</th>
+                        <th class="text-end">Credit Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in report_data.trial_balance_data %}
+                    <tr>
+                        <td class="fw-bold">{{ account.account_code }}</td>
+                        <td>
+                            <a href="{{ url_for('reports.general_ledger', account_id=account.account_id, as_of_date=report_data.as_of_date) }}" 
+                               class="text-decoration-none">
+                                {{ account.account_name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ account.account_type.title() }}</span>
+                        </td>
+                        <td class="text-end">
+                            {% if account.debit_balance > 0 %}
+                                <span class="text-dark fw-bold">{{ account.debit_balance | currency }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if account.credit_balance > 0 %}
+                                <span class="text-dark fw-bold">{{ account.credit_balance | currency }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-dark">
+                    <tr>
+                        <th colspan="3" class="text-end">TOTALS:</th>
+                        <th class="text-end">{{ report_data.total_debits | currency }}</th>
+                        <th class="text-end">{{ report_data.total_credits | currency }}</th>
+                    </tr>
+                    <tr>
+                        <th colspan="3" class="text-end">DIFFERENCE:</th>
+                        <th colspan="2" class="text-end {% if report_data.is_balanced %}text-success{% else %}text-danger{% endif %}">
+                            {{ (report_data.total_debits - report_data.total_credits) | currency }}
+                        </th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small">Total Debits</div>
+                        <div class="h4">{{ report_data.total_debits | currency }}</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-plus-circle" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small">Total Credits</div>
+                        <div class="h4">{{ report_data.total_credits | currency }}</div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-dash-circle" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card {% if report_data.is_balanced %}bg-success{% else %}bg-danger{% endif %} text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="small">Balance Status</div>
+                        <div class="h6">
+                            {% if report_data.is_balanced %}
+                                Balanced
+                            {% else %}
+                                Out of Balance
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi {% if report_data.is_balanced %}bi-check-circle{% else %}bi-exclamation-triangle{% endif %}" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Section -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h6 class="m-0 text-primary">About Trial Balance</h6>
+    </div>
+    <div class="card-body">
+        <p class="mb-2">
+            The Trial Balance lists all accounts with their debit and credit balances as of a specific date. 
+            It's used to ensure that your books are balanced - meaning total debits equal total credits.
+        </p>
+        <ul class="list-unstyled mb-0">
+            <li><i class="bi bi-info-circle text-info"></i> <strong>Debit Balances:</strong> Typically assets and expenses</li>
+            <li><i class="bi bi-info-circle text-info"></i> <strong>Credit Balances:</strong> Typically liabilities, equity, and income</li>
+            <li><i class="bi bi-info-circle text-info"></i> <strong>Balanced Books:</strong> Total debits should always equal total credits</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
