@@ -130,6 +130,8 @@ def create_app(config_name='development'):
     
     # Register blueprints
     register_blueprints(app)
+    from packages.webapp.src.routes.estimates import estimates_bp
+    app.register_blueprint(estimates_bp, url_prefix='/estimates')
     
     # Register API blueprints
     register_api_blueprints(app)
