@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Sales Summary - BigCapitalPy{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+<div>
+<h1 class="h3 mb-0 text-gray-800">Sales Summary</h1>
+<p class="text-muted mb-0">Sales performance and revenue tracking</p>
+</div>
+<div class="btn-group">
+<a href="{{ url_for('reports.index') }}" class="btn btn-secondary">
+<i class="bi bi-arrow-left"></i> Back to Reports
+</a>
+<div class="btn-group">
+<button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+<i class="bi bi-download"></i> Export
+</button>
+<ul class="dropdown-menu">
+<li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-pdf"></i> PDF</a></li>
+<li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-excel"></i> Excel</a></li>
+<li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-text"></i> CSV</a></li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Coming Soon Message -->
+<div class="card shadow">
+<div class="card-body text-center py-5">
+<i class="bi bi-tools text-muted" style="font-size: 4rem;"></i>
+<h3 class="text-muted mt-3">Sales Summary Report</h3>
+<p class="text-muted">This report is currently under development.</p>
+<a href="{{ url_for('reports.index') }}" class="btn btn-primary">
+<i class="bi bi-arrow-left"></i> Back to Reports
+</a>
+</div>
+</div>
+{% endblock %}
