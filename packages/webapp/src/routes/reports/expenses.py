@@ -1,3 +1,8 @@
+# Vendor Aging Report route (for reports.expenses.vendor_aging endpoint)
+@expenses_bp.route('/vendor-aging')
+def vendor_aging():
+    # TODO: Replace with real data and template
+    return render_template('reports/expenses/vendor_aging.html')
 from flask import Blueprint, render_template
 expenses_bp = Blueprint('expenses', __name__)
 
