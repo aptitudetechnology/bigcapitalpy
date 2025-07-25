@@ -18,7 +18,12 @@ def general_ledger():
 @financial_bp.route('/cash-flow')
 def cash_flow():
     # TODO: Replace with real data and template
-    return render_template('reports/financial/cash_flow.html')
+    from datetime import date
+    report_period = {
+        'start_date': None,
+        'end_date': date.today()
+    }
+    return render_template('reports/financial/cash_flow.html', report_period=report_period)
 
 # Balance Sheet route (for reports.financial.balance_sheet endpoint)
 from datetime import date
