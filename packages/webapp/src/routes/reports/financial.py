@@ -20,9 +20,10 @@ from datetime import date
 @financial_bp.route('/cash-flow/<format>')
 def cash_flow(format=None):
     # TODO: Replace with real data and template
+    today = date.today()
     report_period = {
-        'start_date': None,
-        'end_date': date.today()
+        'start_date': today,
+        'end_date': today
     }
     # Placeholder for export logic
     if format == 'pdf':
