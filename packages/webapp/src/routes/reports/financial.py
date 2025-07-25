@@ -1,3 +1,8 @@
+# General Ledger route (for reports.financial.general_ledger endpoint)
+@financial_bp.route('/general-ledger')
+def general_ledger():
+    # TODO: Replace with real data and template
+    return render_template('reports/financial/general_ledger.html')
 
 from flask import Blueprint, render_template
 financial_bp = Blueprint('financial', __name__)
