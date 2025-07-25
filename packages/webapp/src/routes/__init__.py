@@ -18,6 +18,7 @@ from .accounts import accounts_bp
 from .users import users_bp
 from .organization import organization_bp
 from .preferences import preferences_bp
+from .backup import backup_bp
 
 # Import the reports blueprint registration function
 from .reports import register_reports_blueprints
@@ -44,6 +45,7 @@ def register_blueprints(app):
     app.register_blueprint(users_bp)
     app.register_blueprint(organization_bp, url_prefix='/organization')
     app.register_blueprint(preferences_bp, url_prefix='/preferences')
+    app.register_blueprint(backup_bp, url_prefix='/backup')
 
     # The following blueprints were removed as they were reported as non-existent:
     # bills_bp, admin_bp, main_bp
