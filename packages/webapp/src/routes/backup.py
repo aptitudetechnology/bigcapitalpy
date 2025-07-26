@@ -78,7 +78,7 @@ def gpg_setup():
         
         # Try to import the key (this will get the first available key)
         import_result = subprocess.run([
-            "gpg", "--keyserver", "keyserver.ubuntu.com", 
+            "gpg", "--batch""--keyserver", "keyserver.ubuntu.com", 
             "--recv-keys", email
         ], capture_output=True, text=True, timeout=30)
         
