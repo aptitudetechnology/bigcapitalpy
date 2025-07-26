@@ -119,6 +119,11 @@ def gpg_setup():
                 'details': 'Key was imported but cannot be verified'
             })
         
+        # Detailed logging before returning success
+        print(f"GPG key import successful for email: {email}")
+        print(f"Check result: {check_result.stdout}")
+        print(f"Import result: {import_result.stdout}")
+        print(f"Verify result: {verify_result.stdout}")
         return jsonify({
             'success': True,
             'message': 'GPG key imported successfully'
