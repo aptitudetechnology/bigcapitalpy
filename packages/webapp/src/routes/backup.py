@@ -25,12 +25,36 @@ def index():
                          user=current_user)
 
 
+@backup_bp.route('/test', methods=['GET', 'POST'])
+@login_required
+def test_endpoint():
+    """Test endpoint to verify routing works"""
+    return jsonify({
+        'success': True,
+        'message': 'Backup blueprint is working',
+        'method': request.method,
+        'user': current_user.email if current_user else 'No user'
+    })
+
+
 @backup_bp.route('/gpg/setup', methods=['POST'])
 @login_required
 def gpg_setup():
     """Validate and import GPG key from Ubuntu keyserver"""
     try:
-        data = request.get_json()
+        # Debug logging
+        print(f"Request content type: {request.content_type}")
+        print(f"Request data: {request.data}")
+        
+        data = request.get_json(force=True)
+        print(f"Parsed JSON: {data}")
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No JSON data received'
+            }), 400
+        
         email = data.get('email')
         
         if not email:
