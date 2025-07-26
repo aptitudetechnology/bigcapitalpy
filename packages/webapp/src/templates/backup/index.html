@@ -14,7 +14,7 @@
                 <h6 class="m-0 font-weight-bold text-primary">Manual Backup</h6>
             </div>
             <div class="card-body">
-                <form method="POST" action="/backup/create" enctype="multipart/form-data">
+                <form method="POST" action="/backup/create" enctype="multipart/form-data" id="backupForm">
                     <div class="mb-3">
                         <label for="backupFormat" class="form-label">Backup Format</label>
                         <select class="form-select" id="backupFormat" name="format">
@@ -39,9 +39,10 @@
                     <div class="mb-3" id="gpgEmailField" style="display: none;">
                         <label for="gpgEmail" class="form-label">Email Address (GPG Key Owner)</label>
                         <input type="email" class="form-control" id="gpgEmail" name="gpg_email" placeholder="user@example.com" value="{{ user.email if user is defined else '' }}">
+                        <div class="form-text">We'll search Ubuntu Keyserver for this email's public key</div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary mb-3">
+                    <button type="submit" class="btn btn-primary mb-3" id="createBackupBtn">
                         <i class="bi bi-cloud-arrow-down me-2"></i>Create & Download Backup
                     </button>
                 </form>
@@ -235,6 +236,10 @@
         </div>
     </div>
 </div>
+
+<!-- Include GPG Modal -->
+{% include 'backupmodels/gpg-modal.html' %}
+
 {% endblock %}
 
 {% block scripts %}
@@ -242,11 +247,54 @@
 document.addEventListener('DOMContentLoaded', function () {
     const encryptCheckbox = document.getElementById('encryptWithGPG');
     const emailField = document.getElementById('gpgEmailField');
+    const emailInput = document.getElementById('gpgEmail');
+    const backupForm = document.getElementById('backupForm');
 
+    // Show/hide email field based on GPG checkbox
     encryptCheckbox.addEventListener('change', function () {
         emailField.style.display = this.checked ? 'block' : 'none';
+        if (this.checked) {
+            emailInput.required = true;
+        } else {
+            emailInput.required = false;
+        }
     });
 
+    // Intercept form submission for GPG encryption
+    backupForm.addEventListener('submit', function(e) {
+        if (encryptCheckbox.checked) {
+            e.preventDefault(); // Stop normal form submission
+            
+            // Validate email is provided
+            if (!emailInput.value.trim()) {
+                alert('Please provide an email address for GPG encryption.');
+                emailInput.focus();
+                return;
+            }
+
+            // Validate email format
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(emailInput.value.trim())) {
+                alert('Please provide a valid email address.');
+                emailInput.focus();
+                return;
+            }
+
+            // Collect form data for the modal
+            const formData = new FormData(backupForm);
+            
+            // Trigger GPG modal with form data
+            if (window.openGPGBackupModal) {
+                window.openGPGBackupModal(formData);
+            } else {
+                console.error('GPG Modal script not loaded');
+                alert('GPG encryption system not available. Please try again.');
+            }
+        }
+        // If GPG not checked, form submits normally
+    });
+
+    // Scheduled backups functionality
     const enableScheduledBackupsCheckbox = document.getElementById('enableScheduledBackups');
     const scheduledBackupFields = document.querySelectorAll('#backupFrequency, #backupRetention, #backupSuccessNotification, #backupFailureNotification');
     const saveScheduleButton = document.querySelector('.card-body form .btn-primary[type="submit"]');
@@ -256,16 +304,22 @@ document.addEventListener('DOMContentLoaded', function () {
         scheduledBackupFields.forEach(field => {
             field.disabled = !isEnabled;
         });
-        saveScheduleButton.disabled = !isEnabled;
+        if (saveScheduleButton) {
+            saveScheduleButton.disabled = !isEnabled;
+        }
     }
 
     enableScheduledBackupsCheckbox.addEventListener('change', toggleScheduledBackupFields);
     toggleScheduledBackupFields();
 
+    // Initialize tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 });
 </script>
+
+<!-- Include GPG Modal JavaScript -->
+<script src="{{ url_for('static', filename='js/gpg-backup-modal.js') }}"></script>
 {% endblock %}
