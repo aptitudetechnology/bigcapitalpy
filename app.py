@@ -198,12 +198,27 @@ def create_app(config_name='development'):
     return app
 
 if __name__ == '__main__':
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.INFO)
+
     app = create_app()
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') == 'development'
-    
-    print("🚀 Starting BigCapitalPy...")
-    print(f"📍 Running on http://localhost:{port}")
-    print("💡 Press Ctrl+C to stop")
-    
-    app.run(host='0.0.0.0', port=port, debug=debug)
+
+    PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+    CERT_PATH = os.path.join(PROJECT_ROOT, 'ssl', 'cert.pem')
+    KEY_PATH = os.path.join(PROJECT_ROOT, 'ssl', 'key.pem')
+
+    logger.info(f"🚀 Starting BigCapitalPy on port {port}")
+    logger.info(f"📍 Looking for SSL certs in: {CERT_PATH}, {KEY_PATH}")
+
+    if os.path.exists(CERT_PATH) and os.path.exists(KEY_PATH):
+        logger.info("� SSL certificates found. Running in HTTPS mode.")
+        app.run(host='0.0.0.0', port=port, debug=debug, ssl_context=(CERT_PATH, KEY_PATH))
+    else:
+        logger.warning("⚠️ SSL certificates not found. Running in HTTP mode.")
+        logger.warning("� To enable HTTPS, generate them using:")
+        logger.warning("   openssl genrsa -out ssl/key.pem 2048 && openssl req -new -x509 -key ssl/key.pem -out ssl/cert.pem -days 365")
+        app.run(host='0.0.0.0', port=port, debug=debug)
