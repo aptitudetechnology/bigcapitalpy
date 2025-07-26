@@ -1,5 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}GPG Encryption Modal - BigCapitalPy{% endblock %}
+
+
+
+{% block content %}
 <!-- GPG Encryption Confirmation Modal -->
-<div class="modal fade" id="gpgBackupModal" tabindex="-1" aria-labelledby="gpgConfirmationModalLabel" aria-hidden="true">
+<div class="modal fade" id="gpgConfirmationModal" tabindex="-1" aria-labelledby="gpgConfirmationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
@@ -23,7 +30,6 @@
                                 <i class="bi bi-envelope me-2 text-primary"></i>
                                 <strong>Encrypting for:</strong>
                                 <span class="ms-2" id="gpgEmailDisplay">{{ user.email if user is defined else '' }}</span>
-                                <input type="hidden" id="gpgModalEmail" value="{{ user.email if user is defined else '' }}">
                             </div>
                             <div class="d-flex align-items-center" id="keySetupStatus">
                                 <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
@@ -35,7 +41,7 @@
                     </div>
                 </div>
 
-                <!-- Step 2: Backup Progress -->
+                <!-- Step 2: Backup Progress (hidden initially) -->
                 <div id="backupProgressStep" class="mb-4" style="display: none;">
                     <div class="text-center mb-4">
                         <i class="bi bi-cloud-arrow-down text-success" style="font-size: 3rem;"></i>
@@ -64,7 +70,7 @@
                     </div>
                 </div>
 
-                <!-- Success State -->
+                <!-- Success State (hidden initially) -->
                 <div id="successStep" class="mb-4" style="display: none;">
                     <div class="text-center mb-4">
                         <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
@@ -73,7 +79,7 @@
                     </div>
                 </div>
 
-                <!-- Error State -->
+                <!-- Error State (hidden initially) -->
                 <div id="errorStep" class="mb-4" style="display: none;">
                     <div class="text-center mb-4">
                         <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
@@ -97,7 +103,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="modal-footer">
                 <div class="d-flex justify-content-between align-items-center w-100">
                     <div class="text-muted small">
@@ -118,3 +123,4 @@
         </div>
     </div>
 </div>
+{% endblock %}

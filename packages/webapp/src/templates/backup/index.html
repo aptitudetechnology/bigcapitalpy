@@ -249,173 +249,63 @@ document.addEventListener('DOMContentLoaded', function () {
     const emailField = document.getElementById('gpgEmailField');
     const emailInput = document.getElementById('gpgEmail');
     const backupForm = document.getElementById('backupForm');
+    const submitButton = document.getElementById('createBackupBtn');
 
-    console.log('DOM loaded, elements found:');
-    console.log('encryptCheckbox:', encryptCheckbox);
-    console.log('emailField:', emailField);
-    console.log('emailInput:', emailInput);
-    console.log('backupForm:', backupForm);
-
-    // Show/hide email field based on GPG checkbox
-    encryptCheckbox.addEventListener('change', function () {
-        emailField.style.display = this.checked ? 'block' : 'none';
-        if (this.checked) {
-            emailInput.required = true;
-        } else {
-            emailInput.required = false;
-        }
+    // Toggle GPG email field
+    encryptCheckbox?.addEventListener('change', function () {
+        const show = this.checked;
+        emailField.style.display = show ? 'block' : 'none';
+        emailInput.required = show;
     });
 
-    // Intercept form submission for GPG encryption
-    if (backupForm) {
-        console.log('Adding submit event listener to backup form');
-        backupForm.addEventListener('submit', function(e) {
-            console.log('Form submitted, GPG checked:', encryptCheckbox.checked);
-            
-            if (encryptCheckbox.checked) {
-                console.log('GPG encryption enabled, preventing default submission');
-                e.preventDefault(); // Stop normal form submission
-                
-                // Validate email is provided
-                if (!emailInput.value.trim()) {
-                    alert('Please provide an email address for GPG encryption.');
-                    emailInput.focus();
-                    return;
-                }
+    // Form submit handler
+    backupForm?.addEventListener('submit', function (e) {
+        const gpgChecked = encryptCheckbox?.checked;
+        if (gpgChecked) {
+            e.preventDefault();
 
-                // Validate email format
-                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailPattern.test(emailInput.value.trim())) {
-                    alert('Please provide a valid email address.');
-                    emailInput.focus();
-                    return;
-                }
-
-                console.log('Email validation passed, opening modal');
-
-                // Collect form data
-                const formData = new FormData(backupForm);
-                
-                // Check if modal exists
-                const modalElement = document.getElementById('gpgBackupModal');
-                console.log('Modal element found:', modalElement);
-                
-                if (!modalElement) {
-                    alert('GPG modal not found. Please check if the modal template is included correctly.');
-                    return;
-                }
-                
-                // Open the GPG modal directly
-                const gpgModal = new bootstrap.Modal(modalElement);
-                
-                // Set the email in the modal if it has that field
-                const modalEmailField = document.getElementById('gpgModalEmail');
-                if (modalEmailField) {
-                    modalEmailField.value = emailInput.value;
-                }
-                
-                // Store form data for modal to use
-                window.currentBackupFormData = formData;
-                
-                console.log('Showing GPG modal');
-                // Show the modal
-                gpgModal.show();
-            } else {
-                console.log('GPG not checked, allowing normal form submission');
+            // Validate email
+            const email = emailInput?.value.trim();
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email || !emailPattern.test(email)) {
+                alert('Please provide a valid email address for GPG encryption.');
+                emailInput.focus();
+                return;
             }
-            // If GPG not checked, form submits normally
-        });
 
-        // Add button click listener as backup
-        const submitButton = document.getElementById('createBackupBtn');
-        console.log('Submit button found:', submitButton);
-        if (submitButton) {
-            console.log('Adding click listener to submit button');
-            submitButton.addEventListener('click', function(e) {
-                console.log('Button clicked, GPG checked:', encryptCheckbox.checked);
-                
-                if (encryptCheckbox.checked) {
-                    console.log('GPG checked, preventing button default action');
-                    e.preventDefault();
-                    
-                    // Validate email is provided
-                    if (!emailInput.value.trim()) {
-                        alert('Please provide an email address for GPG encryption.');
-                        emailInput.focus();
-                        return;
-                    }
+            // Get modal
+            const modalElement = document.getElementById('gpgBackupModal');
+            if (!modalElement) {
+                alert('GPG modal not found in the DOM. Check that it’s included correctly.');
+                return;
+            }
 
-                    // Validate email format
-                    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    if (!emailPattern.test(emailInput.value.trim())) {
-                        alert('Please provide a valid email address.');
-                        emailInput.focus();
-                        return;
-                    }
+            // Set modal field if exists
+            const modalEmailField = document.getElementById('gpgModalEmail');
+            if (modalEmailField) {
+                modalEmailField.value = email;
+                document.getElementById('gpgEmailDisplay').textContent = email;
+            }
 
-                    console.log('Email validation passed via button click, opening modal');
+            // Save form data
+            window.currentBackupFormData = new FormData(backupForm);
 
-                    // Check if modal exists
-                    const modalElement = document.getElementById('gpgBackupModal');
-                    console.log('Modal element found via button click:', modalElement);
-                    
-                    if (!modalElement) {
-                        alert('GPG modal not found. Please check if the modal template is included correctly.');
-                        return;
-                    }
-                    
-                    // Collect form data
-                    const formData = new FormData(backupForm);
-                    
-                    // Open the GPG modal directly
-                    const gpgModal = new bootstrap.Modal(modalElement);
-                    
-                    // Set the email in the modal if it has that field
-                    const modalEmailField = document.getElementById('gpgModalEmail');
-                    if (modalEmailField) {
-                        modalEmailField.value = emailInput.value;
-                    }
-                    
-                    // Store form data for modal to use
-                    window.currentBackupFormData = formData;
-                    
-                    console.log('Showing GPG modal via button click');
-                    // Show the modal
-                    gpgModal.show();
-                }
-            });
-        } else {
-            console.error('Submit button not found!');
+            // Show modal
+            const gpgModal = new bootstrap.Modal(modalElement);
+            gpgModal.show();
         }
-    } else {
-        console.error('Backup form not found!');
-    }
-
-    // Scheduled backups functionality
-    const enableScheduledBackupsCheckbox = document.getElementById('enableScheduledBackups');
-    const scheduledBackupFields = document.querySelectorAll('#backupFrequency, #backupRetention, #backupSuccessNotification, #backupFailureNotification');
-    const saveScheduleButton = document.querySelector('.card-body form .btn-primary[type="submit"]');
-
-    function toggleScheduledBackupFields() {
-        const isEnabled = enableScheduledBackupsCheckbox.checked;
-        scheduledBackupFields.forEach(field => {
-            field.disabled = !isEnabled;
-        });
-        if (saveScheduleButton) {
-            saveScheduleButton.disabled = !isEnabled;
-        }
-    }
-
-    enableScheduledBackupsCheckbox.addEventListener('change', toggleScheduledBackupFields);
-    toggleScheduledBackupFields();
-
-    // Initialize tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
+        // else: allow default submit
     });
+
+    // Optional: debug modal manually
+    window.showGpgModalManually = function () {
+        const modal = document.getElementById('gpgBackupModal');
+        if (modal) new bootstrap.Modal(modal).show();
+        else console.warn('GPG modal not found.');
+    };
 });
 </script>
+
 
 <!-- Include GPG Modal JavaScript -->
 <script src="{{ url_for('static', filename='js/gpg-backup-modal.js') }}"></script>
