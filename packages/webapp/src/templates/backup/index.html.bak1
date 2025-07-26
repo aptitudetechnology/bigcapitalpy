@@ -250,12 +250,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const emailInput = document.getElementById('gpgEmail');
     const backupForm = document.getElementById('backupForm');
 
-    console.log('DOM loaded, elements found:');
-    console.log('encryptCheckbox:', encryptCheckbox);
-    console.log('emailField:', emailField);
-    console.log('emailInput:', emailInput);
-    console.log('backupForm:', backupForm);
-
     // Show/hide email field based on GPG checkbox
     encryptCheckbox.addEventListener('change', function () {
         emailField.style.display = this.checked ? 'block' : 'none';
@@ -268,10 +262,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Intercept form submission for GPG encryption
     backupForm.addEventListener('submit', function(e) {
-        console.log('Form submitted, GPG checked:', encryptCheckbox.checked);
-        
         if (encryptCheckbox.checked) {
-            console.log('GPG encryption enabled, preventing default submission');
             e.preventDefault(); // Stop normal form submission
             
             // Validate email is provided
@@ -289,22 +280,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            console.log('Email validation passed, opening modal');
-
             // Collect form data
             const formData = new FormData(backupForm);
             
-            // Check if modal exists
-            const modalElement = document.getElementById('gpgBackupModal');
-            console.log('Modal element found:', modalElement);
-            
-            if (!modalElement) {
-                alert('GPG modal not found. Please check if the modal template is included correctly.');
-                return;
-            }
-            
             // Open the GPG modal directly
-            const gpgModal = new bootstrap.Modal(modalElement);
+            const gpgModal = new bootstrap.Modal(document.getElementById('gpgBackupModal'));
             
             // Set the email in the modal if it has that field
             const modalEmailField = document.getElementById('gpgModalEmail');
@@ -315,11 +295,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // Store form data for modal to use
             window.currentBackupFormData = formData;
             
-            console.log('Showing GPG modal');
             // Show the modal
             gpgModal.show();
-        } else {
-            console.log('GPG not checked, allowing normal form submission');
         }
         // If GPG not checked, form submits normally
     });
