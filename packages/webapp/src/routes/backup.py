@@ -63,30 +63,48 @@ def gpg_setup():
                 'error': 'Email address is required'
             }), 400
         
-        # First, search for the key
-        search_result = subprocess.run([
-            "gpg", "--keyserver", "keyserver.ubuntu.com", 
-            "--search-keys", email
-        ], capture_output=True, text=True, timeout=30)
+        # Check if key already exists locally
+        check_result = subprocess.run([
+            "gpg", "--list-keys", email
+        ], capture_output=True, text=True, timeout=10)
         
-        if search_result.returncode != 0:
+        if check_result.returncode == 0:
             return jsonify({
-                'success': False,
-                'error': 'No GPG key found for this email address',
-                'details': f'Keyserver search failed: {search_result.stderr}'
+                'success': True,
+                'message': 'GPG key already available locally'
             })
         
-        # Try to import the key (this will get the first available key)
+        # Try to import the key directly (non-interactive)
+        # This will import the first available key for the email
         import_result = subprocess.run([
-            "gpg", "--batch""--keyserver", "keyserver.ubuntu.com", 
+            "gpg", 
+            "--batch",                           # Non-interactive mode
+            "--keyserver", "keyserver.ubuntu.com", 
             "--recv-keys", email
         ], capture_output=True, text=True, timeout=30)
         
         if import_result.returncode != 0:
+            # If direct import fails, try searching for key IDs first
+            search_result = subprocess.run([
+                "gpg", 
+                "--batch",                       # Non-interactive mode
+                "--keyserver", "keyserver.ubuntu.com",
+                "--search-keys", email
+            ], capture_output=True, text=True, timeout=30, input="\n")  # Auto-select first key
+            
+            if search_result.returncode != 0:
+                return jsonify({
+                    'success': False,
+                    'error': 'No GPG key found for this email address',
+                    'details': f'Keyserver search failed: {search_result.stderr}'
+                })
+            
+            # Extract key ID from search results and import it
+            # This is a fallback - the direct recv-keys should work in most cases
             return jsonify({
                 'success': False,
-                'error': 'Failed to import GPG key',
-                'details': f'Key import failed: {import_result.stderr}'
+                'error': 'Key found but import failed',
+                'details': f'Import failed: {import_result.stderr}'
             })
         
         # Verify the key was imported by listing it
@@ -119,88 +137,6 @@ def gpg_setup():
             'error': 'GPG setup failed',
             'details': str(e)
         }), 500
-
-
-def generate_backup(format='zip', include_attachments=True):
-    """
-    Generate backup file - you'll need to implement this based on your data model
-    Returns path to the created backup file
-    """
-    # TODO: Implement actual backup generation logic
-    # This is a placeholder - replace with your actual backup logic
-    
-    import tempfile
-    import zipfile
-    
-    # Create a temporary backup file
-    temp_dir = tempfile.mkdtemp()
-    backup_filename = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{format}"
-    backup_path = os.path.join(temp_dir, backup_filename)
-    
-    if format == 'zip':
-        with zipfile.ZipFile(backup_path, 'w') as zipf:
-            # TODO: Add your actual database/file backup logic here
-            # For now, just create a dummy file
-            zipf.writestr('backup_info.txt', f'Backup created at {datetime.now()}')
-    
-    return backup_path
-
-
-def create_backup_async(job_id, format_type, include_attachments, encrypt_gpg, gpg_email):
-    """Background task to create backup with progress updates"""
-    try:
-        # Update job status
-        backup_jobs[job_id]['status'] = 'Creating backup archive...'
-        backup_jobs[job_id]['progress'] = 10
-        
-        # Generate the backup
-        backup_path = generate_backup(format=format_type, include_attachments=include_attachments)
-        
-        backup_jobs[job_id]['status'] = 'Backup created, preparing encryption...'
-        backup_jobs[job_id]['progress'] = 70
-        
-        final_path = backup_path
-        
-        if encrypt_gpg and gpg_email:
-            # Encrypt the backup
-            encrypted_path = f"{backup_path}.gpg"
-            
-            backup_jobs[job_id]['status'] = 'Encrypting backup...'
-            backup_jobs[job_id]['progress'] = 80
-            
-            # Replace the encrypt_result = subprocess.run([...]) section around line 135 with this:
-
-            encrypt_result = subprocess.run([
-            "gpg", 
-            "--batch",                    # Run in non-interactive mode
-            "--yes",                      # Answer yes to prompts automatically
-            "--trust-model", "always",    # Trust all keys without prompting
-            "--output", encrypted_path,
-            "--encrypt", 
-             "--recipient", gpg_email, 
-            backup_path
-            ], capture_output=True, text=True, timeout=300)
-            
-            if encrypt_result.returncode != 0:
-                backup_jobs[job_id]['error'] = 'Encryption failed'
-                backup_jobs[job_id]['details'] = encrypt_result.stderr
-                backup_jobs[job_id]['completed'] = True
-                return
-            
-            # Remove unencrypted backup
-            os.remove(backup_path)
-            final_path = encrypted_path
-        
-        backup_jobs[job_id]['status'] = 'Backup ready for download'
-        backup_jobs[job_id]['progress'] = 100
-        backup_jobs[job_id]['completed'] = True
-        backup_jobs[job_id]['download_url'] = f"/backup/download/{job_id}"
-        backup_jobs[job_id]['file_path'] = final_path
-        
-    except Exception as e:
-        backup_jobs[job_id]['error'] = str(e)
-        backup_jobs[job_id]['completed'] = True
-
 
 @backup_bp.route('/create', methods=['POST'])
 @login_required
