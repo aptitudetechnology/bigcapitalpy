@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, jsonify, send_file
+# 1. UPDATE YOUR IMPORTS (add these to the existing imports at the top)
+from flask import Blueprint, render_template, request, jsonify, send_file, current_app
 from flask_login import login_required, current_user
 import subprocess
 import os
@@ -8,408 +9,342 @@ import time
 import uuid
 from datetime import datetime
 import shutil
-import gnupg # Import the gnupg library
+import sqlite3
+import gnupg
+from sqlalchemy import create_engine, text, inspect  # ADD THESE
+import tempfile  # ADD THIS
 
 backup_bp = Blueprint('backup', __name__, url_prefix='/backup')
 
-# Define a temporary directory for backups. In a production environment,
-# this should be configurable and secured.
+# REMOVE THE OLD DATABASE_PATH CONFIGURATION
+# Replace this section:
+# DATABASE_PATH = os.path.join(os.getcwd(), 'bigcapitalpy.db')
+
+# With the new helper function approach (the DATABASE_PATH constant is no longer needed)
+
+# Keep your existing GPG and backup directory configuration
 BACKUP_DIR = os.path.join(os.getcwd(), 'backups_temp')
 os.makedirs(BACKUP_DIR, exist_ok=True)
 
-# Define a GPG home directory for the application.
-# It's good practice to isolate the GPG keyring used by the application
-# from the system's default user keyring.
-# Ensure this directory is writable by the user running the Flask app.
 GPG_HOME = os.path.join(os.getcwd(), '.gnupg_app')
 os.makedirs(GPG_HOME, exist_ok=True)
 
-# Initialize the GPG object
-# Specify the gnupghome to use the application-specific keyring
 gpg = gnupg.GPG(gnupghome=GPG_HOME)
-# You might want to set a keyserver here globally if all operations use the same one
 gpg.keyserver = 'keyserver.ubuntu.com'
 
+# 2. ADD THE NEW HELPER FUNCTIONS (add these after your existing route functions)
 
-# In-memory job storage (use Redis or database in production)
-backup_jobs = {}
-
-@backup_bp.route('/')
-@login_required
-def index():
+def get_database_path():
     """
-    Renders the backup index page.
+    Extracts the database file path from SQLAlchemy configuration.
     """
-    return render_template('backup/index.html',
-                           last_backup_timestamp=None, # This would typically come from a database
-                           previous_backups=None,      # This would typically come from a database
-                           enable_scheduled_backups=False, # This would typically come from user settings
-                           user=current_user)
-
-@backup_bp.route('/test', methods=['GET', 'POST'])
-@login_required
-def test_endpoint():
-    """
-    A simple test endpoint to verify the blueprint is working.
-    """
-    return jsonify({
-        'success': True,
-        'message': 'Backup blueprint is working',
-        'method': request.method,
-        'user': current_user.email if current_user else 'No user'
-    })
-
-@backup_bp.route('/gpg/search', methods=['POST'])
-@login_required
-def gpg_search():
-    """
-    Searches for GPG keys on a keyserver by email address using python-gnupg.
-    """
-    try:
-        data = request.get_json(force=True)
-        email = data.get('email')
-        if not email:
-            return jsonify({'success': False, 'error': 'Email is required'}), 400
-
-        # Use gpg.search_keys from the python-gnupg library
-        # The keyserver is set globally on the gpg object
-        search_result = gpg.search_keys(email, keyserver=gpg.keyserver)
-
-        if not search_result:
-            return jsonify({
-                'success': False,
-                'error': 'No GPG keys found for this email.',
-                'details': 'Search returned no results.'
-            }), 404
-
-        # The search_keys method returns a list of dictionaries, which is already structured.
-        # We'll reformat it slightly to match the previous output structure if needed,
-        # but gnupg's output is usually more comprehensive.
-        keys_list = []
-        for key in search_result:
-            # 'keyid' is the primary key ID
-            # 'date' is the creation date
-            # 'uids' is a list of user IDs
-            keys_list.append({
-                'key_id': key.get('keyid'),
-                'created': key.get('date'),
-                'uids': key.get('uids', [])
-            })
-
-        return jsonify({'success': True, 'keys': keys_list})
-    except Exception as e:
-        # gnupg library will raise exceptions for underlying GPG errors
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@backup_bp.route('/gpg/import', methods=['POST'])
-@login_required
-def gpg_import():
-    """
-    Imports a GPG public key from a keyserver using python-gnupg.
-    """
-    try:
-        data = request.get_json(force=True)
-        key_id = data.get('key_id')
-        if not key_id:
-            return jsonify({'success': False, 'error': 'Key ID is required'}), 400
-
-        # Use gpg.recv_keys from the python-gnupg library
-        # The keyserver is set globally on the gpg object
-        import_result = gpg.recv_keys(gpg.keyserver, key_id)
-
-        # The recv_keys method returns an object with attributes like 'fingerprints' and 'results'
-        # Check if any keys were actually imported
-        if not import_result or not import_result.fingerprints:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to import key',
-                'details': import_result.results if import_result else 'No key imported.'
-            })
-
-        return jsonify({
-            'success': True,
-            'message': 'Key imported successfully',
-            'key_id': key_id,
-            'fingerprints': import_result.fingerprints # Can return fingerprints of imported keys
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@backup_bp.route('/create', methods=['POST'])
-@login_required
-def create_backup():
-    """
-    Initiates a backup creation process. If GPG encryption is requested,
-    it starts an asynchronous job. Otherwise, it generates and sends the file directly.
-    """
-    try:
-        format_type = request.form.get('format', 'zip')
-        include_attachments = 'include_attachments' in request.form
-        encrypt_gpg = 'encrypt_gpg' in request.form
-        gpg_email = request.form.get('gpg_email')
-
-        if encrypt_gpg and gpg_email:
-            job_id = str(uuid.uuid4())
-            backup_jobs[job_id] = {
-                'id': job_id,
-                'created_at': datetime.now(),
-                'status': 'Starting backup...',
-                'progress': 0,
-                'completed': False,
-                'error': None,
-                'details': None,
-                'download_url': None,
-                'file_path': None
-            }
-            # Start the asynchronous backup process in a new thread
-            thread = threading.Thread(
-                target=create_backup_async,
-                args=(job_id, format_type, include_attachments, encrypt_gpg, gpg_email)
-            )
-            thread.daemon = True # Allow the thread to exit when the main program exits
-            thread.start()
-            return jsonify({
-                'success': True,
-                'job_id': job_id,
-                'message': 'Backup started'
-            })
+    db_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if db_uri.startswith('sqlite:///'):
+        # Remove 'sqlite:///' prefix to get file path
+        relative_path = db_uri.replace('sqlite:///', '')
+        # If it's an absolute path, return as-is; otherwise, make it relative to app root
+        if os.path.isabs(relative_path):
+            return relative_path
         else:
-            # If no GPG encryption, generate and send the file synchronously
-            backup_path = generate_backup(format=format_type, include_attachments=include_attachments)
-            return send_file(backup_path, as_attachment=True)
+            return os.path.join(current_app.root_path, relative_path)
+    elif db_uri.startswith('sqlite://'):
+        # Handle sqlite:// (relative path with //)
+        relative_path = db_uri.replace('sqlite://', '')
+        return os.path.join(current_app.root_path, relative_path)
+    else:
+        # Fallback for other database types or malformed URIs
+        return os.path.join(os.getcwd(), 'bigcapitalpy.db')
+
+def backup_database_with_sqlalchemy(backup_dir: str) -> tuple[str, dict]:
+    """
+    Creates a database backup using SQLAlchemy's engine for better compatibility.
+    Returns (backup_file_path, metadata_dict)
+    """
+    try:
+        # Get database path from SQLAlchemy config
+        db_path = get_database_path()
+        
+        if not os.path.exists(db_path):
+            raise FileNotFoundError(f"Database file not found at: {db_path}")
+        
+        # Create backup using SQLite's backup API through SQLAlchemy
+        backup_db_path = os.path.join(backup_dir, "database.db")
+        
+        # Method 1: Use SQLite's backup API (most reliable)
+        engine = create_engine(current_app.config['SQLALCHEMY_DATABASE_URI'])
+        
+        with engine.connect() as source_conn:
+            # Create a backup database engine
+            backup_engine = create_engine(f'sqlite:///{backup_db_path}')
+            
+            # Use SQLite's backup API
+            source_raw = source_conn.connection.driver_connection
+            
+            with backup_engine.connect() as backup_conn:
+                backup_raw = backup_conn.connection.driver_connection
+                
+                # Perform the backup using SQLite's backup API
+                source_raw.backup(backup_raw)
+        
+        # Gather database metadata
+        inspector = inspect(engine)
+        table_names = inspector.get_table_names()
+        
+        metadata = {
+            "database_path": db_path,
+            "backup_method": "SQLite Backup API via SQLAlchemy",
+            "database_size": os.path.getsize(db_path),
+            "backup_size": os.path.getsize(backup_db_path),
+            "table_count": len(table_names),
+            "tables": []
+        }
+        
+        # Get row counts for each table
+        with engine.connect() as conn:
+            for table_name in table_names:
+                try:
+                    result = conn.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
+                    row_count = result.scalar()
+                    metadata["tables"].append({
+                        "name": table_name,
+                        "rows": row_count
+                    })
+                except Exception as e:
+                    metadata["tables"].append({
+                        "name": table_name,
+                        "error": str(e)
+                    })
+        
+        return backup_db_path, metadata
+        
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': 'Failed to create backup',
-            'details': str(e)
-        }), 500
+        # Fallback to file copy if SQLAlchemy method fails
+        print(f"SQLAlchemy backup failed, falling back to file copy: {e}")
+        
+        db_path = get_database_path()
+        backup_db_path = os.path.join(backup_dir, "database.db")
+        
+        if os.path.exists(db_path):
+            shutil.copy2(db_path, backup_db_path)
+            metadata = {
+                "database_path": db_path,
+                "backup_method": "File copy (fallback)",
+                "database_size": os.path.getsize(db_path),
+                "backup_size": os.path.getsize(backup_db_path),
+                "note": f"SQLAlchemy backup failed: {str(e)}"
+            }
+            return backup_db_path, metadata
+        else:
+            raise FileNotFoundError(f"Database file not found at: {db_path}")
 
-@backup_bp.route('/progress/<job_id>', methods=['GET'])
-@login_required
-def backup_progress(job_id):
+def export_database_to_json() -> dict:
     """
-    Retrieves the current progress and status of an asynchronous backup job.
+    Exports all database tables to JSON format using SQLAlchemy.
     """
-    job = backup_jobs.get(job_id)
-    if not job:
-        return jsonify({'success': False, 'error': 'Job not found'}), 404
-    if job.get('error'):
-        return jsonify({'success': False, 'error': job['error'], 'details': job.get('details')})
-    return jsonify({
-        'success': True,
-        'progress': {
-            'percentage': job['progress'],
-            'status': job['status'],
-            'label': f"Progress: {job['progress']}%"
-        },
-        'completed': job['completed'],
-        'download_url': job.get('download_url')
-    })
+    try:
+        engine = create_engine(current_app.config['SQLALCHEMY_DATABASE_URI'])
+        inspector = inspect(engine)
+        table_names = inspector.get_table_names()
+        
+        database_data = {}
+        
+        with engine.connect() as conn:
+            for table_name in table_names:
+                try:
+                    # Get all rows from the table
+                    result = conn.execute(text(f"SELECT * FROM {table_name}"))
+                    rows = result.fetchall()
+                    
+                    # Convert to list of dictionaries
+                    database_data[table_name] = [dict(row._mapping) for row in rows]
+                    
+                except Exception as e:
+                    database_data[table_name] = {"error": str(e)}
+        
+        return {
+            "export_method": "SQLAlchemy",
+            "table_count": len(table_names),
+            "tables_exported": list(database_data.keys()),
+            "data": database_data
+        }
+        
+    except Exception as e:
+        return {
+            "export_method": "SQLAlchemy (failed)",
+            "error": str(e),
+            "data": {}
+        }
 
-@backup_bp.route('/cancel/<job_id>', methods=['POST'])
-@login_required
-def cancel_backup(job_id):
-    """
-    Cancels an ongoing backup job and attempts to clean up any partial files.
-    """
-    job = backup_jobs.get(job_id)
-    if not job:
-        return jsonify({'success': False, 'error': 'Job not found'}), 404
-    job['cancelled'] = True # Set a flag to signal the async function to stop
-    job['completed'] = True
-    job['error'] = 'Backup cancelled by user'
-    # Attempt to remove any created files
-    if job.get('file_path') and os.path.exists(job['file_path']):
-        try:
-            os.remove(job['file_path'])
-        except Exception as e:
-            print(f"Error cleaning up cancelled backup file {job['file_path']}: {e}")
-    if job.get('encrypted_file_path') and os.path.exists(job['encrypted_file_path']):
-        try:
-            os.remove(job['encrypted_file_path'])
-        except Exception as e:
-            print(f"Error cleaning up cancelled encrypted backup file {job['encrypted_file_path']}: {e}")
-    return jsonify({'success': True, 'message': 'Backup cancelled'})
-
-@backup_bp.route('/download/<job_id>', methods=['GET'])
-@login_required
-def download_backup(job_id):
-    """
-    Allows downloading of a completed backup file.
-    """
-    job = backup_jobs.get(job_id)
-    if not job:
-        return jsonify({'success': False, 'error': 'Job not found'}), 404
-    # Ensure the job is completed and has no errors before allowing download
-    if not job['completed'] or job.get('error'):
-        return jsonify({'success': False, 'error': 'Backup not ready or failed'}), 400
-    
-    # Prioritize the encrypted file if it exists, otherwise the original
-    file_path = job.get('encrypted_file_path') or job.get('file_path')
-    
-    if not file_path or not os.path.exists(file_path):
-        return jsonify({'success': False, 'error': 'Backup file not found'}), 404
-    
-    # Send the file as an attachment
-    return send_file(file_path, as_attachment=True)
+# 3. REPLACE YOUR EXISTING generate_backup() FUNCTION WITH THIS ONE:
 
 def generate_backup(format_type: str, include_attachments: bool) -> str:
     """
-    Simulates the creation of a backup file.
-    In a real application, this would involve:
-    1. Exporting database data (e.g., user profiles, notes, etc.).
-    2. Copying user-uploaded files/attachments if include_attachments is True.
-    3. Compressing these into a single file based on format_type.
-
-    For this example, we'll create a simple text file or a dummy zip file.
+    Creates a backup file including the SQLite database using SQLAlchemy.
+    Enhanced version that works better with Flask-SQLAlchemy.
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_filename_base = f"user_backup_{timestamp}"
+    backup_filename_base = f"bigcapitalpy_backup_{timestamp}"
     backup_file_path = os.path.join(BACKUP_DIR, backup_filename_base)
 
     try:
         if format_type == 'zip':
-            # Create a dummy directory to zip
-            dummy_content_dir = os.path.join(BACKUP_DIR, f"content_{uuid.uuid4()}")
-            os.makedirs(dummy_content_dir, exist_ok=True)
+            # Create a temporary directory for backup content
+            backup_content_dir = os.path.join(BACKUP_DIR, f"backup_content_{uuid.uuid4()}")
+            os.makedirs(backup_content_dir, exist_ok=True)
 
-            # Create some dummy files inside the directory
-            with open(os.path.join(dummy_content_dir, "data.txt"), "w") as f:
-                f.write("This is your backed-up data.\n")
-                f.write(f"Backup created at {datetime.now()}\n")
-            if include_attachments:
-                with open(os.path.join(dummy_content_dir, "attachment_example.pdf"), "w") as f:
-                    f.write("This is a dummy attachment.\n")
+            try:
+                # 1. Backup database using SQLAlchemy-compatible method
+                db_backup_path, db_metadata = backup_database_with_sqlalchemy(backup_content_dir)
+                print(f"Database backed up successfully: {db_backup_path}")
 
-            # Create the zip archive
-            final_zip_path = shutil.make_archive(backup_file_path, 'zip', root_dir=dummy_content_dir)
-            
-            # Clean up the dummy content directory
-            shutil.rmtree(dummy_content_dir)
-            return final_zip_path
-        else: # Default to plain text for simplicity if not zip
-            final_txt_path = f"{backup_file_path}.txt"
-            with open(final_txt_path, "w") as f:
-                f.write("This is your backed-up data.\n")
-                f.write(f"Backup created at {datetime.now()}\n")
+                # 2. Create comprehensive backup metadata
+                metadata = {
+                    "backup_created": datetime.now().isoformat(),
+                    "backup_type": "BigCapitalPy Full Backup",
+                    "format": format_type,
+                    "include_attachments": include_attachments,
+                    "database_info": db_metadata,
+                    "sqlalchemy_uri": current_app.config.get('SQLALCHEMY_DATABASE_URI', 'Not configured'),
+                    "backup_version": "2.0"
+                }
+                
+                with open(os.path.join(backup_content_dir, "backup_metadata.json"), "w") as f:
+                    json.dump(metadata, f, indent=2, default=str)
+
+                # 3. Include attachments if requested
                 if include_attachments:
-                    f.write("Attachments were requested but not included in plain text format.\n")
+                    attachments_dir = os.path.join(backup_content_dir, "attachments")
+                    os.makedirs(attachments_dir, exist_ok=True)
+                    
+                    # Common Flask attachment directories
+                    possible_attachment_dirs = [
+                        os.path.join(current_app.root_path, 'uploads'),
+                        os.path.join(current_app.root_path, 'static', 'uploads'),
+                        os.path.join(current_app.root_path, 'attachments'),
+                        os.path.join(current_app.root_path, 'user_files'),
+                        os.path.join(current_app.instance_path, 'uploads') if hasattr(current_app, 'instance_path') else None
+                    ]
+                    
+                    # Remove None values
+                    possible_attachment_dirs = [d for d in possible_attachment_dirs if d is not None]
+                    
+                    attachments_found = False
+                    attachment_summary = []
+                    
+                    for source_dir in possible_attachment_dirs:
+                        if os.path.exists(source_dir) and os.path.isdir(source_dir):
+                            dest_subdir = os.path.join(attachments_dir, os.path.basename(source_dir))
+                            shutil.copytree(source_dir, dest_subdir, dirs_exist_ok=True)
+                            
+                            # Count files
+                            file_count = sum([len(files) for r, d, files in os.walk(dest_subdir)])
+                            attachment_summary.append({
+                                "source": source_dir,
+                                "destination": os.path.basename(source_dir),
+                                "files_copied": file_count
+                            })
+                            attachments_found = True
+                            print(f"Copied {file_count} files from: {source_dir}")
+                    
+                    # Update metadata with attachment info
+                    metadata["attachments"] = {
+                        "included": attachments_found,
+                        "directories_searched": possible_attachment_dirs,
+                        "directories_copied": attachment_summary
+                    }
+                    
+                    if not attachments_found:
+                        with open(os.path.join(attachments_dir, "no_attachments_found.txt"), "w") as f:
+                            f.write("No attachment directories were found at the expected locations.\n")
+                            f.write(f"Searched locations:\n")
+                            for dir_path in possible_attachment_dirs:
+                                f.write(f"  - {dir_path} {'(exists)' if os.path.exists(dir_path) else '(not found)'}\n")
+
+                # 4. Update metadata file with final info
+                with open(os.path.join(backup_content_dir, "backup_metadata.json"), "w") as f:
+                    json.dump(metadata, f, indent=2, default=str)
+
+                # 5. Create the ZIP archive
+                final_zip_path = shutil.make_archive(backup_file_path, 'zip', root_dir=backup_content_dir)
+                
+                # Clean up the temporary directory
+                shutil.rmtree(backup_content_dir)
+                return final_zip_path
+
+            except Exception as e:
+                # Ensure cleanup on error
+                if os.path.exists(backup_content_dir):
+                    shutil.rmtree(backup_content_dir)
+                raise e
+
+        elif format_type == 'json':
+            # For JSON format, export database data using SQLAlchemy
+            final_json_path = f"{backup_file_path}.json"
+            
+            backup_data = {
+                "backup_created": datetime.now().isoformat(),
+                "backup_type": "BigCapitalPy JSON Export",
+                "format": format_type,
+                "include_attachments": include_attachments,
+                "sqlalchemy_uri": current_app.config.get('SQLALCHEMY_DATABASE_URI', 'Not configured'),
+                "database_export": export_database_to_json()
+            }
+
+            with open(final_json_path, "w") as f:
+                json.dump(backup_data, f, indent=2, default=str)
+            
+            return final_json_path
+
+        else:  # CSV or other formats - fallback to text with database info
+            final_txt_path = f"{backup_file_path}.txt"
+            
+            with open(final_txt_path, "w") as f:
+                f.write("=== BIGCAPITALPY BACKUP SUMMARY ===\n")
+                f.write(f"Backup created at: {datetime.now()}\n")
+                f.write(f"Format: {format_type}\n")
+                f.write(f"Include attachments: {include_attachments}\n")
+                f.write(f"SQLAlchemy URI: {current_app.config.get('SQLALCHEMY_DATABASE_URI', 'Not configured')}\n\n")
+                
+                # Get database info using SQLAlchemy
+                try:
+                    db_path = get_database_path()
+                    if os.path.exists(db_path):
+                        f.write("=== DATABASE INFO ===\n")
+                        f.write(f"Database file: {db_path}\n")
+                        f.write(f"Database size: {os.path.getsize(db_path):,} bytes\n")
+                        
+                        engine = create_engine(current_app.config['SQLALCHEMY_DATABASE_URI'])
+                        inspector = inspect(engine)
+                        table_names = inspector.get_table_names()
+                        f.write(f"Number of tables: {len(table_names)}\n\n")
+                        
+                        with engine.connect() as conn:
+                            for table_name in table_names:
+                                try:
+                                    result = conn.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
+                                    row_count = result.scalar()
+                                    f.write(f"Table '{table_name}': {row_count:,} rows\n")
+                                except Exception as e:
+                                    f.write(f"Table '{table_name}': Error reading ({str(e)})\n")
+                    else:
+                        f.write(f"=== DATABASE ERROR ===\n")
+                        f.write(f"Database file not found at: {db_path}\n")
+                        
+                except Exception as e:
+                    f.write(f"=== DATABASE ERROR ===\n")
+                    f.write(f"Error accessing database: {str(e)}\n")
+                
+                if include_attachments:
+                    f.write("\n=== ATTACHMENTS ===\n")
+                    f.write("Note: Attachments cannot be included in text format.\n")
+                    f.write("Please use ZIP format for complete backup with attachments.\n")
+            
             return final_txt_path
+
     except Exception as e:
         print(f"Error generating backup: {e}")
         raise
 
-def create_backup_async(job_id: str, format_type: str, include_attachments: bool, encrypt_gpg: bool, gpg_email: str):
-    """
-    Asynchronously creates a backup, optionally encrypting it with GPG using python-gnupg.
-    Updates the backup_jobs dictionary with progress and status.
-    """
-    job = backup_jobs.get(job_id)
-    if not job:
-        print(f"Job {job_id} not found in async function.")
-        return
-
-    original_file_path = None
-    encrypted_file_path = None
-
-    try:
-        job['status'] = 'Generating backup content...'
-        job['progress'] = 10
-        time.sleep(1) # Simulate work
-
-        # Step 1: Generate the backup file
-        original_file_path = generate_backup(format_type, include_attachments)
-        job['file_path'] = original_file_path # Store the path even if not encrypted
-
-        if job.get('cancelled'):
-            raise Exception("Backup cancelled during content generation.")
-
-        job['status'] = 'Backup content generated.'
-        job['progress'] = 50
-        time.sleep(1) # Simulate work
-
-        if encrypt_gpg:
-            job['status'] = 'Encrypting backup with GPG...'
-            job['progress'] = 70
-            
-            # Determine the output file path for the encrypted file
-            encrypted_file_path = f"{original_file_path}.gpg"
-            
-            # Open the input file for reading in binary mode
-            with open(original_file_path, 'rb') as f:
-                # Use gpg.encrypt_file for encryption
-                # recipients: a list of recipient email addresses or key IDs
-                # output: the path to the output encrypted file
-                encrypt_result = gpg.encrypt_file(f, recipients=[gpg_email], output=encrypted_file_path)
-
-            if not encrypt_result.ok:
-                raise Exception(
-                    f"GPG encryption failed: {encrypt_result.status} - {encrypt_result.stderr}"
-                )
-            
-            # Clean up the unencrypted original file after successful encryption
-            if os.path.exists(original_file_path):
-                os.remove(original_file_path)
-            
-            job['encrypted_file_path'] = encrypted_file_path # Store the path to the encrypted file
-            job['status'] = 'Backup encrypted successfully.'
-            job['progress'] = 90
-            time.sleep(1) # Simulate work
-
-        job['status'] = 'Backup process completed.'
-        job['progress'] = 100
-        job['completed'] = True
-        # Set the download URL to point to the correct file (encrypted or original)
-        job['download_url'] = f"/backup/download/{job_id}"
-
-    except Exception as e:
-        job['error'] = str(e)
-        job['details'] = f"An error occurred during backup: {e}"
-        job['completed'] = True
-        job['progress'] = 100
-        print(f"Error in async backup job {job_id}: {e}")
-        # Ensure cleanup of any partial files on error
-        if original_file_path and os.path.exists(original_file_path):
-            try:
-                os.remove(original_file_path)
-            except Exception as cleanup_e:
-                print(f"Error cleaning up original file {original_file_path}: {cleanup_e}")
-        if encrypted_file_path and os.path.exists(encrypted_file_path):
-            try:
-                os.remove(encrypted_file_path)
-            except Exception as cleanup_e:
-                print(f"Error cleaning up encrypted file {encrypted_file_path}: {cleanup_e}")
-    finally:
-        # Ensure the job is marked as completed even if there's an unhandled error
-        if not job['completed']:
-            job['completed'] = True
-            job['error'] = job.get('error', 'Unknown error completed job.')
-            job['progress'] = 100
-
-def cleanup_old_jobs():
-    """
-    Periodically cleans up old backup jobs and their associated files.
-    This function should ideally be run by a background task scheduler (e.g., Celery, APScheduler).
-    """
-    cutoff = datetime.now().timestamp() - 3600 # 1 hour cutoff
-    jobs_to_remove = []
-    for job_id, job in backup_jobs.items():
-        if job['created_at'].timestamp() < cutoff:
-            # Clean up original file
-            if job.get('file_path') and os.path.exists(job['file_path']):
-                try:
-                    os.remove(job['file_path'])
-                except Exception as e:
-                    print(f"Error cleaning up old original backup file {job['file_path']}: {e}")
-            # Clean up encrypted file
-            if job.get('encrypted_file_path') and os.path.exists(job['encrypted_file_path']):
-                try:
-                    os.remove(job['encrypted_file_path'])
-                except Exception as e:
-                    print(f"Error cleaning up old encrypted backup file {job['encrypted_file_path']}: {e}")
-            jobs_to_remove.append(job_id)
-    for job_id in jobs_to_remove:
-        del backup_jobs[job_id]
-
-# You might want to run cleanup_old_jobs periodically, e.g., using APScheduler
-# For a simple example, it's not explicitly called here, but it's a good practice.
+# 4. KEEP ALL YOUR EXISTING ROUTES AND OTHER FUNCTIONS AS THEY ARE
+# (index, test_endpoint, gpg_search, gpg_import, create_backup, etc.)
+# Only the generate_backup function and helper functions need to be replaced/added
