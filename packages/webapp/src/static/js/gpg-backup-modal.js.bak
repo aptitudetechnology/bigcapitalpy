@@ -63,13 +63,10 @@ class GPGBackupModal {
     showModal() {
         this.resetModalState();
         this.updateEmailDisplay();
-
-        let modalInstance = bootstrap.Modal.getInstance(this.modal);
-        if (!modalInstance) {
-            modalInstance = new bootstrap.Modal(this.modal);
-        }
-        modalInstance.show();
-
+        
+        const modal = new bootstrap.Modal(this.modal);
+        modal.show();
+        
         this.setupEncryption();
     }
     
@@ -144,7 +141,10 @@ class GPGBackupModal {
         this.footerHelpText.textContent = 'Creating your secure backup...';
         
         try {
+            // Get form data
             const formData = new FormData(this.backupForm);
+            
+            // Make API call to create encrypted backup
             const response = await this.makeAPICallWithProgress('/api/backup/create-encrypted', formData);
             
             if (response.success) {
@@ -158,6 +158,7 @@ class GPGBackupModal {
     }
     
     async makeAPICallWithProgress(url, data) {
+        // Simulate progress for now - replace with actual implementation
         return new Promise((resolve) => {
             let progress = 0;
             const messages = [
@@ -173,6 +174,8 @@ class GPGBackupModal {
                 if (progress > 100) progress = 100;
                 
                 this.updateProgress(progress, messages[messageIndex]);
+                
+                // Update message
                 if (messageIndex < messages.length - 1 && progress > (messageIndex + 1) * 25) {
                     messageIndex++;
                 }
@@ -240,20 +243,25 @@ class GPGBackupModal {
     downloadBackup() {
         const downloadUrl = this.downloadButton.getAttribute('data-download-url');
         if (downloadUrl) {
+            // Create download link and trigger
             const link = document.createElement('a');
             link.href = downloadUrl;
             link.download = '';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            
+            // Close modal
             bootstrap.Modal.getInstance(this.modal).hide();
         }
     }
     
     async makeAPICall(url, data) {
+        // Simulate API call for now - replace with actual fetch implementation
         return new Promise((resolve) => {
             setTimeout(() => {
-                const success = Math.random() > 0.1;
+                // Simulate success/failure
+                const success = Math.random() > 0.1; // 90% success rate for demo
                 resolve({
                     success: success,
                     error: success ? null : 'Public key not found for this email address'
@@ -263,6 +271,7 @@ class GPGBackupModal {
     }
 }
 
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     new GPGBackupModal();
 });
