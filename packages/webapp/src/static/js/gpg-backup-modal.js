@@ -1,125 +1,136 @@
-// gpg-backup-modal.js
+// gpg-backup-modal.js - Enhanced Version
 
 // Variable to store the ID of the selected GPG key
 let selectedKeyId = null;
+let currentJobId = null; // Track the current backup job
+let progressInterval = null; // Store the progress polling interval
 
 /**
  * Searches for GPG keys on a key server based on the provided email.
- * This function is designed to work with a UI that allows email input and displays results.
- * NOTE: The email input and search button were previously removed from the modal HTML.
- * This function remains here for completeness of the original file's logic,
- * but its direct UI trigger might be absent.
  */
-export function searchGPGKeys() {
-    // Get references to UI elements
-    const emailInput = document.getElementById("gpgEmailInput"); // This element might not exist anymore in HTML
+export function searchGPGKeys(email = null) {
+    const emailInput = document.getElementById("gpgEmailInput");
     const resultsContainer = document.getElementById("gpgKeyResults");
     const importBtn = document.getElementById("importKeyBtn");
 
-    // Check if emailInput exists before trying to access its value
-    const email = emailInput ? emailInput.value.trim() : '';
+    // Use provided email or get from input
+    const searchEmail = email || (emailInput ? emailInput.value.trim() : '');
 
-    // Basic validation for email
-    if (!email) {
+    if (!searchEmail) {
         if (resultsContainer) {
-            resultsContainer.innerHTML = `<div class="text-danger">Please enter a valid email address.</div>`;
+            resultsContainer.innerHTML = `<div class="alert alert-warning">Please enter a valid email address.</div>`;
         }
         return;
     }
 
     // Update UI to show searching status
     if (resultsContainer) {
-        resultsContainer.innerHTML = `<div class="text-muted">Searching for keys...</div>`;
+        resultsContainer.innerHTML = `
+            <div class="d-flex align-items-center text-muted">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                Searching for keys for ${searchEmail}...
+            </div>`;
     }
     if (importBtn) {
         importBtn.disabled = true;
     }
-    selectedKeyId = null; // Reset selected key
+    selectedKeyId = null;
 
-    // Fetch GPG keys from the backend
     fetch("/backup/gpg/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email: searchEmail })
     })
     .then(res => res.json())
     .then(data => {
-        // Handle no keys found or unsuccessful search
         if (!data.success || !data.keys || !data.keys.length) {
             if (resultsContainer) {
-                resultsContainer.innerHTML = `<div class="text-warning">No GPG keys found for <strong>${email}</strong>.</div>`;
+                resultsContainer.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        No GPG keys found for <strong>${searchEmail}</strong>.
+                        <br><small class="text-muted">Try searching with a different email or check if the key exists on the keyserver.</small>
+                    </div>`;
             }
             return;
         }
 
-        // Populate radio options with found keys
+        // Enhanced key display with better formatting
         if (resultsContainer) {
-            resultsContainer.innerHTML = data.keys.map((key, index) => {
-                const uidText = key.uids ? key.uids.join(", ") : 'No User IDs';
-                return `
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="keySelect" id="keyRadio${index}" value="${key.key_id}">
-                        <label class="form-check-label" for="keyRadio${index}">
-                            ${key.key_id} – ${uidText}
-                        </label>
-                    </div>
-                `;
-            }).join("");
-
-            // The onchange event for radio buttons will need to be handled elsewhere (e.g., inline in HTML or another script)
-            // if you remove the 'change' event listener from here.
-            // For now, I'm assuming you'll manage this if 'searchGPGKeys' is still used.
+            resultsContainer.innerHTML = `
+                <div class="alert alert-info mb-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Found ${data.keys.length} key(s) for <strong>${searchEmail}</strong>. Select one to import:
+                </div>
+                ${data.keys.map((key, index) => {
+                    const uidText = key.uids ? key.uids.join(", ") : 'No User IDs';
+                    const createdDate = key.created ? new Date(key.created * 1000).toLocaleDateString() : 'Unknown';
+                    return `
+                        <div class="card mb-2">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="keySelect" 
+                                           id="keyRadio${index}" value="${key.key_id}" 
+                                           onchange="selectGPGKey('${key.key_id}')">
+                                    <label class="form-check-label" for="keyRadio${index}">
+                                        <div class="fw-bold">${key.key_id}</div>
+                                        <div class="text-muted small">${uidText}</div>
+                                        <div class="text-muted small">Created: ${createdDate}</div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join("")}
+            `;
         }
     })
     .catch(err => {
-        // Log and display error if search fails
         console.error("GPG Key search failed:", err);
         if (resultsContainer) {
-            resultsContainer.innerHTML = `<div class="text-danger">Search failed. Please try again later.</div>`;
+            resultsContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Search failed. Please check your connection and try again.
+                    <br><small class="text-muted">Error: ${err.message}</small>
+                </div>`;
         }
     });
 }
 
 /**
  * Sets the globally selected GPG key ID and enables the import button.
- * @param {string} keyId - The ID of the selected GPG key.
  */
 export function selectGPGKey(keyId) {
     selectedKeyId = keyId;
     const importBtn = document.getElementById("importKeyBtn");
     if (importBtn) {
         importBtn.disabled = false;
+        importBtn.innerHTML = `<i class="bi bi-download me-2"></i>Import Selected Key`;
     }
 }
 
 /**
  * Imports the currently selected GPG key from the key server via the backend.
- * Updates the UI based on the import success or failure.
  */
 export function importSelectedGPGKey() {
-    // Ensure a key is selected
     if (!selectedKeyId) {
         console.warn("No GPG key selected for import.");
         return;
     }
 
-    // Get references to UI elements
     const importBtn = document.getElementById("importKeyBtn");
-    const emailInput = document.getElementById("gpgEmailInput"); // This element might not exist anymore in HTML
     const resultsContainer = document.getElementById("gpgKeyResults");
-    const encryptEmailSpan = document.getElementById("gpgEncryptEmail");
-    const encryptEmailHidden = document.getElementById("gpgModalEmail");
     const selectedKeyInfo = document.getElementById("selectedKeyInfo");
     const statusLine = document.getElementById("gpgStatusLine");
     const confirmBackupBtn = document.getElementById("confirmCreateBackupBtn");
 
-    // Disable import button and show loading spinner
+    // Show importing state
     if (importBtn) {
         importBtn.disabled = true;
         importBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>Importing...`;
     }
 
-    // Fetch call to import the key
     fetch("/backup/gpg/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,242 +138,291 @@ export function importSelectedGPGKey() {
     })
     .then(res => res.json())
     .then(data => {
-        // Handle import failure
         if (!data.success) {
             if (resultsContainer) {
-                resultsContainer.innerHTML = `<div class="text-danger">Import failed: ${data.error}</div>`;
+                resultsContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Import failed: ${data.error}
+                        <br><small class="text-muted">${data.details || ''}</small>
+                    </div>`;
             }
             return;
         }
 
-        // --- Success UI update ---
-        // Since gpgEmailInput might be removed, we need a fallback for the email displayed.
-        // Ideally, the email to encrypt for should be passed from the backend or a global JS variable.
-        const encryptionEmail = emailInput ? emailInput.value : (window.GPG_ENCRYPTION_EMAIL || 'unknown@example.com');
+        // Success - update UI
+        const encryptionEmail = window.GPG_ENCRYPTION_EMAIL || 'selected key';
+        
+        // Update email displays
+        const encryptEmailSpan = document.getElementById("gpgEncryptEmail");
+        const encryptEmailHidden = document.getElementById("gpgModalEmail");
+        
+        if (encryptEmailSpan) encryptEmailSpan.textContent = encryptionEmail;
+        if (encryptEmailHidden) encryptEmailHidden.value = encryptionEmail;
 
-        if (encryptEmailSpan) {
-            encryptEmailSpan.textContent = encryptionEmail;
-        }
-        if (encryptEmailHidden) {
-            encryptEmailHidden.value = encryptionEmail;
+        // Show success message and enable backup
+        if (resultsContainer) {
+            resultsContainer.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Key imported successfully! Ready to create encrypted backup.
+                </div>`;
         }
 
-        // Show selected key info and enable backup confirmation
         if (selectedKeyInfo) selectedKeyInfo.style.display = "flex";
         if (statusLine) statusLine.style.display = "none";
-        if (importBtn) importBtn.style.display = "none"; // Hide import button after successful import
+        if (importBtn) importBtn.style.display = "none";
         if (confirmBackupBtn) {
             confirmBackupBtn.disabled = false;
-            confirmBackupBtn.style.display = "inline-block"; // Show and enable confirm backup button
+            confirmBackupBtn.style.display = "inline-block";
         }
     })
     .catch(err => {
-        // Log and display error if import request fails
         console.error("GPG Key import request failed:", err);
         if (resultsContainer) {
-            resultsContainer.innerHTML = `<div class="text-danger">Import request failed. Try again.</div>`;
+            resultsContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Import request failed. Please try again.
+                </div>`;
         }
     })
     .finally(() => {
-        // Reset import button state in case of error or if it's re-shown
         if (importBtn) {
-            importBtn.disabled = true; // Keep disabled until a new key is selected/searched
+            importBtn.disabled = true;
             importBtn.innerHTML = `<i class="bi bi-download me-2"></i>Import Selected Key`;
         }
     });
 }
 
 /**
- * GPGBackupModal class to manage the state and interactions of the GPG encryption modal.
+ * Enhanced GPGBackupModal class with real backup integration
  */
 export class GPGBackupModal {
-    /**
-     * @param {string} modalId - The ID of the main modal HTML element.
-     */
     constructor(modalId) {
         this.modalElement = document.getElementById(modalId);
         if (!this.modalElement) {
-            console.warn(`GPGBackupModal: Modal element with ID '${modalId}' not found. Using basic modal functions.`);
-            // If the modal element isn't found, we can't initialize Bootstrap's modal or manage steps.
-            // Further operations will rely on manual DOM manipulation or fail.
+            console.warn(`GPGBackupModal: Modal element with ID '${modalId}' not found.`);
             return;
         }
-        // Initialize Bootstrap's modal instance
-        this.bootstrapModal = new bootstrap.Modal(this.modalElement);
 
-        // Get references to the different step containers within the modal
+        this.bootstrapModal = new bootstrap.Modal(this.modalElement);
+        
+        // Get step elements
         this.keySetupStep = document.getElementById('keySetupStep');
         this.backupProgressStep = document.getElementById('backupProgressStep');
         this.successStep = document.getElementById('successStep');
         this.errorStep = document.getElementById('errorStep');
 
-        // Get references to footer buttons
+        // Get button elements
         this.confirmCreateBackupBtn = document.getElementById('confirmCreateBackupBtn');
         this.downloadBackupBtn = document.getElementById('downloadBackupBtn');
         this.cancelBackupBtn = document.getElementById('cancelBackupBtn');
 
-        // Get references to email display elements
-        this.gpgEncryptEmailSpan = document.getElementById("gpgEncryptEmail");
-        this.gpgModalEmailHidden = document.getElementById("gpgModalEmail");
+        // Progress elements
+        this.progressBar = document.getElementById('backupProgressBar');
+        this.progressLabel = document.getElementById('backupProgressLabel');
+        this.progressStatus = document.getElementById('backupProgressStatus');
 
-        // Set initial step to display when modal is first constructed
         this.showStep('keySetup');
-
-        // Event listeners are removed from here as per your request.
-        // You will need to attach these event listeners in a separate script or using inline 'onclick' attributes.
     }
 
-    /**
-     * Displays the modal.
-     */
     show() {
         if (this.bootstrapModal) {
             this.bootstrapModal.show();
-            this.showStep('keySetup'); // Always reset to the initial step when showing the modal
+            this.showStep('keySetup');
         }
     }
 
-    /**
-     * Hides the modal.
-     */
     hide() {
         if (this.bootstrapModal) {
             this.bootstrapModal.hide();
         }
+        this.cleanup();
     }
 
-    /**
-     * Controls which step of the modal is visible.
-     * @param {string} stepName - The name of the step to show ('keySetup', 'progress', 'success', 'error').
-     */
     showStep(stepName) {
-        // Hide all step containers first
-        if (this.keySetupStep) this.keySetupStep.style.display = 'none';
-        if (this.backupProgressStep) this.backupProgressStep.style.display = 'none';
-        if (this.successStep) this.successStep.style.display = 'none';
-        if (this.errorStep) this.errorStep.style.display = 'none';
+        // Hide all steps
+        [this.keySetupStep, this.backupProgressStep, this.successStep, this.errorStep]
+            .forEach(step => step && (step.style.display = 'none'));
 
-        // Show the requested step and manage button visibility/state
+        // Show requested step and manage buttons
         switch (stepName) {
             case 'keySetup':
                 if (this.keySetupStep) this.keySetupStep.style.display = 'block';
-                if (this.confirmCreateBackupBtn) this.confirmCreateBackupBtn.style.display = 'none';
-                if (this.downloadBackupBtn) this.downloadBackupBtn.style.display = 'none';
-                if (this.cancelBackupBtn) this.cancelBackupBtn.style.display = 'inline-block';
+                this.setButtonVisibility(false, false, true);
                 break;
             case 'progress':
                 if (this.backupProgressStep) this.backupProgressStep.style.display = 'block';
-                if (this.confirmCreateBackupBtn) this.confirmCreateBackupBtn.style.display = 'none';
-                if (this.downloadBackupBtn) this.downloadBackupBtn.style.display = 'none';
-                if (this.cancelBackupBtn) this.cancelBackupBtn.style.display = 'inline-block';
+                this.setButtonVisibility(false, false, true);
                 break;
             case 'success':
                 if (this.successStep) this.successStep.style.display = 'block';
-                if (this.confirmCreateBackupBtn) this.confirmCreateBackupBtn.style.display = 'none';
-                if (this.downloadBackupBtn) this.downloadBackupBtn.style.display = 'inline-block';
-                if (this.cancelBackupBtn) this.cancelBackupBtn.style.display = 'none'; // Cancel button might be hidden on success
+                this.setButtonVisibility(false, true, false);
                 break;
             case 'error':
                 if (this.errorStep) this.errorStep.style.display = 'block';
-                if (this.confirmCreateBackupBtn) this.confirmCreateBackupBtn.style.display = 'none';
-                if (this.downloadBackupBtn) this.downloadBackupBtn.style.display = 'none';
-                if (this.cancelBackupBtn) this.cancelBackupBtn.style.display = 'inline-block'; // Or a 'Retry' button
+                this.setButtonVisibility(false, false, true);
                 break;
-            default:
-                console.warn(`GPGBackupModal: Unknown step name provided: ${stepName}`);
+        }
+    }
+
+    setButtonVisibility(confirm, download, cancel) {
+        if (this.confirmCreateBackupBtn) {
+            this.confirmCreateBackupBtn.style.display = confirm ? 'inline-block' : 'none';
+        }
+        if (this.downloadBackupBtn) {
+            this.downloadBackupBtn.style.display = download ? 'inline-block' : 'none';
+        }
+        if (this.cancelBackupBtn) {
+            this.cancelBackupBtn.style.display = cancel ? 'inline-block' : 'none';
         }
     }
 
     /**
-     * Initiates the encrypted backup process.
-     * This will typically involve an AJAX call to your Flask backend.
+     * Real backup integration with your Flask backend
      */
-    startBackup() {
-        this.showStep('progress'); // Transition to the progress step
-        console.log("Starting encrypted backup process...");
+    async startBackup() {
+        this.showStep('progress');
+        this.updateProgress(0, 'Initializing backup...');
 
-        // Example: Simulate an asynchronous backup process with a timeout
-        // In a real application, this would be a fetch() call to your Flask backend
-        // that performs the actual backup and encryption.
-        setTimeout(() => {
-            // After the simulated backup, transition to success or error
-            const backupSuccessful = Math.random() > 0.2; // Simulate success/failure
-            if (backupSuccessful) {
-                this.showStep('success');
-                console.log("Backup process completed successfully.");
-            } else {
-                this.showStep('error');
-                // You might want to set an error message here based on backend response
-                const errorMessageElement = document.getElementById('errorMessage');
-                if (errorMessageElement) {
-                    errorMessageElement.textContent = "Backup failed due to a server error. Please try again.";
-                }
-                console.error("Backup process failed.");
+        try {
+            // Get form data
+            const formData = new FormData();
+            const format = document.querySelector('input[name="format"]:checked')?.value || 'zip';
+            const includeAttachments = document.getElementById('include_attachments')?.checked || false;
+            const gpgEmail = document.getElementById('gpgModalEmail')?.value;
+
+            formData.append('format', format);
+            if (includeAttachments) formData.append('include_attachments', 'on');
+            formData.append('encrypt_gpg', 'on');
+            formData.append('gpg_email', gpgEmail);
+
+            // Start backup job
+            const response = await fetch('/backup/create', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to start backup');
             }
-        }, 3000); // Simulate 3 seconds for backup process
+
+            currentJobId = data.job_id;
+            this.pollProgress();
+
+        } catch (error) {
+            console.error('Backup failed:', error);
+            this.showError(error.message);
+        }
     }
 
     /**
-     * Handles the download of the created backup file.
-     * This will typically trigger a file download from your Flask backend.
+     * Poll backup progress
      */
-    downloadBackup() {
-        console.log("Initiating backup download...");
-        // In a real application, this would trigger a file download,
-        // e.g., by navigating to a download URL or making a fetch request
-        // that returns a blob.
-        // Example: window.location.href = '/backup/download';
+    async pollProgress() {
+        if (!currentJobId) return;
+
+        try {
+            const response = await fetch(`/backup/progress/${currentJobId}`);
+            const data = await response.json();
+
+            if (!data.success) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                return;
+            }
+
+            const progress = data.progress || {};
+            this.updateProgress(progress.percentage || 0, progress.status || 'Processing...');
+
+            if (data.completed) {
+                if (data.download_url) {
+                    this.showSuccess(data.download_url);
+                } else {
+                    throw new Error('Backup completed but no download URL provided');
+                }
+            } else {
+                // Continue polling
+                setTimeout(() => this.pollProgress(), 1000);
+            }
+
+        } catch (error) {
+            console.error('Progress polling failed:', error);
+            this.showError(error.message);
+        }
     }
 
-    /**
-     * Sets the email address displayed in the modal for encryption.
-     * @param {string} email - The email address to display.
-     */
+    updateProgress(percentage, status) {
+        if (this.progressBar) {
+            this.progressBar.style.width = `${percentage}%`;
+            this.progressBar.setAttribute('aria-valuenow', percentage);
+        }
+        if (this.progressLabel) {
+            this.progressLabel.textContent = `${percentage}%`;
+        }
+        if (this.progressStatus) {
+            this.progressStatus.textContent = status;
+        }
+    }
+
+    showSuccess(downloadUrl) {
+        this.showStep('success');
+        if (this.downloadBackupBtn) {
+            this.downloadBackupBtn.onclick = () => {
+                window.location.href = downloadUrl;
+                this.hide();
+            };
+        }
+    }
+
+    showError(message) {
+        this.showStep('error');
+        const errorElement = document.getElementById('errorMessage');
+        if (errorElement) {
+            errorElement.textContent = message;
+        }
+    }
+
+    async cancelBackup() {
+        if (currentJobId) {
+            try {
+                await fetch(`/backup/cancel/${currentJobId}`, { method: 'POST' });
+            } catch (error) {
+                console.error('Failed to cancel backup:', error);
+            }
+        }
+        this.cleanup();
+        this.hide();
+    }
+
+    cleanup() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+        currentJobId = null;
+    }
+
     setEncryptionEmail(email) {
-        if (this.gpgEncryptEmailSpan) {
-            this.gpgEncryptEmailSpan.textContent = email;
-        }
-        if (this.gpgModalEmailHidden) {
-            this.gpgModalEmailHidden.value = email;
-        }
+        window.GPG_ENCRYPTION_EMAIL = email;
+        const elements = ['gpgEncryptEmail', 'gpgModalEmail'];
+        elements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                if (element.tagName === 'INPUT') {
+                    element.value = email;
+                } else {
+                    element.textContent = email;
+                }
+            }
+        });
     }
 }
 
-// The initialization logic and event listeners that were previously here have been removed.
-// You will need to add these in a separate script file or directly in your HTML template
-// where you include this module.
-//
-// Example of how you might initialize the modal and attach event listeners in another script
-// (e.g., in a <script type="module"> block within your backup.html or a dedicated main.js):
-/*
-import { GPGBackupModal, importSelectedGPGKey } from './gpg-backup-modal.js';
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Instantiate the GPGBackupModal class
-    window.gpgBackupModalInstance = new GPGBackupModal('gpgConfirmationModal');
-
-    // Set the encryption email (replace 'chris@caston.id.au' with your dynamic source)
-    window.gpgBackupModalInstance.setEncryptionEmail('chris@caston.id.au');
-
-    // Attach event listener to the button that opens the GPG backup modal
-    const openBackupModalButton = document.getElementById('openBackupModalBtn'); // Your button ID
-    if (openBackupModalButton) {
-        openBackupModalButton.addEventListener('click', () => {
-            window.gpgBackupModalInstance.show();
-        });
-    }
-
-    // Attach event listener for the 'Import Selected Key' button
-    const importKeyBtn = document.getElementById('importKeyBtn');
-    if (importKeyBtn) {
-        importKeyBtn.addEventListener('click', importSelectedGPGKey);
-    }
-
-    // If you have a 'Search' button and 'gpgEmailInput' re-added to your HTML,
-    // you'd attach its event listener here as well:
-    // const searchKeyBtn = document.getElementById('searchKeyBtn');
-    // if (searchKeyBtn) {
-    //     searchKeyBtn.addEventListener('click', searchGPGKeys);
-    // }
-});
-*/
+// Make functions globally available for inline event handlers
+window.selectGPGKey = selectGPGKey;
+window.searchGPGKeys = searchGPGKeys;
