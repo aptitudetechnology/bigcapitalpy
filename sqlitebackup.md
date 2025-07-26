@@ -68,16 +68,56 @@ def backup_database_with_sqlalchemy(backup_dir: str):
 
 ## PostgreSQL Backup (Optional)
 
-If you want to support PostgreSQL backups, you can use the `pg_dump` utility. Example stub:
+If you want to support PostgreSQL backups, you can use the `pg_dump` utility. Here is a complete example:
 
 ```python
+import re
+import subprocess
+import os
+from flask import current_app
+
 def backup_postgresql_database(backup_dir: str):
+    """
+    Creates a PostgreSQL database backup using pg_dump.
+    The backup will be saved as a .sql file in backup_dir.
+    Requires pg_dump to be installed and accessible in PATH.
+    """
     db_uri = current_app.config.get('SQLALCHEMY_DATABASE_URI', '')
-    # Parse URI for credentials and DB name
-    # Use subprocess to call pg_dump
-    # Save output to backup_dir
-    # ...
+    # Example URI: postgresql://user:password@host:port/dbname
+    pattern = r'postgresql://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^:/]+)(:(?P<port>\d+))?/(?P<dbname>[^?]+)'
+    match = re.match(pattern, db_uri)
+    if not match:
+        raise RuntimeError(f"Could not parse PostgreSQL URI: {db_uri}")
+    user = match.group('user')
+    password = match.group('password')
+    host = match.group('host')
+    port = match.group('port') or '5432'
+    dbname = match.group('dbname')
+
+    backup_file = os.path.join(backup_dir, f"{dbname}_backup.sql")
+    env = os.environ.copy()
+    env['PGPASSWORD'] = password
+    cmd = [
+        'pg_dump',
+        '-h', host,
+        '-p', port,
+        '-U', user,
+        '-F', 'c',  # custom format (compressed); use 'plain' for .sql
+        '-b',       # include blobs
+        '-f', backup_file,
+        dbname
+    ]
+    try:
+        subprocess.run(cmd, check=True, env=env)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"pg_dump failed: {e}")
+    return backup_file
 ```
+
+**Notes:**
+- This function requires `pg_dump` to be installed and available in your system's PATH.
+- The backup will be saved in PostgreSQL's custom format (`.sql` if you change `-F` to `plain`).
+- You may need to adjust permissions or connection parameters for your environment.
 
 ## Recommendation
 - **Short-term:** Apply the above patch to provide a clear error for non-SQLite DBs.
