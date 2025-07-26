@@ -23,7 +23,10 @@ def main():
     venv_path = Path('.venv')
     if not venv_path.exists():
         print("📦 Creating virtual environment...")
-        subprocess.run([sys.executable, '-m', 'venv', '.venv'])
+        result = subprocess.run([sys.executable, '-m', 'venv', '.venv'])
+        if result.returncode != 0:
+            print("❌ Failed to create virtual environment. Ensure your system's Python 3 is complete (e.g., 'sudo apt install python3-venv' on Ubuntu).")
+            sys.exit(1)
         print("✅ Virtual environment created")
     
     # Determine the correct pip and python paths
@@ -34,14 +37,24 @@ def main():
         pip_path = '.venv/bin/pip'
         python_path = '.venv/bin/python'
     
+    # --- NEW STEP: Upgrade pip and setuptools within the venv ---
+    print("⬆️ Upgrading pip and setuptools in the virtual environment...")
+    result = subprocess.run([pip_path, 'install', '--upgrade', 'pip', 'setuptools'])
+    if result.returncode == 0:
+        print("✅ pip and setuptools upgraded successfully")
+    else:
+        print("❌ Failed to upgrade pip and setuptools. This might cause dependency installation issues.")
+        # Don't exit here, as it might still work, but warn the user.
+    # --- END NEW STEP ---
+
     # Install dependencies
     if os.path.exists('requirements-python.txt'):
-        print("📥 Installing Python dependencies...")
+        print("📥 Installing Python dependencies from requirements-python.txt...")
         result = subprocess.run([pip_path, 'install', '-r', 'requirements-python.txt'])
         if result.returncode == 0:
             print("✅ Dependencies installed successfully")
         else:
-            print("❌ Failed to install dependencies")
+            print("❌ Failed to install dependencies. Check the error messages above.")
             sys.exit(1)
     
     # Set environment variables

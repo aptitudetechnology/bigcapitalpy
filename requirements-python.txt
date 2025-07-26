@@ -69,3 +69,6 @@ pycycle
 
 # Python gpg
 python-gnupg==0.5
+
+# gunicorn
+gunicorn==22.0.0
