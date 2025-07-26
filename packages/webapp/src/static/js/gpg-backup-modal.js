@@ -66,13 +66,9 @@ export function searchGPGKeys() {
                 `;
             }).join("");
 
-            // Add event listener to the results container for radio button changes
-            // This is crucial if `onchange` attributes are removed from HTML
-            resultsContainer.addEventListener('change', (event) => {
-                if (event.target.matches('input[name="keySelect"]')) {
-                    selectGPGKey(event.target.value);
-                }
-            }, { once: true }); // Use once: true if you only expect one selection per search
+            // The onchange event for radio buttons will need to be handled elsewhere (e.g., inline in HTML or another script)
+            // if you remove the 'change' event listener from here.
+            // For now, I'm assuming you'll manage this if 'searchGPGKeys' is still used.
         }
     })
     .catch(err => {
@@ -212,16 +208,8 @@ export class GPGBackupModal {
         // Set initial step to display when modal is first constructed
         this.showStep('keySetup');
 
-        // Attach event listeners to main action buttons in the modal footer
-        if (this.confirmCreateBackupBtn) {
-            this.confirmCreateBackupBtn.addEventListener('click', () => this.startBackup());
-        }
-        if (this.downloadBackupBtn) {
-            this.downloadBackupBtn.addEventListener('click', () => this.downloadBackup());
-        }
-        if (this.cancelBackupBtn) {
-            this.cancelBackupBtn.addEventListener('click', () => this.hide());
-        }
+        // Event listeners are removed from here as per your request.
+        // You will need to attach these event listeners in a separate script or using inline 'onclick' attributes.
     }
 
     /**
@@ -340,36 +328,41 @@ export class GPGBackupModal {
     }
 }
 
-// --- Initialization Logic ---
-// This part ensures the GPGBackupModal is instantiated and ready when the DOM is loaded.
-// It also attaches the event listener for the button that opens the modal.
+// The initialization logic and event listeners that were previously here have been removed.
+// You will need to add these in a separate script file or directly in your HTML template
+// where you include this module.
+//
+// Example of how you might initialize the modal and attach event listeners in another script
+// (e.g., in a <script type="module"> block within your backup.html or a dedicated main.js):
+/*
+import { GPGBackupModal, importSelectedGPGKey } from './gpg-backup-modal.js';
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Instantiate the GPGBackupModal class.
-    // Make it globally accessible for easier debugging and interaction from other scripts.
+    // Instantiate the GPGBackupModal class
     window.gpgBackupModalInstance = new GPGBackupModal('gpgConfirmationModal');
 
-    // Set the encryption email. This should ideally come from your Flask backend
-    // as a Jinja2 variable (e.g., `{{ current_user.email }}`) embedded in a script tag
-    // or passed via a data attribute on an element.
-    // For demonstration, using a placeholder. Replace 'chris@caston.id.au'
-    // with your actual dynamic email source.
+    // Set the encryption email (replace 'chris@caston.id.au' with your dynamic source)
     window.gpgBackupModalInstance.setEncryptionEmail('chris@caston.id.au');
 
-    // Attach event listener to the button that opens the GPG backup modal.
-    // Replace 'openBackupModalBtn' with the actual ID of your button.
-    const openBackupModalButton = document.getElementById('openBackupModalBtn');
+    // Attach event listener to the button that opens the GPG backup modal
+    const openBackupModalButton = document.getElementById('openBackupModalBtn'); // Your button ID
     if (openBackupModalButton) {
         openBackupModalButton.addEventListener('click', () => {
             window.gpgBackupModalInstance.show();
         });
     }
 
-    // If you still have an 'Import Selected Key' button and it's not handled by the class,
-    // ensure its event listener is attached here.
+    // Attach event listener for the 'Import Selected Key' button
     const importKeyBtn = document.getElementById('importKeyBtn');
     if (importKeyBtn) {
-        // Ensure the button is enabled/disabled based on selectedKeyId
-        // This might be managed by the class's showStep or other methods.
         importKeyBtn.addEventListener('click', importSelectedGPGKey);
     }
+
+    // If you have a 'Search' button and 'gpgEmailInput' re-added to your HTML,
+    // you'd attach its event listener here as well:
+    // const searchKeyBtn = document.getElementById('searchKeyBtn');
+    // if (searchKeyBtn) {
+    //     searchKeyBtn.addEventListener('click', searchGPGKeys);
+    // }
 });
+*/
