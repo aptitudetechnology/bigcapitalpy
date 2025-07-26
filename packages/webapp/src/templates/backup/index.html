@@ -328,6 +328,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Add button click listener as backup
         const submitButton = document.getElementById('createBackupBtn');
+        console.log('Submit button found:', submitButton);
         if (submitButton) {
             console.log('Adding click listener to submit button');
             submitButton.addEventListener('click', function(e) {
