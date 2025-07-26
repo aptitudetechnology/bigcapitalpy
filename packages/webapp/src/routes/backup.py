@@ -168,9 +168,17 @@ def create_backup_async(job_id, format_type, include_attachments, encrypt_gpg, g
             backup_jobs[job_id]['status'] = 'Encrypting backup...'
             backup_jobs[job_id]['progress'] = 80
             
+            # Replace the encrypt_result = subprocess.run([...]) section around line 135 with this:
+
             encrypt_result = subprocess.run([
-                "gpg", "--output", encrypted_path,
-                "--encrypt", "--recipient", gpg_email, backup_path
+            "gpg", 
+            "--batch",                    # Run in non-interactive mode
+            "--yes",                      # Answer yes to prompts automatically
+            "--trust-model", "always",    # Trust all keys without prompting
+            "--output", encrypted_path,
+            "--encrypt", 
+             "--recipient", gpg_email, 
+            backup_path
             ], capture_output=True, text=True, timeout=300)
             
             if encrypt_result.returncode != 0:
