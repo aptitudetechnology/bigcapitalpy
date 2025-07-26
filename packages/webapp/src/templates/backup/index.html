@@ -243,7 +243,14 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script type="module">
+import { GPGBackupModal, importSelectedGPGKey, searchGPGKeys, selectGPGKey } from "{{ url_for('static', filename='js/gpg-backup-modal.js') }}";
+
+// Expose functions for inline HTML event handlers
+window.importSelectedGPGKey = importSelectedGPGKey;
+window.searchGPGKeys = searchGPGKeys;
+window.selectGPGKey = selectGPGKey;
+
 document.addEventListener('DOMContentLoaded', function () {
     const encryptCheckbox = document.getElementById('encryptBackup');
     const emailField = document.getElementById('gpgEmailField');
@@ -280,34 +287,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // Update modal with email
-            const modalEmailDisplay = modalElement.querySelector('#gpgEncryptEmail');
-            const modalEmailInput = modalElement.querySelector('#gpgModalEmail');
-            if (modalEmailDisplay) modalEmailDisplay.textContent = email;
-            if (modalEmailInput) modalEmailInput.value = email;
-
-            // Initialize and show modal
-            try {
-                // Check if GPGBackupModal class is available
-                if (typeof GPGBackupModal !== 'undefined') {
-                    // Use the external JS class
-                    if (!window.gpgModal) {
-                        window.gpgModal = new GPGBackupModal('#gpgConfirmationModal');
-                    }
-                    window.gpgModal.showModal();
-                } else {
-                    // Fallback to basic Bootstrap modal
-                    console.warn('GPGBackupModal class not found, using basic modal');
-                    const gpgModal = new bootstrap.Modal(modalElement, {
-                        backdrop: 'static',
-                        keyboard: false
-                    });
-                    gpgModal.show();
-                }
-            } catch (error) {
-                console.error('Error showing GPG modal:', error);
-                alert('Error showing GPG modal. Check console for details.');
+            // Initialize and show modal using the ES module class
+            if (!window.gpgModalInstance) {
+                window.gpgModalInstance = new GPGBackupModal('gpgConfirmationModal');
             }
+            window.gpgModalInstance.setEncryptionEmail(email);
+            window.gpgModalInstance.show();
         }
         // else: allow default form submission for non-GPG backups
     });
@@ -316,7 +301,10 @@ document.addEventListener('DOMContentLoaded', function () {
     window.showGpgModalManually = function () {
         const modal = document.getElementById('gpgConfirmationModal');
         if (modal) {
-            new bootstrap.Modal(modal).show();
+            if (!window.gpgModalInstance) {
+                window.gpgModalInstance = new GPGBackupModal('gpgConfirmationModal');
+            }
+            window.gpgModalInstance.show();
         } else {
             console.warn('GPG modal not found. Available modals:', 
                 Array.from(document.querySelectorAll('.modal')).map(m => m.id));
@@ -334,7 +322,4 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 });
 </script>
-
-<!-- Include GPG Modal JavaScript -->
-<script type="module" src="{{ url_for('static', filename='js/gpg-backup-modal.js') }}"></script>
 {% endblock %}
