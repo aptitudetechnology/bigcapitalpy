@@ -14,22 +14,35 @@
                 <h6 class="m-0 font-weight-bold text-primary">Manual Backup</h6>
             </div>
             <div class="card-body">
-                <form>
+                <form method="POST" action="/backup/create" enctype="multipart/form-data" id="backupForm">
                     <div class="mb-3">
                         <label for="backupFormat" class="form-label">Backup Format</label>
-                        <select class="form-select" id="backupFormat">
+                        <select class="form-select" id="backupFormat" name="format">
                             <option value="zip">ZIP (Recommended)</option>
                             <option value="json">JSON</option>
                             <option value="csv">CSV</option>
                         </select>
                     </div>
                     <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="includeAttachments" checked>
+                        <input class="form-check-input" type="checkbox" id="includeAttachments" name="include_attachments" checked>
                         <label class="form-check-label" for="includeAttachments">
                             Include Attachments (invoices, receipts, etc.)
                         </label>
                     </div>
-                    <button type="submit" class="btn btn-primary mb-3">
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="encryptWithGPG" name="encrypt_gpg">
+                        <label class="form-check-label" for="encryptWithGPG">
+                            Encrypt with GPG (Public Key from Ubuntu Keyserver)
+                        </label>
+                    </div>
+                    <div class="mb-3" id="gpgEmailField" style="display: none;">
+                        <label for="gpgEmail" class="form-label">Email Address (GPG Key Owner)</label>
+                        <input type="email" class="form-control" id="gpgEmail" name="gpg_email" placeholder="user@example.com" value="{{ user.email if user is defined else '' }}">
+                        <div class="form-text">We'll search Ubuntu Keyserver for this email's public key</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary mb-3" id="createBackupBtn">
                         <i class="bi bi-cloud-arrow-down me-2"></i>Create & Download Backup
                     </button>
                 </form>
@@ -56,9 +69,7 @@
                                 <td>
                                     {% if backup.date %}
                                         {{ backup.date | datetimeformat if backup.date.__class__.__name__ != 'str' else backup.date }}
-                                    {% else %}
-                                        
-                                    {% endif %}
+                                    {% else %}{% endif %}
                                 </td>
                                 <td>
                                     <a href="{{ backup.download_url }}" class="btn btn-outline-primary btn-sm" title="Download">
@@ -77,6 +88,7 @@
         </div>
     </div>
 
+    <!-- Restore -->
     <div class="col-lg-6 mb-4">
         <div class="card shadow">
             <div class="card-header py-3">
@@ -86,8 +98,8 @@
                 <form>
                     <div class="mb-3">
                         <label for="backupFileUpload" class="form-label">Upload Backup File</label>
-                        <input class="form-control" type="file" id="backupFileUpload" accept=".zip,.json,.csv">
-                        <div class="form-text">Accepted formats: ZIP, JSON, CSV</div>
+                        <input class="form-control" type="file" id="backupFileUpload" accept=".zip,.json,.csv,.gpg">
+                        <div class="form-text">Accepted formats: ZIP, JSON, CSV, GPG</div>
                     </div>
                     <button type="submit" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#restoreConfirmationModal">
                         <i class="bi bi-cloud-arrow-up me-2"></i>Restore Data
@@ -117,6 +129,7 @@
         </div>
     </div>
 
+    <!-- Scheduled Backups -->
     <div class="col-lg-6 mb-4">
         <div class="card shadow">
             <div class="card-header py-3">
@@ -159,6 +172,7 @@
         </div>
     </div>
 
+    <!-- Cloud Integrations -->
     <div class="col-lg-6 mb-4">
         <div class="card shadow">
             <div class="card-header py-3">
@@ -169,24 +183,24 @@
                     <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         <div>
                             <i class="bi bi-google me-2 text-primary"></i>
-                            <strong>Google Drive</strong>
-                            <br><small class="text-muted">Connect your Google Drive account</small>
+                            <strong>Google Drive</strong><br>
+                            <small class="text-muted">Connect your Google Drive account</small>
                         </div>
                         <i class="bi bi-chevron-right"></i>
                     </a>
                     <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         <div>
                             <i class="bi bi-dropbox me-2 text-info"></i>
-                            <strong>Dropbox</strong>
-                            <br><small class="text-muted">Connect your Dropbox account</small>
+                            <strong>Dropbox</strong><br>
+                            <small class="text-muted">Connect your Dropbox account</small>
                         </div>
                         <i class="bi bi-chevron-right"></i>
                     </a>
                     <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         <div>
                             <i class="bi bi-cloud-fill me-2 text-warning"></i>
-                            <strong>AWS S3</strong>
-                            <br><small class="text-muted">Configure AWS S3 bucket</small>
+                            <strong>AWS S3</strong><br>
+                            <small class="text-muted">Configure AWS S3 bucket</small>
                         </div>
                         <i class="bi bi-chevron-right"></i>
                     </a>
@@ -198,6 +212,7 @@
         </div>
     </div>
 
+    <!-- Security Settings -->
     <div class="col-lg-12 mb-4">
         <div class="card shadow">
             <div class="card-header py-3">
@@ -222,12 +237,64 @@
     </div>
 </div>
 
+<!-- Include GPG Modal -->
+{% include '/backup/backupmodals/gpg-modal.html' %}
+
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Enable/disable scheduled backup options based on checkbox
+document.addEventListener('DOMContentLoaded', function () {
+    const encryptCheckbox = document.getElementById('encryptWithGPG');
+    const emailField = document.getElementById('gpgEmailField');
+    const emailInput = document.getElementById('gpgEmail');
+    const backupForm = document.getElementById('backupForm');
+
+    // Show/hide email field based on GPG checkbox
+    encryptCheckbox.addEventListener('change', function () {
+        emailField.style.display = this.checked ? 'block' : 'none';
+        if (this.checked) {
+            emailInput.required = true;
+        } else {
+            emailInput.required = false;
+        }
+    });
+
+    // Intercept form submission for GPG encryption
+    backupForm.addEventListener('submit', function(e) {
+        if (encryptCheckbox.checked) {
+            e.preventDefault(); // Stop normal form submission
+            
+            // Validate email is provided
+            if (!emailInput.value.trim()) {
+                alert('Please provide an email address for GPG encryption.');
+                emailInput.focus();
+                return;
+            }
+
+            // Validate email format
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(emailInput.value.trim())) {
+                alert('Please provide a valid email address.');
+                emailInput.focus();
+                return;
+            }
+
+            // Collect form data for the modal
+            const formData = new FormData(backupForm);
+            
+            // Trigger GPG modal with form data
+            if (window.openGPGBackupModal) {
+                window.openGPGBackupModal(formData);
+            } else {
+                console.error('GPG Modal script not loaded');
+                alert('GPG encryption system not available. Please try again.');
+            }
+        }
+        // If GPG not checked, form submits normally
+    });
+
+    // Scheduled backups functionality
     const enableScheduledBackupsCheckbox = document.getElementById('enableScheduledBackups');
     const scheduledBackupFields = document.querySelectorAll('#backupFrequency, #backupRetention, #backupSuccessNotification, #backupFailureNotification');
     const saveScheduleButton = document.querySelector('.card-body form .btn-primary[type="submit"]');
@@ -237,19 +304,22 @@ document.addEventListener('DOMContentLoaded', function() {
         scheduledBackupFields.forEach(field => {
             field.disabled = !isEnabled;
         });
-        saveScheduleButton.disabled = !isEnabled;
+        if (saveScheduleButton) {
+            saveScheduleButton.disabled = !isEnabled;
+        }
     }
 
     enableScheduledBackupsCheckbox.addEventListener('change', toggleScheduledBackupFields);
-
-    // Initial state setup
     toggleScheduledBackupFields();
 
-    // Add tooltips if needed
+    // Initialize tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 });
 </script>
+
+<!-- Include GPG Modal JavaScript -->
+<script src="{{ url_for('static', filename='js/gpg-backup-modal.js') }}"></script>
 {% endblock %}

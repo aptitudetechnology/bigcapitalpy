@@ -238,7 +238,7 @@
 </div>
 
 <!-- Include GPG Modal -->
-{% include '/backup/backupmodals/gpg-modal.html' %}
+{% include 'backupmodels/gpg-modal.html' %}
 
 {% endblock %}
 
@@ -280,16 +280,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // Collect form data for the modal
+            // Collect form data
             const formData = new FormData(backupForm);
             
-            // Trigger GPG modal with form data
-            if (window.openGPGBackupModal) {
-                window.openGPGBackupModal(formData);
-            } else {
-                console.error('GPG Modal script not loaded');
-                alert('GPG encryption system not available. Please try again.');
+            // Open the GPG modal directly
+            const gpgModal = new bootstrap.Modal(document.getElementById('gpgBackupModal'));
+            
+            // Set the email in the modal if it has that field
+            const modalEmailField = document.getElementById('gpgModalEmail');
+            if (modalEmailField) {
+                modalEmailField.value = emailInput.value;
             }
+            
+            // Store form data for modal to use
+            window.currentBackupFormData = formData;
+            
+            // Show the modal
+            gpgModal.show();
         }
         // If GPG not checked, form submits normally
     });
