@@ -45,97 +45,88 @@ def gpg_setup():
         # Debug logging
         print(f"Request content type: {request.content_type}")
         print(f"Request data: {request.data}")
-        
         data = request.get_json(force=True)
         print(f"Parsed JSON: {data}")
-        
         if not data:
             return jsonify({
                 'success': False,
                 'error': 'No JSON data received'
             }), 400
-        
         email = data.get('email')
-        
         if not email:
             return jsonify({
                 'success': False,
                 'error': 'Email address is required'
             }), 400
-        
         # Check if key already exists locally
         check_result = subprocess.run([
             "gpg", "--list-keys", email
         ], capture_output=True, text=True, timeout=10)
-        
+        print(f"Check result: {check_result.stdout}")
         if check_result.returncode == 0:
             return jsonify({
                 'success': True,
                 'message': 'GPG key already available locally'
             })
-        
-        # Try to import the key directly (non-interactive)
-        # This will import the first available key for the email
-        import_result = subprocess.run([
-            "gpg", 
-            "--batch",                           # Non-interactive mode
-            "--keyserver", "keyserver.ubuntu.com", 
-            "--recv-keys", email
-        ], capture_output=True, text=True, timeout=30)
-        
-        if import_result.returncode != 0:
-            # If direct import fails, try searching for key IDs first
-            search_result = subprocess.run([
-                "gpg", 
-                "--batch",                       # Non-interactive mode
-                "--keyserver", "keyserver.ubuntu.com",
-                "--search-keys", email
-            ], capture_output=True, text=True, timeout=30, input="\n")  # Auto-select first key
-            
-            if search_result.returncode != 0:
-                return jsonify({
-                    'success': False,
-                    'error': 'No GPG key found for this email address',
-                    'details': f'Keyserver search failed: {search_result.stderr}'
-                })
-            
-            # Extract key ID from search results and import it
-            # This is a fallback - the direct recv-keys should work in most cases
+        # Search for the key to get the key ID
+        search_result = subprocess.run([
+            "gpg", "--batch", "--keyserver", "keyserver.ubuntu.com",
+            "--search-keys", email
+        ], capture_output=True, text=True, timeout=30, input="q\n")  # Auto-quit after finding
+        print(f"Search result: {search_result.stdout}")
+        if search_result.returncode != 0:
             return jsonify({
                 'success': False,
-                'error': 'Key found but import failed',
-                'details': f'Import failed: {import_result.stderr}'
+                'error': 'No GPG key found for this email address',
+                'details': f'Keyserver search failed: {search_result.stderr}'
             })
-        
+        # Extract key ID from search results
+        import re
+        key_id_match = re.search(r'key ([A-F0-9]+)', search_result.stdout)
+        if not key_id_match:
+            return jsonify({
+                'success': False,
+                'error': 'Could not extract key ID from search results',
+                'details': f'Search output: {search_result.stdout}'
+            })
+        key_id = key_id_match.group(1)
+        print(f"Found key ID: {key_id}")
+        # Import the key using the key ID
+        import_result = subprocess.run([
+            "gpg", "--batch", "--keyserver", "keyserver.ubuntu.com",
+            "--recv-keys", key_id
+        ], capture_output=True, text=True, timeout=30)
+        print(f"Import result: {import_result.stdout}")
+        if import_result.returncode != 0:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to import GPG key',
+                'details': f'Key import failed: {import_result.stderr}'
+            })
         # Verify the key was imported by listing it
         verify_result = subprocess.run([
             "gpg", "--list-keys", email
         ], capture_output=True, text=True, timeout=10)
-        
+        print(f"GPG verification output: {verify_result.stdout}")
+        print(f"GPG verification stderr: {verify_result.stderr}")
+        print(f"GPG verification return code: {verify_result.returncode}")
         if verify_result.returncode != 0:
             return jsonify({
                 'success': False,
                 'error': 'GPG key import verification failed',
                 'details': 'Key was imported but cannot be verified'
             })
-        
-        # Detailed logging before returning success
-        print(f"GPG key import successful for email: {email}")
-        print(f"Check result: {check_result.stdout}")
-        print(f"Import result: {import_result.stdout}")
-        print(f"Verify result: {verify_result.stdout}")
         return jsonify({
             'success': True,
-            'message': 'GPG key imported successfully'
+            'message': 'GPG key imported successfully',
+            'key_id': key_id
         })
-        
     except subprocess.TimeoutExpired:
         return jsonify({
             'success': False,
             'error': 'GPG operation timed out',
             'details': 'The keyserver request took too long. Please try again.'
         }), 408
-        
     except Exception as e:
         return jsonify({
             'success': False,
