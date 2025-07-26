@@ -1,8 +1,8 @@
-chris@simple:~/bigcapitalpy/scripts$ python3 test_links.py 
+ python3 scripts/test_links.py 
 Attempting to log in to http://simple.local:5000/auth/login...
 Using Email: admin@bigcapitalpy.com
 Using Password: admin123
-CSRF token obtained: IjM4MDNiYW...
+CSRF token obtained: IjY4Njc5NW...
 Login POST request completed. Final URL: http://simple.local:5000/
 Login successful. Starting crawl...
 Crawling: http://simple.local:5000
@@ -11,17 +11,26 @@ Crawling: http://simple.local:5000/customers/
 Crawling: http://simple.local:5000/vendors/
 Crawling: http://simple.local:5000/items/
 Crawling: http://simple.local:5000/invoices/
+Crawling: http://simple.local:5000/estimates/
+  ⚠️  Rendering error detected: Jinja2 Template Error
 Crawling: http://simple.local:5000/payments/
 Crawling: http://simple.local:5000/accounts/
-Crawling: http://simple.local:5000/financial/
-Crawling: http://simple.local:5000/financial/banking
-Crawling: http://simple.local:5000/financial/manual-journals
-Crawling: http://simple.local:5000/financial/reconciliation
-Crawling: http://simple.local:5000/financial/cash-flow
+  ⚠️  Rendering error detected: Jinja2 Template Error
 Crawling: http://simple.local:5000/reports/
+Crawling: http://simple.local:5000/organization/
+Crawling: http://simple.local:5000/system/user/settings
+Crawling: http://simple.local:5000/system/user/profile
+Crawling: http://simple.local:5000/preferences/
+  ⚠️  Rendering error detected: Jinja2 Template Error
+Crawling: http://simple.local:5000/backup/
 Crawling: http://simple.local:5000/auth/logout
 Crawling: http://simple.local:5000/auth/register
 Crawling: http://simple.local:5000/auth/login
+Crawling: http://simple.local:5000/system/user/change-password
+Crawling: http://simple.local:5000/system/user/settings/edit
+Crawling: http://simple.local:5000/organization/edit
+Crawling: http://simple.local:5000/organization/settings
+Crawling: http://simple.local:5000/organization/backup
 Crawling: http://simple.local:5000/reports/profit-loss
 Crawling: http://simple.local:5000/reports/balance-sheet
 Crawling: http://simple.local:5000/reports/cash-flow
@@ -36,16 +45,11 @@ Crawling: http://simple.local:5000/reports/tax-codes
 Crawling: http://simple.local:5000/reports/tax-summary
 Crawling: http://simple.local:5000/reports/general-ledger
 Crawling: http://simple.local:5000/reports/trial-balance
-Crawling: http://simple.local:5000/reports/custom
-Crawling: http://simple.local:5000/reports/profitability
-Crawling: http://simple.local:5000/reports/dashboard
-Crawling: http://simple.local:5000/financial/cash-flow?format=pdf
-Crawling: http://simple.local:5000/financial/cash-flow?format=excel
-Crawling: http://simple.local:5000/financial/cash-flow?format=csv
-Crawling: http://simple.local:5000/accounts/new
-Crawling: http://simple.local:5000/financial/manual-journals/create
-Crawling: http://simple.local:5000/accounts/?type=asset
-Crawling: http://simple.local:5000/accounts/new?type=asset
+Crawling: http://simple.local:5000/reports/custom-report-builder
+Crawling: http://simple.local:5000/reports/profitability-analysis
+  ⚠️  Rendering error detected: Jinja2 Template Error
+Crawling: http://simple.local:5000/reports/executive-dashboard
+  ⚠️  Rendering error detected: Jinja2 Template Error
 Crawling: http://simple.local:5000/payments/create
 Crawling: http://simple.local:5000/invoices/create
 Crawling: http://simple.local:5000/items/new
@@ -58,78 +62,218 @@ Crawling: http://simple.local:5000/customers/new
 CRAWL RESULTS
 ============================================================
 
-Summary: Checked 48 pages
+Summary: Checked 47 pages
 Found 0 broken links
-Found 161 dummy/placeholder links
-Found 52 text/URL mismatches
+Found 124 dummy/placeholder links
+Found 75 text/URL mismatches
+Found 5 rendering/template errors
 
---- DUMMY/PLACEHOLDER LINKS (161) ---
-🔗 Page: http://simple.local:5000/invoices/
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
+--- RENDERING/TEMPLATE ERRORS (5) ---
+🔥 http://simple.local:5000/estimates/
+   Status: HTTP 500
+   Type: Jinja2 Template Error
+   Error: jinja2.exceptions.TemplateNotFound: estimates/index.html
 
+🔥 http://simple.local:5000/accounts/
+   Status: HTTP 500
+   Type: Jinja2 Template Error
+   Error: UndefinedError: &#39;jinja2.runtime.TemplateReference object&#39; has no attribute &#39;render_account_tree&#39;
+
+🔥 http://simple.local:5000/preferences/
+   Status: HTTP 500
+   Type: Jinja2 Template Error
+   Error: TemplateAssertionError: No filter named &#39;strftime&#39;.
+
+🔥 http://simple.local:5000/reports/profitability-analysis
+   Status: HTTP 500
+   Type: Jinja2 Template Error
+   Error: jinja2.exceptions.TemplateNotFound: reports/profitability_analysis.html
+
+🔥 http://simple.local:5000/reports/executive-dashboard
+   Status: HTTP 500
+   Type: Jinja2 Template Error
+   Error: jinja2.exceptions.TemplateNotFound: reports/executive_dashboard.html
+
+
+--- DUMMY/PLACEHOLDER LINKS (124) ---
 🔗 Page: http://simple.local:5000/payments/
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/payments/
-   Link: 'Credit Notes' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/accounts/
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/accounts/
-   Link: 'Credit Notes' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/
-   Link: 'Credit Notes' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/banking
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/banking
-   Link: 'Credit Notes' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/manual-journals
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/manual-journals
-   Link: 'Credit Notes' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/reconciliation
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/reconciliation
-   Link: 'Credit Notes' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow
-   Link: 'Credit Notes' -> #
+   Link: 'Credit Notes (Coming Soon)' -> #
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/reports/
-   Link: 'Estimates' -> #
+   Link: 'Credit Notes (Coming Soon)' -> #
    Issue: Hash-only link (no dropdown functionality)
 
-🔗 Page: http://simple.local:5000/reports/
-   Link: 'Credit Notes' -> #
+🔗 Page: http://simple.local:5000/organization/
+   Link: 'Credit Notes (Coming Soon)' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/settings
+   Link: 'Credit Notes (Coming Soon)' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/profile
+   Link: 'Credit Notes (Coming Soon)' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'Credit Notes (Coming Soon)' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'New invoice created' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'Payment overdue' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'Report generated' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'View all notifications' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'Profile' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'Settings' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'Help' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/auth/logout
+   Link: 'Forgot Password?' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/auth/login
+   Link: 'Forgot Password?' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'Google DriveConnect your Google Drive account' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'DropboxConnect your Dropbox account' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'AWS S3Configure AWS S3 bucket' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/backup/
+   Link: 'View Audit Log' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/profile
+   Link: 'New invoice created' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/profile
+   Link: 'Payment overdue' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/profile
+   Link: 'Report generated' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/profile
+   Link: 'View all notifications' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/profile
+   Link: 'Profile' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/profile
+   Link: 'Settings' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/profile
+   Link: 'Help' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/change-password
+   Link: 'Forgot Password?' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/settings
+   Link: 'New invoice created' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/settings
+   Link: 'Payment overdue' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/settings
+   Link: 'Report generated' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/settings
+   Link: 'View all notifications' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/settings
+   Link: 'Profile' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/settings
+   Link: 'Settings' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/settings
+   Link: 'Help' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/system/user/settings/edit
+   Link: 'Forgot Password?' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/organization/
+   Link: 'New invoice created' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/organization/
+   Link: 'Payment overdue' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/organization/
+   Link: 'Report generated' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/organization/
+   Link: 'View all notifications' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/organization/
+   Link: 'Profile' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/organization/
+   Link: 'Settings' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/organization/
+   Link: 'Help' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/organization/edit
+   Link: 'Forgot Password?' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/organization/settings
+   Link: 'Forgot Password?' -> #
+   Issue: Hash-only link (no dropdown functionality)
+
+🔗 Page: http://simple.local:5000/organization/backup
+   Link: 'Forgot Password?' -> #
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/reports/
@@ -160,14 +304,6 @@ Found 52 text/URL mismatches
    Link: 'Help' -> #
    Issue: Hash-only link (no dropdown functionality)
 
-🔗 Page: http://simple.local:5000/auth/logout
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/auth/login
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
 🔗 Page: http://simple.local:5000/reports/
    Link: 'PDF' -> #
    Issue: Hash-only link (no dropdown functionality)
@@ -180,18 +316,6 @@ Found 52 text/URL mismatches
    Link: 'CSV' -> #
    Issue: Hash-only link (no dropdown functionality)
 
-🔗 Page: http://simple.local:5000/reports/profit-loss
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/reports/balance-sheet
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/reports/cash-flow
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
 🔗 Page: http://simple.local:5000/reports/sales-summary
    Link: 'Forgot Password?' -> #
    Issue: Hash-only link (no dropdown functionality)
@@ -201,18 +325,6 @@ Found 52 text/URL mismatches
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/reports/invoice-summary
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/reports/expense-summary
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/reports/vendor-aging
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/reports/purchase-summary
    Link: 'Forgot Password?' -> #
    Issue: Hash-only link (no dropdown functionality)
 
@@ -228,216 +340,8 @@ Found 52 text/URL mismatches
    Link: 'Forgot Password?' -> #
    Issue: Hash-only link (no dropdown functionality)
 
-🔗 Page: http://simple.local:5000/reports/general-ledger
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/reports/trial-balance
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/reports/custom
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/reports/profitability
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/reports/dashboard
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
 🔗 Page: http://simple.local:5000/reports/
    Link: 'Clear History' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow
-   Link: 'New invoice created' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow
-   Link: 'Payment overdue' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow
-   Link: 'Report generated' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow
-   Link: 'View all notifications' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow
-   Link: 'Profile' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow
-   Link: 'Settings' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow
-   Link: 'Help' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow?format=pdf
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow?format=excel
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/cash-flow?format=csv
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/manual-journals/create
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/accounts/?type=asset
-   Link: 'Forgot Password?' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/reconciliation
-   Link: 'New invoice created' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/reconciliation
-   Link: 'Payment overdue' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/reconciliation
-   Link: 'Report generated' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/reconciliation
-   Link: 'View all notifications' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/reconciliation
-   Link: 'Profile' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/reconciliation
-   Link: 'Settings' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/reconciliation
-   Link: 'Help' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/manual-journals
-   Link: 'New invoice created' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/manual-journals
-   Link: 'Payment overdue' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/manual-journals
-   Link: 'Report generated' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/manual-journals
-   Link: 'View all notifications' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/manual-journals
-   Link: 'Profile' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/manual-journals
-   Link: 'Settings' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/manual-journals
-   Link: 'Help' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/banking
-   Link: 'New invoice created' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/banking
-   Link: 'Payment overdue' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/banking
-   Link: 'Report generated' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/banking
-   Link: 'View all notifications' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/banking
-   Link: 'Profile' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/banking
-   Link: 'Settings' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/banking
-   Link: 'Help' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/
-   Link: 'New invoice created' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/
-   Link: 'Payment overdue' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/
-   Link: 'Report generated' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/
-   Link: 'View all notifications' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/
-   Link: 'Profile' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/
-   Link: 'Settings' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/financial/
-   Link: 'Help' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/accounts/
-   Link: 'New invoice created' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/accounts/
-   Link: 'Payment overdue' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/accounts/
-   Link: 'Report generated' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/accounts/
-   Link: 'View all notifications' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/accounts/
-   Link: 'Profile' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/accounts/
-   Link: 'Settings' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/accounts/
-   Link: 'Help' -> #
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/payments/
@@ -473,7 +377,7 @@ Found 52 text/URL mismatches
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/invoices/
-   Link: 'Credit Notes' -> #
+   Link: 'Credit Notes (Coming Soon)' -> #
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/invoices/
@@ -509,11 +413,7 @@ Found 52 text/URL mismatches
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/items/
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/items/
-   Link: 'Credit Notes' -> #
+   Link: 'Credit Notes (Coming Soon)' -> #
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/items/
@@ -549,11 +449,7 @@ Found 52 text/URL mismatches
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/vendors/
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/vendors/
-   Link: 'Credit Notes' -> #
+   Link: 'Credit Notes (Coming Soon)' -> #
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/vendors/
@@ -597,11 +493,7 @@ Found 52 text/URL mismatches
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/customers/
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/customers/
-   Link: 'Credit Notes' -> #
+   Link: 'Credit Notes (Coming Soon)' -> #
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/customers/
@@ -637,11 +529,7 @@ Found 52 text/URL mismatches
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000/
-   Link: 'Credit Notes' -> #
+   Link: 'Credit Notes (Coming Soon)' -> #
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000/
@@ -673,11 +561,7 @@ Found 52 text/URL mismatches
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000
-   Link: 'Estimates' -> #
-   Issue: Hash-only link (no dropdown functionality)
-
-🔗 Page: http://simple.local:5000
-   Link: 'Credit Notes' -> #
+   Link: 'Credit Notes (Coming Soon)' -> #
    Issue: Hash-only link (no dropdown functionality)
 
 🔗 Page: http://simple.local:5000
@@ -709,10 +593,10 @@ Found 52 text/URL mismatches
    Issue: Hash-only link (no dropdown functionality)
 
 
---- TEXT/URL MISMATCHES (52) ---
+--- TEXT/URL MISMATCHES (75) ---
 ⚠️  Page: http://simple.local:5000/invoices/
    Link: 'Sales & Inventory' -> http://simple.local:5000/invoices/
-   Issue: Text suggests 'sales' but URL suggests 'invoices'
+   Issue: Text suggests 'inventory' but URL suggests 'invoices'
 
 ⚠️  Page: http://simple.local:5000/invoices/
    Link: 'Sales' -> http://simple.local:5000/invoices/
@@ -720,7 +604,7 @@ Found 52 text/URL mismatches
 
 ⚠️  Page: http://simple.local:5000/reports/
    Link: 'Sales & Inventory' -> http://simple.local:5000/reports/
-   Issue: Text suggests 'sales' but URL suggests 'reports'
+   Issue: Text suggests 'inventory' but URL suggests 'reports'
 
 ⚠️  Page: http://simple.local:5000/reports/
    Link: 'Sales' -> http://simple.local:5000/reports/
@@ -731,20 +615,100 @@ Found 52 text/URL mismatches
    Issue: Text suggests 'accounting' but URL suggests 'reports'
 
 ⚠️  Page: http://simple.local:5000/reports/
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
+
+⚠️  Page: http://simple.local:5000/reports/
    Link: 'System' -> http://simple.local:5000/reports/
    Issue: Text suggests 'system' but URL suggests 'reports'
 
-⚠️  Page: http://simple.local:5000/reports/
-   Link: 'Organization' -> http://simple.local:5000/reports/
-   Issue: Text suggests 'organization' but URL suggests 'reports'
+⚠️  Page: http://simple.local:5000/organization/
+   Link: 'Sales & Inventory' -> http://simple.local:5000/organization/
+   Issue: Text suggests 'inventory' but URL suggests 'organization'
 
-⚠️  Page: http://simple.local:5000/reports/
-   Link: 'Users & Permissions' -> http://simple.local:5000/reports/
-   Issue: Text suggests 'permissions' but URL suggests 'reports'
+⚠️  Page: http://simple.local:5000/organization/
+   Link: 'Sales' -> http://simple.local:5000/organization/
+   Issue: Text suggests 'sales' but URL suggests 'organization'
 
-⚠️  Page: http://simple.local:5000/reports/
-   Link: 'Backup & Restore' -> http://simple.local:5000/reports/
-   Issue: Text suggests 'backup' but URL suggests 'reports'
+⚠️  Page: http://simple.local:5000/organization/
+   Link: 'Accounting' -> http://simple.local:5000/organization/
+   Issue: Text suggests 'accounting' but URL suggests 'organization'
+
+⚠️  Page: http://simple.local:5000/organization/
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
+
+⚠️  Page: http://simple.local:5000/organization/
+   Link: 'System' -> http://simple.local:5000/organization/
+   Issue: Text suggests 'system' but URL suggests 'organization'
+
+⚠️  Page: http://simple.local:5000/organization/
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
+
+⚠️  Page: http://simple.local:5000/system/user/settings
+   Link: 'Sales & Inventory' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'inventory' but URL suggests 'settings'
+
+⚠️  Page: http://simple.local:5000/system/user/settings
+   Link: 'Sales' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'sales' but URL suggests 'settings'
+
+⚠️  Page: http://simple.local:5000/system/user/settings
+   Link: 'Accounting' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'accounting' but URL suggests 'settings'
+
+⚠️  Page: http://simple.local:5000/system/user/settings
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
+
+⚠️  Page: http://simple.local:5000/system/user/settings
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
+
+⚠️  Page: http://simple.local:5000/system/user/profile
+   Link: 'Sales & Inventory' -> http://simple.local:5000/system/user/profile
+   Issue: Text suggests 'inventory' but URL suggests 'system'
+
+⚠️  Page: http://simple.local:5000/system/user/profile
+   Link: 'Sales' -> http://simple.local:5000/system/user/profile
+   Issue: Text suggests 'sales' but URL suggests 'system'
+
+⚠️  Page: http://simple.local:5000/system/user/profile
+   Link: 'Accounting' -> http://simple.local:5000/system/user/profile
+   Issue: Text suggests 'accounting' but URL suggests 'system'
+
+⚠️  Page: http://simple.local:5000/system/user/profile
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
+
+⚠️  Page: http://simple.local:5000/system/user/profile
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
+
+⚠️  Page: http://simple.local:5000/backup/
+   Link: 'Sales & Inventory' -> http://simple.local:5000/backup/
+   Issue: Text suggests 'inventory' but URL suggests 'backup'
+
+⚠️  Page: http://simple.local:5000/backup/
+   Link: 'Sales' -> http://simple.local:5000/backup/
+   Issue: Text suggests 'sales' but URL suggests 'backup'
+
+⚠️  Page: http://simple.local:5000/backup/
+   Link: 'Accounting' -> http://simple.local:5000/backup/
+   Issue: Text suggests 'accounting' but URL suggests 'backup'
+
+⚠️  Page: http://simple.local:5000/backup/
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
+
+⚠️  Page: http://simple.local:5000/backup/
+   Link: 'System' -> http://simple.local:5000/backup/
+   Issue: Text suggests 'system' but URL suggests 'backup'
+
+⚠️  Page: http://simple.local:5000/backup/
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
 
 ⚠️  Page: http://simple.local:5000/auth/logout
    Link: 'Create Account' -> http://simple.local:5000/auth/register
@@ -754,17 +718,37 @@ Found 52 text/URL mismatches
    Link: 'Create Account' -> http://simple.local:5000/auth/register
    Issue: Text suggests 'create' but URL suggests 'register'
 
-⚠️  Page: http://simple.local:5000/reports/profit-loss
+⚠️  Page: http://simple.local:5000/system/user/profile
+   Link: 'Edit Profile' -> http://simple.local:5000/system/user/profile
+   Issue: Text suggests 'edit' but URL suggests 'system'
+
+⚠️  Page: http://simple.local:5000/system/user/change-password
    Link: 'Create Account' -> http://simple.local:5000/auth/register
    Issue: Text suggests 'create' but URL suggests 'register'
 
-⚠️  Page: http://simple.local:5000/reports/balance-sheet
+⚠️  Page: http://simple.local:5000/system/user/settings/edit
    Link: 'Create Account' -> http://simple.local:5000/auth/register
    Issue: Text suggests 'create' but URL suggests 'register'
 
-⚠️  Page: http://simple.local:5000/reports/cash-flow
+⚠️  Page: http://simple.local:5000/system/user/settings
+   Link: 'View Profile' -> http://simple.local:5000/system/user/profile
+   Issue: Text suggests 'view' but URL suggests 'system'
+
+⚠️  Page: http://simple.local:5000/organization/edit
    Link: 'Create Account' -> http://simple.local:5000/auth/register
    Issue: Text suggests 'create' but URL suggests 'register'
+
+⚠️  Page: http://simple.local:5000/organization/settings
+   Link: 'Create Account' -> http://simple.local:5000/auth/register
+   Issue: Text suggests 'create' but URL suggests 'register'
+
+⚠️  Page: http://simple.local:5000/organization/backup
+   Link: 'Create Account' -> http://simple.local:5000/auth/register
+   Issue: Text suggests 'create' but URL suggests 'register'
+
+⚠️  Page: http://simple.local:5000/reports/
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
 
 ⚠️  Page: http://simple.local:5000/reports/sales-summary
    Link: 'Create Account' -> http://simple.local:5000/auth/register
@@ -778,21 +762,9 @@ Found 52 text/URL mismatches
    Link: 'Create Account' -> http://simple.local:5000/auth/register
    Issue: Text suggests 'create' but URL suggests 'register'
 
-⚠️  Page: http://simple.local:5000/reports/expense-summary
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
-
-⚠️  Page: http://simple.local:5000/reports/vendor-aging
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
-
 ⚠️  Page: http://simple.local:5000/reports/
    Link: 'Purchase SummaryPurchase orders and spending analysis' -> http://simple.local:5000/reports/purchase-summary
    Issue: Text suggests 'orders' but URL suggests 'reports'
-
-⚠️  Page: http://simple.local:5000/reports/purchase-summary
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
 
 ⚠️  Page: http://simple.local:5000/reports/australian-gst-bas
    Link: 'Create Account' -> http://simple.local:5000/auth/register
@@ -806,45 +778,13 @@ Found 52 text/URL mismatches
    Link: 'Create Account' -> http://simple.local:5000/auth/register
    Issue: Text suggests 'create' but URL suggests 'register'
 
-⚠️  Page: http://simple.local:5000/reports/general-ledger
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
+⚠️  Page: http://simple.local:5000/payments/
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
 
-⚠️  Page: http://simple.local:5000/reports/trial-balance
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
-
-⚠️  Page: http://simple.local:5000/reports/custom
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
-
-⚠️  Page: http://simple.local:5000/reports/profitability
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
-
-⚠️  Page: http://simple.local:5000/reports/dashboard
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
-
-⚠️  Page: http://simple.local:5000/financial/cash-flow?format=pdf
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
-
-⚠️  Page: http://simple.local:5000/financial/cash-flow?format=excel
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
-
-⚠️  Page: http://simple.local:5000/financial/cash-flow?format=csv
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
-
-⚠️  Page: http://simple.local:5000/financial/manual-journals/create
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
-
-⚠️  Page: http://simple.local:5000/accounts/?type=asset
-   Link: 'Create Account' -> http://simple.local:5000/auth/register
-   Issue: Text suggests 'create' but URL suggests 'register'
+⚠️  Page: http://simple.local:5000/payments/
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
 
 ⚠️  Page: http://simple.local:5000/payments/create
    Link: 'Create Account' -> http://simple.local:5000/auth/register
@@ -855,28 +795,40 @@ Found 52 text/URL mismatches
    Issue: Text suggests 'accounting' but URL suggests 'invoices'
 
 ⚠️  Page: http://simple.local:5000/invoices/
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
+
+⚠️  Page: http://simple.local:5000/invoices/
    Link: 'System' -> http://simple.local:5000/invoices/
    Issue: Text suggests 'system' but URL suggests 'invoices'
 
 ⚠️  Page: http://simple.local:5000/invoices/
-   Link: 'Organization' -> http://simple.local:5000/invoices/
-   Issue: Text suggests 'organization' but URL suggests 'invoices'
-
-⚠️  Page: http://simple.local:5000/invoices/
-   Link: 'Users & Permissions' -> http://simple.local:5000/invoices/
-   Issue: Text suggests 'permissions' but URL suggests 'invoices'
-
-⚠️  Page: http://simple.local:5000/invoices/
-   Link: 'Backup & Restore' -> http://simple.local:5000/invoices/
-   Issue: Text suggests 'backup' but URL suggests 'invoices'
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
 
 ⚠️  Page: http://simple.local:5000/invoices/create
    Link: 'Create Account' -> http://simple.local:5000/auth/register
    Issue: Text suggests 'create' but URL suggests 'register'
 
+⚠️  Page: http://simple.local:5000/items/
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
+
+⚠️  Page: http://simple.local:5000/items/
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
+
 ⚠️  Page: http://simple.local:5000/items/new
    Link: 'Create Account' -> http://simple.local:5000/auth/register
    Issue: Text suggests 'create' but URL suggests 'register'
+
+⚠️  Page: http://simple.local:5000/vendors/
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
+
+⚠️  Page: http://simple.local:5000/vendors/
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
 
 ⚠️  Page: http://simple.local:5000/vendors/new
    Link: 'Create Account' -> http://simple.local:5000/auth/register
@@ -890,11 +842,27 @@ Found 52 text/URL mismatches
    Link: 'Create Account' -> http://simple.local:5000/auth/register
    Issue: Text suggests 'create' but URL suggests 'register'
 
+⚠️  Page: http://simple.local:5000/customers/
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
+
+⚠️  Page: http://simple.local:5000/customers/
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
+
 ⚠️  Page: http://simple.local:5000/customers/new
    Link: 'Create Account' -> http://simple.local:5000/auth/register
    Issue: Text suggests 'create' but URL suggests 'register'
 
 ⚠️  Page: http://simple.local:5000/
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
+
+⚠️  Page: http://simple.local:5000/
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
+
+⚠️  Page: http://simple.local:5000/
    Link: 'View All' -> http://simple.local:5000/invoices/
    Issue: Text suggests 'view' but URL suggests 'invoices'
 
@@ -907,6 +875,14 @@ Found 52 text/URL mismatches
    Issue: Text suggests 'view' but URL suggests 'reports'
 
 ⚠️  Page: http://simple.local:5000
+   Link: 'Financial Dashboard' -> http://simple.local:5000/reports/
+   Issue: Text suggests 'dashboard' but URL suggests 'reports'
+
+⚠️  Page: http://simple.local:5000
+   Link: 'Users & Permissions' -> http://simple.local:5000/system/user/settings
+   Issue: Text suggests 'permissions' but URL suggests 'settings'
+
+⚠️  Page: http://simple.local:5000
    Link: 'View All' -> http://simple.local:5000/invoices/
    Issue: Text suggests 'view' but URL suggests 'invoices'
 
@@ -917,4 +893,3 @@ Found 52 text/URL mismatches
 ⚠️  Page: http://simple.local:5000
    Link: 'View ReportsFinancial insights' -> http://simple.local:5000/reports/
    Issue: Text suggests 'view' but URL suggests 'reports'
-
