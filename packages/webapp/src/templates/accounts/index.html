@@ -192,8 +192,7 @@
                                 {# {% if account.parent %}
                                     <small class="text-muted">{{ account.parent.name }}</small>
                                 {% endif %} #}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
+                                <span class="text-muted">-</span>
                             </td>
                             <td class="{% if account.balance > 0 %}text-success{% elif account.balance < 0 %}text-danger{% else %}text-muted{% endif %}">
                                 {{ account.balance | currency }}
