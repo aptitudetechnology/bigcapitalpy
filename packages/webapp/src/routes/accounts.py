@@ -38,8 +38,8 @@ def index():
     """
     # Placeholder data for now. You'll replace this with actual database queries.
     accounts = [
-        {'id': 1, 'code': '1000', 'name': 'Cash on Hand', 'type': 'asset', 'balance': 1500.00, 'parent_id': None},
-        {'id': 2, 'code': '4000', 'name': 'Sales Revenue', 'type': 'income', 'balance': 10000.00, 'parent_id': None},
+        {'id': 1, 'code': '1000', 'name': 'Cash on Hand', 'type': 'asset', 'balance': 1500.00, 'parent_id': None, 'is_active': True, 'description': 'Primary cash account', 'children': []},
+        {'id': 2, 'code': '4000', 'name': 'Sales Revenue', 'type': 'income', 'balance': 10000.00, 'parent_id': None, 'is_active': True, 'description': 'Revenue from sales', 'children': []},
     ]
 
     class Summary:
@@ -94,8 +94,8 @@ def show(account_id):
     """
     # Placeholder - find account by ID
     accounts = [
-        {'id': 1, 'code': '1000', 'name': 'Cash on Hand', 'type': 'asset', 'balance': 1500.00, 'parent_id': None, 'description': 'Primary cash account'},
-        {'id': 2, 'code': '4000', 'name': 'Sales Revenue', 'type': 'income', 'balance': 10000.00, 'parent_id': None, 'description': 'Revenue from sales'},
+        {'id': 1, 'code': '1000', 'name': 'Cash on Hand', 'type': 'asset', 'balance': 1500.00, 'parent_id': None, 'is_active': True, 'description': 'Primary cash account', 'children': []},
+        {'id': 2, 'code': '4000', 'name': 'Sales Revenue', 'type': 'income', 'balance': 10000.00, 'parent_id': None, 'is_active': True, 'description': 'Revenue from sales', 'children': []},
     ]
     
     account = next((a for a in accounts if a['id'] == account_id), None)
