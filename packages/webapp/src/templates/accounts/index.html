@@ -132,7 +132,14 @@
                 <div class="account-type-content" id="content-{{ account_type }}">
                     {% for account in type_accounts %}
                         {% if not account.parent_id %}
-                            {{ self.render_account_tree(account, type_accounts, 0) }}
+                            <div class="account-item ms-3 mb-2">
+                                <a href="{{ url_for('accounts.show', account_id=account.id) }}" class="text-decoration-none">
+                                    <code class="text-primary">{{ account.code }}</code> - {{ account.name }}
+                                </a>
+                                {% if account.balance %}
+                                    <span class="badge bg-secondary float-end">{{ account.balance|round(2) }}</span>
+                                {% endif %}
+                            </div>
                         {% endif %}
                     {% endfor %}
                 </div>

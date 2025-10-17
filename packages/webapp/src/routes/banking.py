@@ -229,8 +229,11 @@ def import_transactions(account_id):
                     transaction_date = datetime.strptime(row['parsed_date'], '%Y-%m-%d').date()
                     
                     # Determine amount
-                    debit_amount = float(row.get('debit_net_amount', '0').replace(',', ''))
-                    credit_amount = float(row.get('credit_net_amount', '0').replace(',', ''))
+                    debit_str = row.get('debit_net_amount', '').strip()
+                    credit_str = row.get('credit_net_amount', '').strip()
+                    
+                    debit_amount = float(debit_str.replace(',', '')) if debit_str else 0
+                    credit_amount = float(credit_str.replace(',', '')) if credit_str else 0
                     
                     if debit_amount > 0:
                         amount = -debit_amount
@@ -245,7 +248,8 @@ def import_transactions(account_id):
                         description = f"{row.get('type', 'Unknown')} transaction"
                     
                     # Get balance
-                    balance = float(row.get('account_balance', '0').replace(',', ''))
+                    balance_str = row.get('account_balance', '').strip()
+                    balance = float(balance_str.replace(',', '')) if balance_str else 0
                     
                     # Check for duplicate
                     reference = row.get('transaction_id', '').strip()
