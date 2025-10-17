@@ -64,7 +64,7 @@ def index():
     }
 
     # Pass the macro to the template context for recursive rendering
-    return render_template('accounts/index.html', accounts=accounts, account_summary=account_summary, accounts_by_type=accounts_by_type, render_account_tree=None)
+    return render_template('accounts/index.html', accounts=accounts, account_summary=account_summary, accounts_by_type=accounts_by_type)
 
 @accounts_bp.route('/new', methods=['GET', 'POST'])
 @login_required
@@ -85,3 +85,22 @@ def new():
     return render_template('accounts/new.html', form=form)
 
 # Add other account-related routes as needed (e.g., /<int:id>, /edit, /delete)
+
+@accounts_bp.route('/<int:account_id>')
+@login_required
+def show(account_id):
+    """
+    Show account details.
+    """
+    # Placeholder - find account by ID
+    accounts = [
+        {'id': 1, 'code': '1000', 'name': 'Cash on Hand', 'type': 'asset', 'balance': 1500.00, 'parent_id': None, 'description': 'Primary cash account'},
+        {'id': 2, 'code': '4000', 'name': 'Sales Revenue', 'type': 'income', 'balance': 10000.00, 'parent_id': None, 'description': 'Revenue from sales'},
+    ]
+    
+    account = next((a for a in accounts if a['id'] == account_id), None)
+    if not account:
+        flash('Account not found', 'error')
+        return redirect(url_for('accounts.index'))
+    
+    return render_template('accounts/show.html', account=account)

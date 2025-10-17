@@ -63,12 +63,12 @@ def api_metrics():
     # Calculate monthly sales trend (last 6 months)
     six_months_ago = datetime.now() - timedelta(days=180)
     monthly_sales = db.session.query(
-        func.date_trunc('month', Invoice.invoice_date).label('month'),
+        func.strftime('%Y-%m', Invoice.invoice_date).label('month'),
         func.sum(Invoice.total).label('total')
     ).filter(
         Invoice.organization_id == org_id,
         Invoice.invoice_date >= six_months_ago
-    ).group_by('month').order_by('month').all()
+    ).group_by(func.strftime('%Y-%m', Invoice.invoice_date)).order_by(func.strftime('%Y-%m', Invoice.invoice_date)).all()
     
     sales_data = [
         {
