@@ -10,6 +10,8 @@ from wtforms import StringField, SelectField, DecimalField, BooleanField
 from wtforms.validators import DataRequired, Length, Optional
 from packages.server.src.models import BankAccount, BankTransaction, db
 from datetime import datetime
+import csv
+import io
 
 banking_bp = Blueprint('banking', __name__, url_prefix='/banking')
 
@@ -187,16 +189,110 @@ def api_pause_feeds(account_id):
     
     return jsonify({'success': True})
 
-@banking_bp.route('/api/accounts/<int:account_id>/resume_feeds', methods=['POST'])
+@banking_bp.route('/accounts/<int:account_id>/import', methods=['GET', 'POST'])
 @login_required
-def api_resume_feeds(account_id):
-    """API endpoint to resume feeds for a bank account"""
+def import_transactions(account_id):
+    """Import transactions for a bank account"""
     bank_account = BankAccount.query.filter_by(
         id=account_id,
         organization_id=current_user.organization_id
     ).first_or_404()
     
-    bank_account.feeds_paused = False
-    db.session.commit()
+    if request.method == 'POST':
+        # Check if a file was uploaded
+        if 'csv_file' not in request.files:
+            flash('No file uploaded', 'error')
+            return redirect(request.url)
+        
+        file = request.files['csv_file']
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(request.url)
+        
+        if not file.filename.lower().endswith('.csv'):
+            flash('Please upload a CSV file', 'error')
+            return redirect(request.url)
+        
+        try:
+            # Read CSV content
+            import csv
+            import io
+            
+            # Decode file content
+            content = file.read().decode('utf-8')
+            csv_reader = csv.DictReader(io.StringIO(content))
+            
+            transactions_imported = 0
+            for row in csv_reader:
+                try:
+                    # Parse transaction data (similar to the import script)
+                    transaction_date = datetime.strptime(row['parsed_date'], '%Y-%m-%d').date()
+                    
+                    # Determine amount
+                    debit_amount = float(row.get('debit_net_amount', '0').replace(',', ''))
+                    credit_amount = float(row.get('credit_net_amount', '0').replace(',', ''))
+                    
+                    if debit_amount > 0:
+                        amount = -debit_amount
+                    elif credit_amount > 0:
+                        amount = credit_amount
+                    else:
+                        continue  # Skip zero-amount transactions
+                    
+                    # Get description
+                    description = row.get('description', '').strip()[:500]
+                    if not description:
+                        description = f"{row.get('type', 'Unknown')} transaction"
+                    
+                    # Get balance
+                    balance = float(row.get('account_balance', '0').replace(',', ''))
+                    
+                    # Check for duplicate
+                    reference = row.get('transaction_id', '').strip()
+                    if reference:
+                        existing = BankTransaction.query.filter_by(
+                            reference=reference,
+                            account_id=account_id
+                        ).first()
+                        if existing:
+                            continue
+                    
+                    # Create transaction
+                    transaction = BankTransaction(
+                        account_id=account_id,
+                        transaction_date=transaction_date,
+                        amount=amount,
+                        description=description,
+                        reference=reference,
+                        balance=balance,
+                        status='unmatched',
+                        organization_id=current_user.organization_id
+                    )
+                    
+                    db.session.add(transaction)
+                    transactions_imported += 1
+                    
+                except Exception as e:
+                    print(f"Error processing row: {e}")
+                    continue
+            
+            # Update account balance
+            if transactions_imported > 0:
+                # Get the latest balance from the imported transactions
+                latest_transaction = BankTransaction.query.filter_by(
+                    account_id=account_id
+                ).order_by(BankTransaction.transaction_date.desc()).first()
+                if latest_transaction:
+                    bank_account.balance = latest_transaction.balance
+            
+            db.session.commit()
+            
+            flash(f'Successfully imported {transactions_imported} transactions!', 'success')
+            return redirect(url_for('banking.account_detail', account_id=account_id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error importing transactions: {str(e)}', 'error')
+            return redirect(request.url)
     
-    return jsonify({'success': True})
+    return render_template('banking/import_transactions.html', account=bank_account)
