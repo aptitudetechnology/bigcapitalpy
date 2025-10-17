@@ -716,9 +716,6 @@ class BankAccount(db.Model):
         return f'<BankAccount {self.name}: {self.account_type}>'
 
 
-class BankTransaction(db.Model):
-
-
 # Payment Models
 class Payment(db.Model):
     """Model for payments received from customers"""
