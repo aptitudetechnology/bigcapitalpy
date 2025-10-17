@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Bank Accounts - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Bank Accounts</li>
+            </ol>
+        </nav>
+        <h1 class="h3 mb-0 text-gray-800">Bank Accounts</h1>
+    </div>
+    <div>
+        <a href="{{ url_for('banking.new_account') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Bank Account
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    {% for account in accounts %}
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    {% if account.account_type == 'cash' %}
+                        <i class="bi bi-cash"></i>
+                    {% elif account.account_type == 'bank' %}
+                        <i class="bi bi-bank"></i>
+                    {% elif account.account_type == 'credit-card' %}
+                        <i class="bi bi-credit-card"></i>
+                    {% endif %}
+                    {{ account.name }}
+                </h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('banking.account_detail', account_id=account.id) }}">
+                            <i class="bi bi-eye"></i> View Details
+                        </a></li>
+                        <li><a class="dropdown-item" href="#">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#">
+                            <i class="bi bi-trash"></i> Delete
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if account.account_number %}
+                <p class="text-muted small mb-2">
+                    <i class="bi bi-hash"></i> ****{{ account.account_number[-4:] if account.account_number else '' }}
+                </p>
+                {% endif %}
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">Balance</small>
+                        <div class="h5 mb-0 {{ 'text-success' if (account.balance or 0) >= 0 else 'text-danger' }}">
+                            ${{ "%.2f"|format(account.balance or 0) }}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">{{ account.currency }}</small>
+                        <div class="badge {{ 'bg-success' if account.is_active else 'bg-secondary' }}">
+                            {{ 'Active' if account.is_active else 'Inactive' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{{ url_for('banking.account_detail', account_id=account.id) }}" class="btn btn-sm btn-outline-primary w-100">
+                    View Transactions
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not accounts %}
+<div class="text-center py-5">
+    <i class="bi bi-bank display-1 text-muted mb-3"></i>
+    <h4>No Bank Accounts</h4>
+    <p class="text-muted">Get started by adding your first bank account.</p>
+    <a href="{{ url_for('banking.new_account') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Add Your First Bank Account
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -616,7 +616,7 @@ class BankTransaction(db.Model):
     __tablename__ = 'bank_transactions'
     
     id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('bank_accounts.id'), nullable=False)
     transaction_date = db.Column(db.Date, nullable=False)
     description = db.Column(db.String(500), nullable=False)
     reference = db.Column(db.String(100))
@@ -628,7 +628,7 @@ class BankTransaction(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    account = db.relationship('Account', backref='bank_transactions')
+    account = db.relationship('BankAccount', backref='bank_transactions')
     organization = db.relationship('Organization', backref='bank_transactions')
     
     def __repr__(self):
@@ -640,7 +640,7 @@ class BankReconciliation(db.Model):
     __tablename__ = 'bank_reconciliations'
     
     id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('bank_accounts.id'), nullable=False)
     reconciliation_date = db.Column(db.Date, nullable=False)
     statement_ending_date = db.Column(db.Date, nullable=False)
     statement_ending_balance = db.Column(db.Numeric(15, 2), nullable=False)
@@ -654,7 +654,7 @@ class BankReconciliation(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    account = db.relationship('Account', backref='reconciliations')
+    account = db.relationship('BankAccount', backref='reconciliations')
     organization = db.relationship('Organization', backref='reconciliations')
     creator = db.relationship('User', backref='reconciliations')
     
@@ -679,6 +679,44 @@ class ReconciliationMatch(db.Model):
     
     def __repr__(self):
         return f'<ReconciliationMatch {self.id}: {self.match_type}>'
+
+
+class BankAccount(db.Model):
+    """Model for bank accounts (checking, savings, credit cards)"""
+    __tablename__ = 'bank_accounts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    account_number = db.Column(db.String(100))  # Last 4 digits or full number
+    account_type = db.Column(db.String(50), nullable=False)  # cash, bank, credit-card
+    balance = db.Column(db.Numeric(15, 2), default=0)
+    currency = db.Column(db.String(3), default='USD')
+    
+    # Plaid integration fields
+    plaid_account_id = db.Column(db.String(100))
+    plaid_item_id = db.Column(db.String(100))
+    plaid_access_token = db.Column(db.Text)  # Encrypted
+    
+    # Status
+    is_active = db.Column(db.Boolean, default=True)
+    feeds_paused = db.Column(db.Boolean, default=False)
+    
+    # Organization
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    organization = db.relationship('Organization', backref='bank_accounts')
+    transactions = db.relationship('BankTransaction', backref='bank_account', lazy='dynamic')
+    
+    def __repr__(self):
+        return f'<BankAccount {self.name}: {self.account_type}>'
+
+
+class BankTransaction(db.Model):
 
 
 # Payment Models

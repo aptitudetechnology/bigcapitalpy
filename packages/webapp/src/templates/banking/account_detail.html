@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}{{ account.name }} - Bank Account - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('banking.accounts') }}">Bank Accounts</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ account.name }}</li>
+            </ol>
+        </nav>
+        <h1 class="h3 mb-0 text-gray-800">{{ account.name }}</h1>
+        {% if account.account_number %}
+        <p class="text-muted mb-0">****{{ account.account_number[-4:] if account.account_number else '' }}</p>
+        {% endif %}
+    </div>
+    <div>
+        <a href="{{ url_for('banking.accounts') }}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left"></i> Back to Accounts
+        </a>
+        <button class="btn btn-primary">
+            <i class="bi bi-upload"></i> Import Transactions
+        </button>
+    </div>
+</div>
+
+<!-- Account Summary Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Current Balance
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            ${{ "%.2f"|format(account.balance or 0) }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-cash-stack fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Account Type
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {% if account.account_type == 'cash' %}
+                                <i class="bi bi-cash"></i> Cash
+                            {% elif account.account_type == 'bank' %}
+                                <i class="bi bi-bank"></i> Bank
+                            {% elif account.account_type == 'credit-card' %}
+                                <i class="bi bi-credit-card"></i> Credit Card
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-tag fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Transactions
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ transactions|length }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-receipt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Status
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            <span class="badge {{ 'bg-success' if account.is_active else 'bg-secondary' }}">
+                                {{ 'Active' if account.is_active else 'Inactive' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-circle-fill fa-2x {{ 'text-success' if account.is_active else 'text-secondary' }}"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions Table -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="bi bi-receipt"></i> Recent Transactions
+        </h6>
+        <div>
+            <button class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-funnel"></i> Filter
+            </button>
+            <button class="btn btn-sm btn-outline-success">
+                <i class="bi bi-download"></i> Export
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if transactions %}
+        <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Reference</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-end">Balance</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.transaction_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ transaction.description }}</td>
+                        <td>{{ transaction.reference or '-' }}</td>
+                        <td class="text-end {{ 'text-success' if transaction.amount >= 0 else 'text-danger' }}">
+                            ${{ "%.2f"|format(transaction.amount) }}
+                        </td>
+                        <td class="text-end">${{ "%.2f"|format(transaction.balance or 0) }}</td>
+                        <td>
+                            <span class="badge {{ 'bg-warning' if transaction.status == 'unmatched' else 'bg-success' if transaction.status == 'matched' else 'bg-info' }}">
+                                {{ transaction.status.title() }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" title="Match Transaction">
+                                <i class="bi bi-link"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-receipt display-1 text-muted mb-3"></i>
+            <h4>No Transactions Yet</h4>
+            <p class="text-muted">Import your bank statements to see transactions here.</p>
+            <button class="btn btn-primary">
+                <i class="bi bi-upload"></i> Import Transactions
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Add Bank Account - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('banking.accounts') }}">Bank Accounts</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add Account</li>
+            </ol>
+        </nav>
+        <h1 class="h3 mb-0 text-gray-800">Add Bank Account</h1>
+    </div>
+    <div>
+        <a href="{{ url_for('banking.accounts') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Accounts
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-plus-circle"></i> Account Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="row">
+                        <!-- Account Name -->
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.name.id }}" class="form-label fw-bold">
+                                {{ form.name.label.text }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="e.g., Main Checking Account") }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Descriptive name for this bank account</div>
+                        </div>
+
+                        <!-- Account Type -->
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.account_type.id }}" class="form-label fw-bold">
+                                {{ form.account_type.label.text }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.account_type(class="form-select" + (" is-invalid" if form.account_type.errors else "")) }}
+                            {% if form.account_type.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.account_type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Type of bank account</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Account Number -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.account_number.id }}" class="form-label fw-bold">
+                                {{ form.account_number.label.text }}
+                            </label>
+                            {{ form.account_number(class="form-control" + (" is-invalid" if form.account_number.errors else ""), placeholder="e.g., ****1234 or full account number") }}
+                            {% if form.account_number.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.account_number.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Account number (last 4 digits or full number)</div>
+                        </div>
+
+                        <!-- Currency -->
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.currency.id }}" class="form-label fw-bold">
+                                {{ form.currency.label.text }}
+                            </label>
+                            {{ form.currency(class="form-control" + (" is-invalid" if form.currency.errors else ""), placeholder="USD") }}
+                            {% if form.currency.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.currency.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Currency code (e.g., USD, EUR, AUD)</div>
+                        </div>
+                    </div>
+
+                    <!-- Opening Balance -->
+                    <div class="mb-3">
+                        <label for="{{ form.balance.id }}" class="form-label fw-bold">
+                            {{ form.balance.label.text }}
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            {{ form.balance(class="form-control" + (" is-invalid" if form.balance.errors else ""), step="0.01", placeholder="0.00") }}
+                            {% if form.balance.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.balance.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-text">Current balance in this account</div>
+                    </div>
+
+                    <!-- Active Status -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_active(class="form-check-input") }}
+                            <label class="form-check-label fw-bold" for="{{ form.is_active.id }}">
+                                {{ form.is_active.label.text }}
+                            </label>
+                            {% if form.is_active.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.is_active.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-text">Inactive accounts won't appear in reports</div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('banking.accounts') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Create Bank Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
