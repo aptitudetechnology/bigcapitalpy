@@ -628,8 +628,8 @@ class BankTransaction(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    account = db.relationship('BankAccount', backref='bank_transactions')
-    organization = db.relationship('Organization', backref='bank_transactions')
+    account = db.relationship('BankAccount')
+    organization = db.relationship('Organization')
     
     def __repr__(self):
         return f'<BankTransaction {self.transaction_date}: {self.description} - {self.amount}>'
