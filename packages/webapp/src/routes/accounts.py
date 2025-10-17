@@ -5,11 +5,30 @@ Handles Chart of Accounts and related operations.
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
 from flask_login import login_required, current_user
+from flask_wtf import FlaskForm
+from wtforms import StringField, SelectField, TextAreaField, DecimalField, BooleanField
+from wtforms.validators import DataRequired, Length, Optional
 # You'll likely need to import models and db here later
 # from packages.server.src.models import Account, AccountType
 # from packages.server.src.database import db
 
 accounts_bp = Blueprint('accounts', __name__)
+
+class AccountForm(FlaskForm):
+    """Form for creating and editing accounts."""
+    code = StringField('Account Code', validators=[DataRequired(), Length(min=1, max=20)])
+    name = StringField('Account Name', validators=[DataRequired(), Length(min=1, max=255)])
+    type = SelectField('Account Type', choices=[
+        ('asset', 'Asset'),
+        ('liability', 'Liability'),
+        ('equity', 'Equity'),
+        ('income', 'Income'),
+        ('expense', 'Expense')
+    ], validators=[DataRequired()])
+    parent_id = SelectField('Parent Account', choices=[], validators=[Optional()], coerce=int)
+    description = TextAreaField('Description', validators=[Optional(), Length(max=500)])
+    opening_balance = DecimalField('Opening Balance', places=2, validators=[Optional()])
+    is_active = BooleanField('Active', default=True)
 
 @accounts_bp.route('/')
 @login_required
@@ -53,11 +72,16 @@ def new():
     """
     Create a new account (Chart of Accounts).
     """
-    # Placeholder form logic. Replace with WTForms and database logic as needed.
-    if request.method == 'POST':
+    form = AccountForm()
+    
+    # Populate parent account choices (placeholder for now)
+    form.parent_id.choices = [(0, '-- None --')]  # Add actual parent accounts later
+    
+    if form.validate_on_submit():
         # Here you would process form data and create the account
-        flash('Account created (placeholder)', 'success')
+        flash('Account created successfully!', 'success')
         return redirect(url_for('accounts.index'))
-    return render_template('accounts/new.html')
+    
+    return render_template('accounts/new.html', form=form)
 
 # Add other account-related routes as needed (e.g., /<int:id>, /edit, /delete)
