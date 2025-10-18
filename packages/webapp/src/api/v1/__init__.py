@@ -13,6 +13,9 @@ from .payments import payments_api_bp
 from .accounts import accounts_api_bp
 from .reports import reports_api_bp
 from .organizations import organizations_api_bp
+from .banking import banking_api_bp
+from .journal import journal_api_bp
+from .tax import tax_api_bp
 
 # Create API v1 blueprint
 api_v1_bp = Blueprint('api_v1', __name__)
@@ -30,6 +33,9 @@ def register_api_blueprints(app):
     api_v1_bp.register_blueprint(accounts_api_bp, url_prefix='/accounts')
     api_v1_bp.register_blueprint(reports_api_bp, url_prefix='/reports')
     api_v1_bp.register_blueprint(organizations_api_bp, url_prefix='/organizations')
+    api_v1_bp.register_blueprint(banking_api_bp, url_prefix='/banking')
+    api_v1_bp.register_blueprint(journal_api_bp, url_prefix='/journal')
+    api_v1_bp.register_blueprint(tax_api_bp, url_prefix='/tax')
     
     # Register main API v1 blueprint
     app.register_blueprint(api_v1_bp, url_prefix='/api/v1')
