@@ -623,6 +623,9 @@ class BankTransaction(db.Model):
     amount = db.Column(db.Numeric(15, 2), nullable=False)
     balance = db.Column(db.Numeric(15, 2))
     status = db.Column(db.String(20), default='unmatched')  # unmatched, matched, reconciled
+    is_reconciled = db.Column(db.Boolean, default=False)
+    reconciled_at = db.Column(db.DateTime)
+    reconciled_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -630,6 +633,7 @@ class BankTransaction(db.Model):
     # Relationships
     account = db.relationship('BankAccount')
     organization = db.relationship('Organization')
+    reconciled_by = db.relationship('User', foreign_keys=[reconciled_by_id])
     
     def __repr__(self):
         return f'<BankTransaction {self.transaction_date}: {self.description} - {self.amount}>'

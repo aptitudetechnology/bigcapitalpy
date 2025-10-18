@@ -300,3 +300,44 @@ def import_transactions(account_id):
             return redirect(request.url)
     
     return render_template('banking/import_transactions.html', account=bank_account)
+
+@banking_bp.route('/accounts/<int:account_id>/reconcile', methods=['GET', 'POST'])
+@login_required
+def reconcile(account_id):
+    """Bank reconciliation interface"""
+    bank_account = BankAccount.query.filter_by(
+        id=account_id,
+        organization_id=current_user.organization_id
+    ).first_or_404()
+    
+    # Get unreconciled transactions
+    unreconciled_transactions = BankTransaction.query.filter_by(
+        account_id=account_id,
+        is_reconciled=False
+    ).order_by(BankTransaction.transaction_date).all()
+    
+    # Calculate reconciliation summary
+    total_unreconciled = sum(t.amount for t in unreconciled_transactions)
+    reconciled_balance = bank_account.balance - total_unreconciled
+    
+    if request.method == 'POST':
+        # Handle reconciliation submission
+        transaction_ids = request.form.getlist('transaction_ids')
+        
+        BankTransaction.query.filter(
+            BankTransaction.id.in_(transaction_ids)
+        ).update({
+            'is_reconciled': True,
+            'reconciled_at': datetime.utcnow(),
+            'reconciled_by_id': current_user.id
+        })
+        
+        db.session.commit()
+        flash(f'Successfully reconciled {len(transaction_ids)} transactions', 'success')
+        return redirect(url_for('banking.reconcile', account_id=account_id))
+    
+    return render_template('banking/reconcile.html',
+                         bank_account=bank_account,
+                         unreconciled_transactions=unreconciled_transactions,
+                         total_unreconciled=total_unreconciled,
+                         reconciled_balance=reconciled_balance)

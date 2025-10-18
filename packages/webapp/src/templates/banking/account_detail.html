@@ -21,9 +21,12 @@
         <a href="{{ url_for('banking.accounts') }}" class="btn btn-outline-secondary me-2">
             <i class="bi bi-arrow-left"></i> Back to Accounts
         </a>
-                            <a href="{{ url_for('banking.import_transactions', account_id=account.id) }}" class="btn btn-primary">
-                        <i class="fas fa-upload"></i> Import Transactions
-                    </a>
+        <a href="{{ url_for('banking.reconcile', account_id=account.id) }}" class="btn btn-info me-2">
+            <i class="fas fa-balance-scale"></i> Reconcile
+        </a>
+        <a href="{{ url_for('banking.import_transactions', account_id=account.id) }}" class="btn btn-primary">
+            <i class="fas fa-upload"></i> Import Transactions
+        </a>
     </div>
 </div>
 
