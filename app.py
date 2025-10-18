@@ -188,7 +188,7 @@ if __name__ == '__main__':
 
     # The 'app' variable is already created above, so no need to re-create it here.
     # We just use it for running the development server.
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5050))
     threaded=True  # This is crucial for performance
     debug = os.environ.get('FLASK_ENV') == 'development'
 
