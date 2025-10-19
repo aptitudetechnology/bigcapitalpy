@@ -19,11 +19,12 @@ import argparse
 from typing import Dict, Any, Optional
 
 class MVPAPITester:
-    def __init__(self, base_url: str, username: str = None, password: str = None):
+    def __init__(self, base_url: str, username: str = None, password: str = None, api_key: str = None):
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
-        self.username = username or "admin"  # Default test user
-        self.password = password or "password"  # Default test password
+        self.username = username or "admin@bigcapitalpy.com"  # Default test user
+        self.password = password or "admin123"  # Default test password
+        self.api_key = api_key  # Optional API key for testing
 
         # Test data
         self.test_customer_id = None
@@ -33,10 +34,14 @@ class MVPAPITester:
         """Log a message with level"""
         print(f"[{level}] {message}")
 
-    def make_request(self, method: str, endpoint: str, data: Dict = None, expected_status: int = 200) -> Dict:
+    def make_request(self, method: str, endpoint: str, data: Dict = None, expected_status: int = 200, use_api_key: bool = False) -> Dict:
         """Make an API request and return the response"""
         url = f"{self.base_url}{endpoint}"
         headers = {'Content-Type': 'application/json'}
+        
+        # Add API key authentication if requested and available
+        if use_api_key and self.api_key:
+            headers['X-API-Key'] = self.api_key
 
         try:
             if method.upper() == 'GET':
@@ -77,6 +82,35 @@ class MVPAPITester:
             return True
         else:
             self.log("Login failed", "ERROR")
+            return False
+
+    def generate_api_key(self) -> bool:
+        """Generate an API key for testing"""
+        self.log("Generating API key...")
+        response = self.make_request('POST', '/api/v1/auth/api-key', expected_status=200)
+        if response and response.get('success'):
+            self.api_key = response.get('data', {}).get('api_key')
+            self.log(f"API key generated: {self.api_key[:10]}...", "SUCCESS")
+            return True
+        else:
+            self.log("Failed to generate API key", "ERROR")
+            return False
+
+    def test_api_key_auth(self) -> bool:
+        """Test API key authentication"""
+        if not self.api_key:
+            self.log("No API key available for testing", "ERROR")
+            return False
+
+        self.log("\n=== Testing API Key Authentication ===")
+
+        # Test API key authentication with organizations endpoint
+        response = self.make_request('GET', '/api/v1/organizations', use_api_key=True)
+        if response and response.get('success'):
+            self.log("API key authentication successful", "SUCCESS")
+            return True
+        else:
+            self.log("API key authentication failed", "ERROR")
             return False
 
     def test_organizations_api(self) -> bool:
@@ -270,6 +304,14 @@ class MVPAPITester:
         if not self.login():
             return False
 
+        # Generate API key for testing
+        if not self.generate_api_key():
+            self.log("Warning: Could not generate API key, continuing with session auth", "WARNING")
+
+        # Test API key authentication if available
+        if self.api_key and not self.test_api_key_auth():
+            self.log("Warning: API key authentication failed, continuing with session auth", "WARNING")
+
         # Run tests
         tests = [
             ("Organizations API", self.test_organizations_api),
@@ -310,12 +352,13 @@ class MVPAPITester:
 def main():
     parser = argparse.ArgumentParser(description='Test BigCapitalPy MVP APIs')
     parser.add_argument('--base-url', required=True, help='Base URL of the BigCapitalPy server')
-    parser.add_argument('--username', default='admin', help='Login username')
-    parser.add_argument('--password', default='password', help='Login password')
+    parser.add_argument('--username', default='admin@bigcapitalpy.com', help='Login username')
+    parser.add_argument('--password', default='admin123', help='Login password')
+    parser.add_argument('--api-key', help='API key for authentication (optional)')
 
     args = parser.parse_args()
 
-    tester = MVPAPITester(args.base_url, args.username, args.password)
+    tester = MVPAPITester(args.base_url, args.username, args.password, args.api_key)
     success = tester.run_all_tests()
 
     sys.exit(0 if success else 1)

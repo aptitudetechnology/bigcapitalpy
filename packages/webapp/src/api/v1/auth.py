@@ -54,10 +54,55 @@ def me():
     
     return api_response(data={'user': user_data})
 
-@auth_api_bp.route('/check', methods=['GET'])
-def check():
-    """Check authentication status"""
-    return api_response(data={
-        'authenticated': current_user.is_authenticated,
-        'user_id': current_user.id if current_user.is_authenticated else None
-    })
+@auth_api_bp.route('/api-key', methods=['POST'])
+def generate_api_key():
+    """Generate a new API key for the current user"""
+    if not current_user.is_authenticated:
+        return api_error('Not authenticated', 401)
+    
+    try:
+        api_key = current_user.generate_api_key()
+        db.session.commit()
+        
+        return api_response(
+            data={
+                'api_key': api_key,
+                'created_at': current_user.api_key_created_at.isoformat()
+            },
+            message='API key generated successfully'
+        )
+    except Exception as e:
+        db.session.rollback()
+        return api_error(f'Failed to generate API key: {str(e)}', 500)
+
+@auth_api_bp.route('/api-key', methods=['DELETE'])
+def revoke_api_key():
+    """Revoke the current API key"""
+    if not current_user.is_authenticated:
+        return api_error('Not authenticated', 401)
+    
+    try:
+        current_user.revoke_api_key()
+        db.session.commit()
+        
+        return api_response(message='API key revoked successfully')
+    except Exception as e:
+        db.session.rollback()
+        return api_error(f'Failed to revoke API key: {str(e)}', 500)
+
+@auth_api_bp.route('/api-key', methods=['GET'])
+def get_api_key_info():
+    """Get information about the current API key"""
+    if not current_user.is_authenticated:
+        return api_error('Not authenticated', 401)
+    
+    if current_user.api_key:
+        return api_response(data={
+            'has_api_key': True,
+            'created_at': current_user.api_key_created_at.isoformat() if current_user.api_key_created_at else None,
+            'last_used': None  # Could be added later with usage tracking
+        })
+    else:
+        return api_response(data={
+            'has_api_key': False
+        })

@@ -142,6 +142,8 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(50), default='user')  # admin, accountant, user
     is_active = db.Column(db.Boolean, default=True)
     last_login = db.Column(db.DateTime)
+    api_key = db.Column(db.String(64), unique=True)  # API key for programmatic access
+    api_key_created_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -157,6 +159,18 @@ class User(UserMixin, db.Model):
     
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
+    def generate_api_key(self):
+        """Generate a new API key for the user"""
+        import secrets
+        self.api_key = secrets.token_hex(32)  # 64 character hex string
+        self.api_key_created_at = datetime.utcnow()
+        return self.api_key
+    
+    def revoke_api_key(self):
+        """Revoke the current API key"""
+        self.api_key = None
+        self.api_key_created_at = None
 
     def get_display_timezone(self):
         return getattr(self, 'timezone', None) or 'UTC'

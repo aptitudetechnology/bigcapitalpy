@@ -16,9 +16,34 @@ Include the API key in the request header:
 ```
 X-API-Key: your-api-key-here
 ```
+or
+```
+Authorization: Bearer your-api-key-here
+```
 
 ### Session Authentication
-For web-based requests, session authentication is handled automatically.
+For web-based requests, session authentication is handled automatically through login.
+
+### API Key Management
+API keys can be managed through the authentication endpoints:
+
+#### Generate API Key
+```http
+POST /api/v1/auth/api-key
+Authorization: Required (session auth)
+```
+
+#### Get API Key Info
+```http
+GET /api/v1/auth/api-key
+Authorization: Required (session auth)
+```
+
+#### Revoke API Key
+```http
+DELETE /api/v1/auth/api-key
+Authorization: Required (session auth)
+```
 
 ## Common Response Format
 

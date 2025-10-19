@@ -35,11 +35,27 @@ def require_api_key(f):
     """Decorator to require API key authentication"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # For now, we'll use session-based auth (login_required equivalent)
-        # In the future, this can be extended to support API keys or JWT tokens
-        if not current_user.is_authenticated:
-            return api_error('Authentication required', 401)
-        return f(*args, **kwargs)
+        # First check for session authentication (web users)
+        if current_user.is_authenticated:
+            return f(*args, **kwargs)
+        
+        # Check for API key in header
+        api_key = request.headers.get('X-API-Key') or request.headers.get('Authorization')
+        if api_key:
+            # Remove 'Bearer ' prefix if present
+            if api_key.startswith('Bearer '):
+                api_key = api_key[7:]
+            
+            # Find user by API key
+            from packages.server.src.models import User
+            user = User.query.filter_by(api_key=api_key, is_active=True).first()
+            if user:
+                # Temporarily set current_user for this request
+                from flask_login import login_user
+                login_user(user, remember=False)
+                return f(*args, **kwargs)
+        
+        return api_error('Authentication required', 401)
     return decorated_function
 
 def validate_json_request(required_fields=None):
