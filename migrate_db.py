@@ -61,29 +61,40 @@ def migrate_database(db_path='bigcapitalpy.db'):
 
 def main():
     """Main migration function"""
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Migrate BigCapitalPy database to add API key support')
+    parser.add_argument('db_path', nargs='?', help='Path to the BigCapitalPy database file')
+    args = parser.parse_args()
+
     print("🚀 BigCapitalPy Database Migration")
     print("Adding API key support to users table")
     print("-" * 40)
 
-    # Try common database locations
-    possible_paths = [
-        'bigcapitalpy.db',
-        './bigcapitalpy.db',
-        '../bigcapitalpy.db',
-        '/app/bigcapitalpy.db',  # Docker container
-        os.path.expanduser('~/bigcapitalpy.db')
-    ]
-
-    db_path = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            db_path = path
-            break
-
+    db_path = args.db_path
     if not db_path:
-        print("❌ Could not find bigcapitalpy.db database file.")
-        print("Please specify the database path:")
-        db_path = input("Database path: ").strip()
+        # Try common database locations
+        possible_paths = [
+            'bigcapitalpy.db',
+            './bigcapitalpy.db',
+            'instance/bigcapitalpy.db',
+            './instance/bigcapitalpy.db',
+            '../bigcapitalpy.db',
+            '/app/bigcapitalpy.db',  # Docker container
+            os.path.expanduser('~/bigcapitalpy.db')
+        ]
+
+        for path in possible_paths:
+            if os.path.exists(path):
+                db_path = path
+                print(f"📍 Found database at: {path}")
+                break
+
+        if not db_path:
+            print("❌ Could not find bigcapitalpy.db database file.")
+            print("Please specify the database path as an argument:")
+            print("  python3 migrate_db.py /path/to/bigcapitalpy.db")
+            sys.exit(1)
 
     if migrate_database(db_path):
         print("\n📋 Next steps:")
