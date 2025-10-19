@@ -22,15 +22,31 @@ def migrate_database(db_path='bigcapitalpy.db'):
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        # Add API key columns
-        print("📝 Adding api_key column...")
-        cursor.execute("ALTER TABLE users ADD COLUMN api_key VARCHAR(64) UNIQUE")
+        # Check if columns already exist
+        cursor.execute("PRAGMA table_info(users)")
+        columns = [column[1] for column in cursor.fetchall()]
 
-        print("📝 Adding api_key_created_at column...")
-        cursor.execute("ALTER TABLE users ADD COLUMN api_key_created_at DATETIME")
+        if 'api_key' not in columns:
+            print("📝 Adding api_key column...")
+            cursor.execute("ALTER TABLE users ADD COLUMN api_key VARCHAR(64)")
+        else:
+            print("ℹ️  api_key column already exists")
 
+        if 'api_key_created_at' not in columns:
+            print("📝 Adding api_key_created_at column...")
+            cursor.execute("ALTER TABLE users ADD COLUMN api_key_created_at DATETIME")
+        else:
+            print("ℹ️  api_key_created_at column already exists")
+
+        # Create index (this is safe to run multiple times)
         print("📝 Creating index on api_key...")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_api_key ON users(api_key)")
+
+        # Add unique constraint separately if needed
+        try:
+            cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_api_key_unique ON users(api_key)")
+        except sqlite3.Error:
+            print("⚠️  Could not create unique constraint (may already exist or have duplicates)")
 
         conn.commit()
         conn.close()
