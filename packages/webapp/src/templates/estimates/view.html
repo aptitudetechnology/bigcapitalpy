@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Estimate {{ estimate.estimate_number }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Estimate {{ estimate.estimate_number }}</h1>
+    <div>
+        {% if estimate.status == EstimateStatus.DRAFT %}
+        <form method="POST" action="{{ url_for('estimates.send', id=estimate.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-primary">Mark as Sent</button>
+        </form>
+        <form method="POST" action="{{ url_for('estimates.approve', id=estimate.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-success">Approve</button>
+        </form>
+        <a href="{{ url_for('estimates.edit', id=estimate.id) }}" class="btn btn-warning">Edit</a>
+        <form method="POST" action="{{ url_for('estimates.delete', id=estimate.id) }}" class="d-inline" onsubmit="return confirm('Delete?')">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        {% elif estimate.status == EstimateStatus.SENT %}
+        <form method="POST" action="{{ url_for('estimates.approve', id=estimate.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-success">Approve</button>
+        </form>
+        <form method="POST" action="{{ url_for('estimates.reject', id=estimate.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-danger">Reject</button>
+        </form>
+        {% elif estimate.status == EstimateStatus.APPROVED and not estimate.converted_invoice_id %}
+        <form method="POST" action="{{ url_for('estimates.convert_to_invoice', id=estimate.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-success"><i class="bi bi-arrow-right-circle"></i> Convert to Invoice</button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('estimates.index') }}" class="btn btn-secondary">Back</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Estimate Details</h6></div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Customer:</strong> {{ estimate.customer.display_name }}</p>
+                        <p><strong>Estimate Date:</strong> {{ estimate.estimate_date.strftime('%Y-%m-%d') }}</p>
+                        {% if estimate.expiry_date %}<p><strong>Expiry Date:</strong> {{ estimate.expiry_date.strftime('%Y-%m-%d') }}</p>{% endif %}
+                        {% if estimate.reference %}<p><strong>Reference:</strong> {{ estimate.reference }}</p>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong>
+                            {% if estimate.status == EstimateStatus.DRAFT %}<span class="badge bg-secondary">Draft</span>
+                            {% elif estimate.status == EstimateStatus.SENT %}<span class="badge bg-primary">Sent</span>
+                            {% elif estimate.status == EstimateStatus.APPROVED %}<span class="badge bg-success">Approved</span>
+                            {% elif estimate.status == EstimateStatus.REJECTED %}<span class="badge bg-danger">Rejected</span>
+                            {% elif estimate.status == EstimateStatus.INVOICED %}<span class="badge bg-info">Invoiced</span>
+                            {% elif estimate.status == EstimateStatus.EXPIRED %}<span class="badge bg-warning">Expired</span>
+                            {% endif %}
+                        </p>
+                        {% if estimate.converted_invoice_id %}
+                        <p><strong>Invoice:</strong> <a href="{{ url_for('invoices.view', id=estimate.converted_invoice_id) }}">View Invoice</a></p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <h6 class="font-weight-bold">Line Items</h6>
+                <table class="table">
+                    <thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Tax</th><th class="text-end">Amount</th></tr></thead>
+                    <tbody>
+                        {% for item in estimate.line_items %}
+                        <tr>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.rate | currency }}</td>
+                            <td>{{ item.tax_amount | currency }}</td>
+                            <td class="text-end">{{ item.amount | currency }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr><td colspan="4" class="text-end"><strong>Subtotal:</strong></td><td class="text-end">{{ estimate.subtotal | currency }}</td></tr>
+                        <tr><td colspan="4" class="text-end"><strong>Tax:</strong></td><td class="text-end">{{ estimate.tax_amount | currency }}</td></tr>
+                        <tr><td colspan="4" class="text-end"><strong>Total:</strong></td><td class="text-end"><strong>{{ estimate.total | currency }}</strong></td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        {% if estimate.terms %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Terms</h6></div>
+            <div class="card-body">{{ estimate.terms }}</div>
+        </div>
+        {% endif %}
+        {% if estimate.notes %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Notes</h6></div>
+            <div class="card-body">{{ estimate.notes }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

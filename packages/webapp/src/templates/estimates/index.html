@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Estimates - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Estimates</h1>
+    <a href="{{ url_for('estimates.create') }}" class="btn btn-primary"><i class="bi bi-plus"></i> New Estimate</a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Estimates</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Amount</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_amount | currency }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Approved</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.approved_amount | currency }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead><tr><th>Estimate #</th><th>Customer</th><th>Date</th><th>Expiry</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                    {% for estimate in estimates.items %}
+                    <tr>
+                        <td><a href="{{ url_for('estimates.view', id=estimate.id) }}">{{ estimate.estimate_number }}</a></td>
+                        <td>{{ estimate.customer.display_name }}</td>
+                        <td>{{ estimate.estimate_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ estimate.expiry_date.strftime('%Y-%m-%d') if estimate.expiry_date else '-' }}</td>
+                        <td>{{ estimate.total | currency }}</td>
+                        <td>
+                            {% if estimate.status == EstimateStatus.DRAFT %}<span class="badge bg-secondary">Draft</span>
+                            {% elif estimate.status == EstimateStatus.SENT %}<span class="badge bg-primary">Sent</span>
+                            {% elif estimate.status == EstimateStatus.APPROVED %}<span class="badge bg-success">Approved</span>
+                            {% elif estimate.status == EstimateStatus.REJECTED %}<span class="badge bg-danger">Rejected</span>
+                            {% elif estimate.status == EstimateStatus.INVOICED %}<span class="badge bg-info">Invoiced</span>
+                            {% elif estimate.status == EstimateStatus.EXPIRED %}<span class="badge bg-warning">Expired</span>
+                            {% elif estimate.status == EstimateStatus.CANCELLED %}<span class="badge bg-dark">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td><a href="{{ url_for('estimates.view', id=estimate.id) }}" class="btn btn-sm btn-outline-primary">View</a></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted">No estimates found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

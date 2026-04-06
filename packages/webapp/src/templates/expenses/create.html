@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Create Expense - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Create Expense</h1>
+    <a href="{{ url_for('expenses_mgmt.index') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<form method="POST" action="{{ url_for('expenses_mgmt.save') }}">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Expense Details</h6></div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Expense Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="expense_number" value="{{ next_number }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="expense_date" value="{{ today.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Vendor</label>
+                                <select class="form-select" name="vendor_id">
+                                    <option value="">No Vendor</option>
+                                    {% for vendor in vendors %}
+                                    <option value="{{ vendor.id }}">{{ vendor.display_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Payment Account</label>
+                                <select class="form-select" name="payment_account_id">
+                                    <option value="">Select Account</option>
+                                    {% for account in payment_accounts %}
+                                    <option value="{{ account.id }}">{{ account.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Payment Method</label>
+                                <select class="form-select" name="payment_method">
+                                    <option value="">Select</option>
+                                    {% for method in PaymentMethod %}
+                                    <option value="{{ method.value }}">{{ method.value | replace('_', ' ') | title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Reference</label>
+                                <input type="text" class="form-control" name="reference">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <input type="text" class="form-control" name="description" placeholder="What is this expense for?">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Line Items</h6>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="addLineItem()"><i class="bi bi-plus"></i> Add</button>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless" id="lineItemsTable">
+                        <thead>
+                            <tr><th>Description <span class="text-danger">*</span></th><th style="width:20%;">Account</th><th style="width:15%;">Amount</th><th style="width:15%;">Tax</th><th style="width:5%;"></th></tr>
+                        </thead>
+                        <tbody id="lineItemsBody">
+                            <tr class="line-item-row">
+                                <td><input type="text" class="form-control form-control-sm" name="line_description[]" required></td>
+                                <td>
+                                    <select class="form-select form-select-sm" name="line_account_id[]">
+                                        <option value="">Select</option>
+                                        {% for account in expense_accounts %}
+                                        <option value="{{ account.id }}">{{ account.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><input type="number" class="form-control form-control-sm line-amount" name="line_amount[]" value="0.00" step="0.01" onchange="calculateTotals()"></td>
+                                <td>
+                                    <select class="form-select form-select-sm" name="line_tax_code_id[]">
+                                        <option value="">None</option>
+                                        {% for tc in tax_codes %}
+                                        <option value="{{ tc.id }}" data-rate="{{ tc.rate }}">{{ tc.name }} ({{ tc.rate }}%)</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLineItem(this)"><i class="bi bi-trash"></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="row justify-content-end mt-3">
+                        <div class="col-md-4">
+                            <table class="table table-sm">
+                                <tr><td>Subtotal:</td><td class="text-end" id="subtotal">0.00</td></tr>
+                                <tr><td>Tax:</td><td class="text-end" id="taxTotal">0.00</td></tr>
+                                <tr class="fw-bold"><td>Total:</td><td class="text-end" id="grandTotal">0.00</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Notes</h6></div>
+                <div class="card-body">
+                    <textarea class="form-control" name="notes" rows="4" placeholder="Additional notes..."></textarea>
+                </div>
+            </div>
+            <div class="d-grid gap-2"><button type="submit" class="btn btn-primary btn-lg">Save Expense</button></div>
+        </div>
+    </div>
+</form>
+
+<script>
+function addLineItem() {
+    const tbody = document.getElementById('lineItemsBody');
+    const row = tbody.querySelector('.line-item-row').cloneNode(true);
+    row.querySelectorAll('input').forEach(input => input.value = input.name.includes('amount') ? '0.00' : '');
+    row.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+    tbody.appendChild(row);
+}
+function removeLineItem(btn) { const tbody = document.getElementById('lineItemsBody'); if (tbody.children.length > 1) { btn.closest('tr').remove(); calculateTotals(); } }
+function calculateTotals() {
+    let subtotal = 0, taxTotal = 0;
+    document.querySelectorAll('.line-item-row').forEach(row => {
+        const amount = parseFloat(row.querySelector('.line-amount').value) || 0;
+        subtotal += amount;
+        const ts = row.querySelector('[name="line_tax_code_id[]"]');
+        const r = parseFloat(ts.options[ts.selectedIndex]?.dataset?.rate) || 0;
+        taxTotal += amount * (r / 100);
+    });
+    document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+    document.getElementById('taxTotal').textContent = taxTotal.toFixed(2);
+    document.getElementById('grandTotal').textContent = (subtotal + taxTotal).toFixed(2);
+}
+document.addEventListener('change', function(e) { if (e.target.name === 'line_tax_code_id[]') calculateTotals(); });
+</script>
+{% endblock %}

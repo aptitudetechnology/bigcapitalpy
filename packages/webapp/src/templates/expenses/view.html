@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Expense {{ expense.expense_number }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Expense {{ expense.expense_number }}</h1>
+    <div>
+        {% if expense.status in [ExpenseStatus.DRAFT, ExpenseStatus.PENDING] %}
+        <form method="POST" action="{{ url_for('expenses_mgmt.approve', id=expense.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-success">Approve & Record</button>
+        </form>
+        <a href="{{ url_for('expenses_mgmt.edit', id=expense.id) }}" class="btn btn-warning">Edit</a>
+        <form method="POST" action="{{ url_for('expenses_mgmt.delete', id=expense.id) }}" class="d-inline" onsubmit="return confirm('Delete?')">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('expenses_mgmt.index') }}" class="btn btn-secondary">Back</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Expense Details</h6></div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Date:</strong> {{ expense.expense_date.strftime('%Y-%m-%d') }}</p>
+                        <p><strong>Vendor:</strong> {{ expense.vendor.display_name if expense.vendor else 'N/A' }}</p>
+                        {% if expense.reference %}<p><strong>Reference:</strong> {{ expense.reference }}</p>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong>
+                            {% if expense.status == ExpenseStatus.DRAFT %}<span class="badge bg-secondary">Draft</span>
+                            {% elif expense.status == ExpenseStatus.PENDING %}<span class="badge bg-warning">Pending</span>
+                            {% elif expense.status == ExpenseStatus.PAID %}<span class="badge bg-success">Paid</span>
+                            {% endif %}
+                        </p>
+                        {% if expense.payment_account %}<p><strong>Payment Account:</strong> {{ expense.payment_account.name }}</p>{% endif %}
+                        {% if expense.payment_method %}<p><strong>Method:</strong> {{ expense.payment_method.value | replace('_', ' ') | title }}</p>{% endif %}
+                    </div>
+                </div>
+                {% if expense.description %}<p><strong>Description:</strong> {{ expense.description }}</p>{% endif %}
+
+                <h6 class="font-weight-bold mt-4">Line Items</h6>
+                <table class="table">
+                    <thead><tr><th>Description</th><th>Account</th><th>Tax</th><th class="text-end">Amount</th></tr></thead>
+                    <tbody>
+                        {% for item in expense.line_items %}
+                        <tr>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.account.name if item.account else '-' }}</td>
+                            <td>{{ item.tax_amount | currency }}</td>
+                            <td class="text-end">{{ item.amount | currency }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr><td colspan="3" class="text-end"><strong>Subtotal:</strong></td><td class="text-end">{{ expense.subtotal | currency }}</td></tr>
+                        <tr><td colspan="3" class="text-end"><strong>Tax:</strong></td><td class="text-end">{{ expense.tax_amount | currency }}</td></tr>
+                        <tr><td colspan="3" class="text-end"><strong>Total:</strong></td><td class="text-end"><strong>{{ expense.total | currency }}</strong></td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        {% if expense.notes %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Notes</h6></div>
+            <div class="card-body">{{ expense.notes }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

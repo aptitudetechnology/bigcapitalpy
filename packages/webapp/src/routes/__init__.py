@@ -22,6 +22,13 @@ from .backup import backup_bp
 from .financial import financial_bp
 from .banking import banking_bp
 
+# New blueprints
+from .bills import bills_bp
+from .expenses_routes import expenses_bp as expenses_mgmt_bp
+from .credit_notes import credit_notes_bp
+from .vendor_credits import vendor_credits_bp
+from .estimates import estimates_bp
+
 # Import the reports blueprint registration function
 from .reports import register_reports_blueprints
 
@@ -51,5 +58,9 @@ def register_blueprints(app):
     app.register_blueprint(financial_bp, url_prefix='/financial')
     app.register_blueprint(banking_bp)
 
-    # The following blueprints were removed as they were reported as non-existent:
-    # bills_bp, admin_bp, main_bp
+    # New blueprints
+    app.register_blueprint(bills_bp, url_prefix='/bills')
+    app.register_blueprint(expenses_mgmt_bp, url_prefix='/expenses')
+    app.register_blueprint(credit_notes_bp, url_prefix='/credit-notes')
+    app.register_blueprint(vendor_credits_bp, url_prefix='/vendor-credits')
+    app.register_blueprint(estimates_bp)

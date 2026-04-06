@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Credit Note {{ credit_note.credit_note_number }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Credit Note {{ credit_note.credit_note_number }}</h1>
+    <div>
+        {% if credit_note.status == CreditNoteStatus.DRAFT %}
+        <form method="POST" action="{{ url_for('credit_notes.open_credit_note', id=credit_note.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-success">Open</button>
+        </form>
+        <form method="POST" action="{{ url_for('credit_notes.delete', id=credit_note.id) }}" class="d-inline" onsubmit="return confirm('Delete?')">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('credit_notes.index') }}" class="btn btn-secondary">Back</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Details</h6></div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Customer:</strong> {{ credit_note.customer.display_name }}</p>
+                        <p><strong>Date:</strong> {{ credit_note.credit_note_date.strftime('%Y-%m-%d') }}</p>
+                        {% if credit_note.reference %}<p><strong>Reference:</strong> {{ credit_note.reference }}</p>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong>
+                            {% if credit_note.status == CreditNoteStatus.DRAFT %}<span class="badge bg-secondary">Draft</span>
+                            {% elif credit_note.status == CreditNoteStatus.OPEN %}<span class="badge bg-primary">Open</span>
+                            {% elif credit_note.status == CreditNoteStatus.PARTIAL %}<span class="badge bg-info">Partial</span>
+                            {% elif credit_note.status == CreditNoteStatus.CLOSED %}<span class="badge bg-success">Closed</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Total:</strong> {{ credit_note.total | currency }}</p>
+                        <p><strong>Applied:</strong> {{ credit_note.applied_amount | currency }}</p>
+                        <p><strong>Balance:</strong> <span class="fw-bold">{{ credit_note.balance | currency }}</span></p>
+                    </div>
+                </div>
+
+                <h6 class="font-weight-bold">Line Items</h6>
+                <table class="table">
+                    <thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Tax</th><th class="text-end">Amount</th></tr></thead>
+                    <tbody>
+                        {% for item in credit_note.line_items %}
+                        <tr>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.rate | currency }}</td>
+                            <td>{{ item.tax_amount | currency }}</td>
+                            <td class="text-end">{{ item.amount | currency }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr><td colspan="4" class="text-end"><strong>Subtotal:</strong></td><td class="text-end">{{ credit_note.subtotal | currency }}</td></tr>
+                        <tr><td colspan="4" class="text-end"><strong>Tax:</strong></td><td class="text-end">{{ credit_note.tax_amount | currency }}</td></tr>
+                        <tr><td colspan="4" class="text-end"><strong>Total:</strong></td><td class="text-end"><strong>{{ credit_note.total | currency }}</strong></td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        {% if credit_note.applications %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Applications</h6></div>
+            <div class="card-body">
+                <table class="table">
+                    <thead><tr><th>Date</th><th>Invoice</th><th>Amount</th></tr></thead>
+                    <tbody>
+                        {% for app in credit_note.applications %}
+                        <tr>
+                            <td>{{ app.applied_date.strftime('%Y-%m-%d') }}</td>
+                            <td><a href="{{ url_for('invoices.view', id=app.invoice_id) }}">{{ app.invoice.invoice_number }}</a></td>
+                            <td>{{ app.applied_amount | currency }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        {% if credit_note.status in [CreditNoteStatus.OPEN, CreditNoteStatus.PARTIAL] and open_invoices %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Apply to Invoice</h6></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('credit_notes.apply_to_invoice', id=credit_note.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label">Invoice</label>
+                        <select class="form-select" name="invoice_id" required>
+                            <option value="">Select Invoice</option>
+                            {% for inv in open_invoices %}
+                            <option value="{{ inv.id }}">{{ inv.invoice_number }} (Balance: {{ inv.balance | currency }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <input type="number" class="form-control" name="apply_amount" step="0.01" max="{{ credit_note.balance }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if credit_note.notes %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Notes</h6></div>
+            <div class="card-body">{{ credit_note.notes }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

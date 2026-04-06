@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Pay Bill {{ bill.bill_number }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Record Payment for Bill {{ bill.bill_number }}</h1>
+    <a href="{{ url_for('bills.view', id=bill.id) }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Bill Summary</h6></div>
+            <div class="card-body">
+                <p><strong>Vendor:</strong> {{ bill.vendor.display_name }}</p>
+                <p><strong>Bill Total:</strong> {{ bill.total | currency }}</p>
+                <p><strong>Already Paid:</strong> {{ bill.paid_amount | currency }}</p>
+                <p><strong>Balance Due:</strong> <span class="text-danger fw-bold">{{ bill.balance | currency }}</span></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Payment Details</h6></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('bills.record_payment', id=bill.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label">Payment Number</label>
+                        <input type="text" class="form-control" name="payment_number" value="{{ next_number }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="payment_date" value="{{ today.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="amount" value="{{ bill.balance }}" step="0.01" max="{{ bill.balance }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method <span class="text-danger">*</span></label>
+                        <select class="form-select" name="payment_method" required>
+                            {% for method in PaymentMethod %}
+                            <option value="{{ method.value }}">{{ method.value | replace('_', ' ') | title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Account <span class="text-danger">*</span></label>
+                        <select class="form-select" name="payment_account_id" required>
+                            <option value="">Select Account</option>
+                            {% for account in payment_accounts %}
+                            <option value="{{ account.id }}">{{ account.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reference</label>
+                        <input type="text" class="form-control" name="reference">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Record Payment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

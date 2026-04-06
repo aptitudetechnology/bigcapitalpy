@@ -786,3 +786,464 @@ class PaymentAllocation(db.Model):
     
     def __repr__(self):
         return f'<PaymentAllocation {self.payment_id} -> {self.invoice_id}: {self.allocated_amount}>'
+
+
+# --- New Enums ---
+
+class BillStatus(enum.Enum):
+    DRAFT = "draft"
+    RECEIVED = "received"
+    PARTIAL = "partial"
+    PAID = "paid"
+    OVERDUE = "overdue"
+    CANCELLED = "cancelled"
+
+class EstimateStatus(enum.Enum):
+    DRAFT = "draft"
+    SENT = "sent"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    INVOICED = "invoiced"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+
+class CreditNoteStatus(enum.Enum):
+    DRAFT = "draft"
+    OPEN = "open"
+    PARTIAL = "partial"
+    CLOSED = "closed"
+    CANCELLED = "cancelled"
+
+class VendorCreditStatus(enum.Enum):
+    DRAFT = "draft"
+    OPEN = "open"
+    PARTIAL = "partial"
+    CLOSED = "closed"
+    CANCELLED = "cancelled"
+
+class ExpenseStatus(enum.Enum):
+    DRAFT = "draft"
+    PENDING = "pending"
+    APPROVED = "approved"
+    PAID = "paid"
+    CANCELLED = "cancelled"
+
+
+# --- Bill (Purchase Bill) Models ---
+
+class Bill(db.Model):
+    __tablename__ = 'bills'
+
+    id = db.Column(db.Integer, primary_key=True)
+    bill_number = db.Column(db.String(50), nullable=False, unique=True)
+    vendor_bill_number = db.Column(db.String(100))
+    reference = db.Column(db.String(100))
+
+    # Dates
+    bill_date = db.Column(db.Date, nullable=False, default=date.today)
+    due_date = db.Column(db.Date, nullable=False)
+
+    # Vendor
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendors.id'), nullable=False)
+
+    # Financial
+    subtotal = db.Column(db.Numeric(15, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    discount_amount = db.Column(db.Numeric(15, 2), default=0)
+    total = db.Column(db.Numeric(15, 2), default=0)
+    paid_amount = db.Column(db.Numeric(15, 2), default=0)
+    balance = db.Column(db.Numeric(15, 2), default=0)
+
+    # Settings
+    currency = db.Column(db.String(3), default='USD')
+    status = db.Column(db.Enum(BillStatus), default=BillStatus.DRAFT)
+    terms = db.Column(db.Text)
+    notes = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Foreign Keys
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+
+    # Relationships
+    vendor = db.relationship('Vendor', backref='bills')
+    line_items = db.relationship('BillLineItem', backref='bill', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<Bill {self.bill_number}>'
+
+
+class BillLineItem(db.Model):
+    __tablename__ = 'bill_line_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    bill_id = db.Column(db.Integer, db.ForeignKey('bills.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
+
+    description = db.Column(db.String(500), nullable=False)
+    quantity = db.Column(db.Numeric(15, 2), nullable=False, default=1)
+    rate = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+    amount = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+
+    # Tax
+    tax_rate = db.Column(db.Numeric(5, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    tax_code_id = db.Column(db.Integer, db.ForeignKey('tax_codes.id'))
+
+    # Account (expense account for this line)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
+
+    # Relationships
+    item = db.relationship('Item')
+    tax_code = db.relationship('TaxCode')
+    account = db.relationship('Account')
+
+
+class BillPayment(db.Model):
+    """Payment made to a vendor for bills"""
+    __tablename__ = 'bill_payments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    payment_number = db.Column(db.String(50), nullable=False, unique=True)
+    payment_date = db.Column(db.Date, nullable=False)
+    amount = db.Column(db.Numeric(15, 2), nullable=False)
+    payment_method = db.Column(db.Enum(PaymentMethod), nullable=False)
+    reference = db.Column(db.String(100))
+    notes = db.Column(db.Text)
+
+    # Vendor
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendors.id'), nullable=False)
+    payment_account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    vendor = db.relationship('Vendor', backref='bill_payments')
+    payment_account = db.relationship('Account', backref='bill_payments')
+    organization = db.relationship('Organization', backref='bill_payments')
+    creator = db.relationship('User', backref='bill_payments')
+
+    def __repr__(self):
+        return f'<BillPayment {self.payment_number}: {self.amount}>'
+
+
+class BillPaymentAllocation(db.Model):
+    """Allocation of a bill payment to specific bills"""
+    __tablename__ = 'bill_payment_allocations'
+
+    id = db.Column(db.Integer, primary_key=True)
+    bill_payment_id = db.Column(db.Integer, db.ForeignKey('bill_payments.id'), nullable=False)
+    bill_id = db.Column(db.Integer, db.ForeignKey('bills.id'), nullable=False)
+    allocated_amount = db.Column(db.Numeric(15, 2), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    bill_payment = db.relationship('BillPayment', backref='allocations')
+    bill = db.relationship('Bill', backref='payment_allocations')
+
+    def __repr__(self):
+        return f'<BillPaymentAllocation {self.bill_payment_id} -> {self.bill_id}: {self.allocated_amount}>'
+
+
+# --- Expense Models ---
+
+class Expense(db.Model):
+    __tablename__ = 'expenses'
+
+    id = db.Column(db.Integer, primary_key=True)
+    expense_number = db.Column(db.String(50), nullable=False, unique=True)
+    expense_date = db.Column(db.Date, nullable=False, default=date.today)
+    reference = db.Column(db.String(100))
+
+    # Vendor (optional - expenses may not always be tied to a vendor)
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendors.id'))
+
+    # Financial
+    subtotal = db.Column(db.Numeric(15, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    total = db.Column(db.Numeric(15, 2), default=0)
+    currency = db.Column(db.String(3), default='USD')
+
+    # Payment
+    payment_account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
+    payment_method = db.Column(db.Enum(PaymentMethod))
+    status = db.Column(db.Enum(ExpenseStatus), default=ExpenseStatus.DRAFT)
+
+    # Details
+    description = db.Column(db.Text)
+    notes = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Foreign Keys
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # Relationships
+    vendor = db.relationship('Vendor', backref='expenses')
+    payment_account = db.relationship('Account', backref='expenses')
+    organization = db.relationship('Organization', backref='expenses')
+    creator = db.relationship('User', backref='expenses')
+    line_items = db.relationship('ExpenseLineItem', backref='expense', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<Expense {self.expense_number}>'
+
+
+class ExpenseLineItem(db.Model):
+    __tablename__ = 'expense_line_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    expense_id = db.Column(db.Integer, db.ForeignKey('expenses.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+
+    description = db.Column(db.String(500), nullable=False)
+    amount = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+
+    # Tax
+    tax_rate = db.Column(db.Numeric(5, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    tax_code_id = db.Column(db.Integer, db.ForeignKey('tax_codes.id'))
+
+    # Relationships
+    account = db.relationship('Account')
+    tax_code = db.relationship('TaxCode')
+
+
+# --- Credit Note Models ---
+
+class CreditNote(db.Model):
+    __tablename__ = 'credit_notes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    credit_note_number = db.Column(db.String(50), nullable=False, unique=True)
+    reference = db.Column(db.String(100))
+
+    # Dates
+    credit_note_date = db.Column(db.Date, nullable=False, default=date.today)
+
+    # Customer
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+
+    # Related invoice (optional)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'))
+
+    # Financial
+    subtotal = db.Column(db.Numeric(15, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    total = db.Column(db.Numeric(15, 2), default=0)
+    applied_amount = db.Column(db.Numeric(15, 2), default=0)
+    balance = db.Column(db.Numeric(15, 2), default=0)
+
+    # Settings
+    currency = db.Column(db.String(3), default='USD')
+    status = db.Column(db.Enum(CreditNoteStatus), default=CreditNoteStatus.DRAFT)
+    notes = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Foreign Keys
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+
+    # Relationships
+    customer = db.relationship('Customer', backref='credit_notes')
+    invoice = db.relationship('Invoice', backref='credit_notes')
+    line_items = db.relationship('CreditNoteLineItem', backref='credit_note', cascade='all, delete-orphan')
+    applications = db.relationship('CreditNoteApplication', backref='credit_note', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<CreditNote {self.credit_note_number}>'
+
+
+class CreditNoteLineItem(db.Model):
+    __tablename__ = 'credit_note_line_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    credit_note_id = db.Column(db.Integer, db.ForeignKey('credit_notes.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
+
+    description = db.Column(db.String(500), nullable=False)
+    quantity = db.Column(db.Numeric(15, 2), nullable=False, default=1)
+    rate = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+    amount = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+
+    tax_rate = db.Column(db.Numeric(5, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    tax_code_id = db.Column(db.Integer, db.ForeignKey('tax_codes.id'))
+
+    # Relationships
+    item = db.relationship('Item')
+    tax_code = db.relationship('TaxCode')
+
+
+class CreditNoteApplication(db.Model):
+    """Apply credit notes to invoices"""
+    __tablename__ = 'credit_note_applications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    credit_note_id = db.Column(db.Integer, db.ForeignKey('credit_notes.id'), nullable=False)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), nullable=False)
+    applied_amount = db.Column(db.Numeric(15, 2), nullable=False)
+    applied_date = db.Column(db.Date, nullable=False, default=date.today)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    invoice = db.relationship('Invoice', backref='credit_note_applications')
+
+
+# --- Vendor Credit Models ---
+
+class VendorCredit(db.Model):
+    __tablename__ = 'vendor_credits'
+
+    id = db.Column(db.Integer, primary_key=True)
+    credit_number = db.Column(db.String(50), nullable=False, unique=True)
+    reference = db.Column(db.String(100))
+
+    # Dates
+    credit_date = db.Column(db.Date, nullable=False, default=date.today)
+
+    # Vendor
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendors.id'), nullable=False)
+
+    # Related bill (optional)
+    bill_id = db.Column(db.Integer, db.ForeignKey('bills.id'))
+
+    # Financial
+    subtotal = db.Column(db.Numeric(15, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    total = db.Column(db.Numeric(15, 2), default=0)
+    applied_amount = db.Column(db.Numeric(15, 2), default=0)
+    balance = db.Column(db.Numeric(15, 2), default=0)
+
+    # Settings
+    currency = db.Column(db.String(3), default='USD')
+    status = db.Column(db.Enum(VendorCreditStatus), default=VendorCreditStatus.DRAFT)
+    notes = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Foreign Keys
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+
+    # Relationships
+    vendor = db.relationship('Vendor', backref='vendor_credits')
+    bill = db.relationship('Bill', backref='vendor_credits')
+    line_items = db.relationship('VendorCreditLineItem', backref='vendor_credit', cascade='all, delete-orphan')
+    applications = db.relationship('VendorCreditApplication', backref='vendor_credit', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<VendorCredit {self.credit_number}>'
+
+
+class VendorCreditLineItem(db.Model):
+    __tablename__ = 'vendor_credit_line_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    vendor_credit_id = db.Column(db.Integer, db.ForeignKey('vendor_credits.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
+
+    description = db.Column(db.String(500), nullable=False)
+    quantity = db.Column(db.Numeric(15, 2), nullable=False, default=1)
+    rate = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+    amount = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+
+    tax_rate = db.Column(db.Numeric(5, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    tax_code_id = db.Column(db.Integer, db.ForeignKey('tax_codes.id'))
+
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
+
+    # Relationships
+    item = db.relationship('Item')
+    tax_code = db.relationship('TaxCode')
+    account = db.relationship('Account')
+
+
+class VendorCreditApplication(db.Model):
+    """Apply vendor credits to bills"""
+    __tablename__ = 'vendor_credit_applications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    vendor_credit_id = db.Column(db.Integer, db.ForeignKey('vendor_credits.id'), nullable=False)
+    bill_id = db.Column(db.Integer, db.ForeignKey('bills.id'), nullable=False)
+    applied_amount = db.Column(db.Numeric(15, 2), nullable=False)
+    applied_date = db.Column(db.Date, nullable=False, default=date.today)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    bill = db.relationship('Bill', backref='vendor_credit_applications')
+
+
+# --- Sale Estimate Models ---
+
+class Estimate(db.Model):
+    __tablename__ = 'estimates'
+
+    id = db.Column(db.Integer, primary_key=True)
+    estimate_number = db.Column(db.String(50), nullable=False, unique=True)
+    reference = db.Column(db.String(100))
+
+    # Dates
+    estimate_date = db.Column(db.Date, nullable=False, default=date.today)
+    expiry_date = db.Column(db.Date)
+
+    # Customer
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+
+    # Financial
+    subtotal = db.Column(db.Numeric(15, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    discount_amount = db.Column(db.Numeric(15, 2), default=0)
+    total = db.Column(db.Numeric(15, 2), default=0)
+
+    # Settings
+    currency = db.Column(db.String(3), default='USD')
+    status = db.Column(db.Enum(EstimateStatus), default=EstimateStatus.DRAFT)
+    terms = db.Column(db.Text)
+    notes = db.Column(db.Text)
+
+    # Converted invoice reference
+    converted_invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'))
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Foreign Keys
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+
+    # Relationships
+    customer = db.relationship('Customer', backref='estimates')
+    converted_invoice = db.relationship('Invoice', backref='source_estimate')
+    line_items = db.relationship('EstimateLineItem', backref='estimate', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<Estimate {self.estimate_number}>'
+
+
+class EstimateLineItem(db.Model):
+    __tablename__ = 'estimate_line_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    estimate_id = db.Column(db.Integer, db.ForeignKey('estimates.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
+
+    description = db.Column(db.String(500), nullable=False)
+    quantity = db.Column(db.Numeric(15, 2), nullable=False, default=1)
+    rate = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+    amount = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+
+    tax_rate = db.Column(db.Numeric(5, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    tax_code_id = db.Column(db.Integer, db.ForeignKey('tax_codes.id'))
+
+    # Relationships
+    item = db.relationship('Item')
+    tax_code = db.relationship('TaxCode')

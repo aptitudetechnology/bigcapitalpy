@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Credit Notes - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Credit Notes</h1>
+    <a href="{{ url_for('credit_notes.create') }}" class="btn btn-primary"><i class="bi bi-plus"></i> New Credit Note</a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Credit Notes</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Amount</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_amount | currency }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Open Balance</div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.open_amount | currency }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead><tr><th>Credit Note #</th><th>Date</th><th>Customer</th><th>Total</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                    {% for cn in credit_notes.items %}
+                    <tr>
+                        <td><a href="{{ url_for('credit_notes.view', id=cn.id) }}">{{ cn.credit_note_number }}</a></td>
+                        <td>{{ cn.credit_note_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ cn.customer.display_name }}</td>
+                        <td>{{ cn.total | currency }}</td>
+                        <td>{{ cn.balance | currency }}</td>
+                        <td>
+                            {% if cn.status == CreditNoteStatus.DRAFT %}<span class="badge bg-secondary">Draft</span>
+                            {% elif cn.status == CreditNoteStatus.OPEN %}<span class="badge bg-primary">Open</span>
+                            {% elif cn.status == CreditNoteStatus.PARTIAL %}<span class="badge bg-info">Partial</span>
+                            {% elif cn.status == CreditNoteStatus.CLOSED %}<span class="badge bg-success">Closed</span>
+                            {% elif cn.status == CreditNoteStatus.CANCELLED %}<span class="badge bg-dark">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td><a href="{{ url_for('credit_notes.view', id=cn.id) }}" class="btn btn-sm btn-outline-primary">View</a></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted">No credit notes found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

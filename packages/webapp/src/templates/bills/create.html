@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Create Bill - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Create Bill</h1>
+    <a href="{{ url_for('bills.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Bills
+    </a>
+</div>
+
+<form method="POST" action="{{ url_for('bills.save') }}" id="billForm">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Bill Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="vendor_id" class="form-label">Vendor <span class="text-danger">*</span></label>
+                                <select class="form-select" id="vendor_id" name="vendor_id" required>
+                                    <option value="">Select Vendor</option>
+                                    {% for vendor in vendors %}
+                                    <option value="{{ vendor.id }}">{{ vendor.display_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="bill_number" class="form-label">Bill Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="bill_number" name="bill_number" value="{{ next_number }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="vendor_bill_number" class="form-label">Vendor Bill #</label>
+                                <input type="text" class="form-control" id="vendor_bill_number" name="vendor_bill_number">
+                            </div>
+                            <div class="mb-3">
+                                <label for="reference" class="form-label">Reference</label>
+                                <input type="text" class="form-control" id="reference" name="reference">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bill_date" class="form-label">Bill Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="bill_date" name="bill_date" value="{{ today.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="due_date" name="due_date" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Line Items -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Line Items</h6>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="addLineItem()">
+                        <i class="bi bi-plus"></i> Add Item
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-borderless" id="lineItemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Description <span class="text-danger">*</span></th>
+                                    <th style="width:10%;">Qty</th>
+                                    <th style="width:15%;">Rate</th>
+                                    <th style="width:15%;">Account</th>
+                                    <th style="width:12%;">Tax</th>
+                                    <th style="width:12%;">Amount</th>
+                                    <th style="width:5%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="lineItemsBody">
+                                <tr class="line-item-row">
+                                    <td>
+                                        <input type="hidden" name="item_id[]" value="">
+                                        <input type="text" class="form-control form-control-sm" name="description[]" required>
+                                    </td>
+                                    <td><input type="number" class="form-control form-control-sm" name="quantity[]" value="1" step="0.01" onchange="calculateLineTotal(this)"></td>
+                                    <td><input type="number" class="form-control form-control-sm" name="rate[]" value="0.00" step="0.01" onchange="calculateLineTotal(this)"></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="account_id[]">
+                                            <option value="">Select</option>
+                                            {% for account in expense_accounts %}
+                                            <option value="{{ account.id }}">{{ account.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select class="form-select form-select-sm" name="tax_code_id[]">
+                                            <option value="">None</option>
+                                            {% for tc in tax_codes %}
+                                            <option value="{{ tc.id }}" data-rate="{{ tc.rate }}">{{ tc.name }} ({{ tc.rate }}%)</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm line-amount" readonly value="0.00"></td>
+                                    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLineItem(this)"><i class="bi bi-trash"></i></button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row justify-content-end mt-3">
+                        <div class="col-md-4">
+                            <table class="table table-sm">
+                                <tr><td>Subtotal:</td><td class="text-end" id="subtotal">0.00</td></tr>
+                                <tr><td>Tax:</td><td class="text-end" id="taxTotal">0.00</td></tr>
+                                <tr class="fw-bold"><td>Total:</td><td class="text-end" id="grandTotal">0.00</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Notes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="terms" class="form-label">Terms</label>
+                        <textarea class="form-control" id="terms" name="terms" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">Save Bill</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+function addLineItem() {
+    const tbody = document.getElementById('lineItemsBody');
+    const row = tbody.querySelector('.line-item-row').cloneNode(true);
+    row.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+        if (input.name === 'quantity[]') input.value = '1';
+        else if (input.name === 'rate[]') input.value = '0.00';
+        else input.value = '';
+    });
+    row.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+    row.querySelector('.line-amount').value = '0.00';
+    tbody.appendChild(row);
+}
+
+function removeLineItem(btn) {
+    const tbody = document.getElementById('lineItemsBody');
+    if (tbody.children.length > 1) {
+        btn.closest('tr').remove();
+        calculateTotals();
+    }
+}
+
+function calculateLineTotal(el) {
+    const row = el.closest('tr');
+    const qty = parseFloat(row.querySelector('[name="quantity[]"]').value) || 0;
+    const rate = parseFloat(row.querySelector('[name="rate[]"]').value) || 0;
+    row.querySelector('.line-amount').value = (qty * rate).toFixed(2);
+    calculateTotals();
+}
+
+function calculateTotals() {
+    let subtotal = 0;
+    let taxTotal = 0;
+    document.querySelectorAll('.line-item-row').forEach(row => {
+        const amount = parseFloat(row.querySelector('.line-amount').value) || 0;
+        subtotal += amount;
+        const taxSelect = row.querySelector('[name="tax_code_id[]"]');
+        const selectedOption = taxSelect.options[taxSelect.selectedIndex];
+        const taxRate = parseFloat(selectedOption?.dataset?.rate) || 0;
+        taxTotal += amount * (taxRate / 100);
+    });
+    document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+    document.getElementById('taxTotal').textContent = taxTotal.toFixed(2);
+    document.getElementById('grandTotal').textContent = (subtotal + taxTotal).toFixed(2);
+}
+
+document.addEventListener('change', function(e) {
+    if (e.target.name === 'tax_code_id[]') calculateTotals();
+});
+</script>
+{% endblock %}

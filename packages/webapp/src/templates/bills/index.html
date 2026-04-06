@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Bills - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Bills</h1>
+    <a href="{{ url_for('bills.create') }}" class="btn btn-primary">
+        <i class="bi bi-plus"></i> New Bill
+    </a>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Bills</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_bills }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-file-earmark-text fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Amount</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_amount | currency }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-currency-dollar fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Paid</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.paid_amount | currency }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-check-circle fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Outstanding</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.outstanding_amount | currency }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bills Table -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Bill #</th>
+                        <th>Vendor</th>
+                        <th>Date</th>
+                        <th>Due Date</th>
+                        <th>Total</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in bills.items %}
+                    <tr>
+                        <td><a href="{{ url_for('bills.view', id=bill.id) }}">{{ bill.bill_number }}</a></td>
+                        <td>{{ bill.vendor.display_name }}</td>
+                        <td>{{ bill.bill_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ bill.due_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ bill.total | currency }}</td>
+                        <td>{{ bill.balance | currency }}</td>
+                        <td>
+                            {% if bill.status == BillStatus.DRAFT %}
+                            <span class="badge bg-secondary">Draft</span>
+                            {% elif bill.status == BillStatus.RECEIVED %}
+                            <span class="badge bg-primary">Received</span>
+                            {% elif bill.status == BillStatus.PARTIAL %}
+                            <span class="badge bg-info">Partial</span>
+                            {% elif bill.status == BillStatus.PAID %}
+                            <span class="badge bg-success">Paid</span>
+                            {% elif bill.status == BillStatus.OVERDUE %}
+                            <span class="badge bg-danger">Overdue</span>
+                            {% elif bill.status == BillStatus.CANCELLED %}
+                            <span class="badge bg-dark">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('bills.view', id=bill.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center text-muted">No bills found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if bills.pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% for p in bills.iter_pages() %}
+                {% if p %}
+                <li class="page-item {% if p == bills.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('bills.index', page=p) }}">{{ p }}</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

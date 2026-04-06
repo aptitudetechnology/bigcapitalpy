@@ -69,9 +69,32 @@
                             <a href="{{ url_for('invoices.index') }}" class="submenu-link">Invoices</a>
                             <a href="{{ url_for('estimates.index') }}" class="submenu-link">Estimates</a>
                             <a href="{{ url_for('payments.index') }}" class="submenu-link">Payments Received</a>
-                            <a href="#" class="submenu-link">Credit Notes (Coming Soon)</a>
+                            <a href="{{ url_for('credit_notes.index') }}" class="submenu-link">Credit Notes</a>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Purchases Section -->
+            <div class="sidebar-item dropdown-menu-item">
+                <a href="#" class="sidebar-link dropdown-toggle {{ 'active' if 'bills' in request.endpoint or 'expenses' in request.endpoint or 'vendor_credits' in request.endpoint }}" data-dropdown="purchases">
+                    <i class="bi bi-cart"></i>
+                    <span class="sidebar-text">Purchases</span>
+                    <i class="bi bi-chevron-down dropdown-arrow"></i>
+                </a>
+                <div class="dropdown-content" id="purchases">
+                    <a href="{{ url_for('bills.index') }}" class="dropdown-link {{ 'active' if 'bills' in request.endpoint }}">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <span>Bills</span>
+                    </a>
+                    <a href="{{ url_for('expenses_mgmt.index') }}" class="dropdown-link {{ 'active' if 'expenses' in request.endpoint }}">
+                        <i class="bi bi-cash-stack"></i>
+                        <span>Expenses</span>
+                    </a>
+                    <a href="{{ url_for('vendor_credits.index') }}" class="dropdown-link {{ 'active' if 'vendor_credits' in request.endpoint }}">
+                        <i class="bi bi-credit-card-2-back"></i>
+                        <span>Vendor Credits</span>
+                    </a>
                 </div>
             </div>
 

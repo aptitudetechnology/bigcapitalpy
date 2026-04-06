@@ -75,10 +75,11 @@
                             <thead>
                                 <tr>
                                     <th style="width: 25%;">Item/Description <span class="text-danger">*</span></th>
-                                    <th style="width: 15%;">Quantity</th>
-                                    <th style="width: 20%;">Rate</th>
-                                    <th style="width: 20%;">Amount</th>
-                                    <th style="width: 10%;"></th>
+                                    <th style="width: 12%;">Quantity</th>
+                                    <th style="width: 15%;">Rate</th>
+                                    <th style="width: 15%;">Tax</th>
+                                    <th style="width: 15%;">Amount</th>
+                                    <th style="width: 8%;"></th>
                                 </tr>
                             </thead>
                             <tbody id="lineItemsBody">
@@ -177,12 +178,20 @@
             <input type="text" class="form-control mt-2" name="description[]" placeholder="Description" required>
         </td>
         <td>
-            <input type="number" class="form-control quantity-input" name="quantity[]" 
+            <input type="number" class="form-control quantity-input" name="quantity[]"
                    value="1" min="0" step="0.01" onchange="calculateLineTotal(this)">
         </td>
         <td>
-            <input type="number" class="form-control rate-input" name="rate[]" 
+            <input type="number" class="form-control rate-input" name="rate[]"
                    value="0.00" min="0" step="0.01" onchange="calculateLineTotal(this)">
+        </td>
+        <td>
+            <select class="form-select tax-code-select" name="tax_code_id[]" onchange="calculateLineTotal(this)">
+                <option value="" data-rate="0">No Tax</option>
+                {% for tc in tax_codes %}
+                <option value="{{ tc.id }}" data-rate="{{ tc.rate }}">{{ tc.name }} ({{ tc.rate }}%)</option>
+                {% endfor %}
+            </select>
         </td>
         <td>
             <input type="text" class="form-control amount-display" readonly value="$0.00">
@@ -270,19 +279,28 @@ function calculateLineTotal(input) {
 
 function calculateTotal() {
     let subtotal = 0;
-    const amountDisplays = document.querySelectorAll('.amount-display');
-    
-    amountDisplays.forEach(function(display) {
-        const value = display.value.replace('$', '').replace(',', '');
-        subtotal += parseFloat(value) || 0;
+    let totalTax = 0;
+    const lineItems = document.querySelectorAll('#lineItemsBody tr');
+
+    lineItems.forEach(function(row) {
+        const quantity = parseFloat(row.querySelector('.quantity-input')?.value) || 0;
+        const rate = parseFloat(row.querySelector('.rate-input')?.value) || 0;
+        const lineAmount = quantity * rate;
+        subtotal += lineAmount;
+
+        const taxSelect = row.querySelector('.tax-code-select');
+        if (taxSelect) {
+            const selectedOption = taxSelect.options[taxSelect.selectedIndex];
+            const taxRate = parseFloat(selectedOption?.dataset?.rate) || 0;
+            totalTax += lineAmount * (taxRate / 100);
+        }
     });
-    
-    const tax = 0; // No tax calculation for now
-    const discount = 0; // No discount calculation for now
-    const total = subtotal + tax - discount;
-    
+
+    const discount = 0;
+    const total = subtotal + totalTax - discount;
+
     document.getElementById('subtotalAmount').textContent = '$' + subtotal.toFixed(2);
-    document.getElementById('taxAmount').textContent = '$' + tax.toFixed(2);
+    document.getElementById('taxAmount').textContent = '$' + totalTax.toFixed(2);
     document.getElementById('discountAmount').textContent = '$' + discount.toFixed(2);
     document.getElementById('totalAmount').textContent = '$' + total.toFixed(2);
 }

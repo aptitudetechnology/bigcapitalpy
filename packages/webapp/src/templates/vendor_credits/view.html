@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Vendor Credit {{ vendor_credit.credit_number }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Vendor Credit {{ vendor_credit.credit_number }}</h1>
+    <div>
+        {% if vendor_credit.status == VendorCreditStatus.DRAFT %}
+        <form method="POST" action="{{ url_for('vendor_credits.open_vendor_credit', id=vendor_credit.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-success">Open</button>
+        </form>
+        <form method="POST" action="{{ url_for('vendor_credits.delete', id=vendor_credit.id) }}" class="d-inline" onsubmit="return confirm('Delete?')">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('vendor_credits.index') }}" class="btn btn-secondary">Back</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Details</h6></div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Vendor:</strong> {{ vendor_credit.vendor.display_name }}</p>
+                        <p><strong>Date:</strong> {{ vendor_credit.credit_date.strftime('%Y-%m-%d') }}</p>
+                        {% if vendor_credit.reference %}<p><strong>Reference:</strong> {{ vendor_credit.reference }}</p>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong>
+                            {% if vendor_credit.status == VendorCreditStatus.DRAFT %}<span class="badge bg-secondary">Draft</span>
+                            {% elif vendor_credit.status == VendorCreditStatus.OPEN %}<span class="badge bg-primary">Open</span>
+                            {% elif vendor_credit.status == VendorCreditStatus.PARTIAL %}<span class="badge bg-info">Partial</span>
+                            {% elif vendor_credit.status == VendorCreditStatus.CLOSED %}<span class="badge bg-success">Closed</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Total:</strong> {{ vendor_credit.total | currency }}</p>
+                        <p><strong>Applied:</strong> {{ vendor_credit.applied_amount | currency }}</p>
+                        <p><strong>Balance:</strong> <span class="fw-bold">{{ vendor_credit.balance | currency }}</span></p>
+                    </div>
+                </div>
+
+                <h6 class="font-weight-bold">Line Items</h6>
+                <table class="table">
+                    <thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Tax</th><th class="text-end">Amount</th></tr></thead>
+                    <tbody>
+                        {% for item in vendor_credit.line_items %}
+                        <tr>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.rate | currency }}</td>
+                            <td>{{ item.tax_amount | currency }}</td>
+                            <td class="text-end">{{ item.amount | currency }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr><td colspan="4" class="text-end"><strong>Subtotal:</strong></td><td class="text-end">{{ vendor_credit.subtotal | currency }}</td></tr>
+                        <tr><td colspan="4" class="text-end"><strong>Tax:</strong></td><td class="text-end">{{ vendor_credit.tax_amount | currency }}</td></tr>
+                        <tr><td colspan="4" class="text-end"><strong>Total:</strong></td><td class="text-end"><strong>{{ vendor_credit.total | currency }}</strong></td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        {% if vendor_credit.applications %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Applications</h6></div>
+            <div class="card-body">
+                <table class="table">
+                    <thead><tr><th>Date</th><th>Bill</th><th>Amount</th></tr></thead>
+                    <tbody>
+                        {% for app in vendor_credit.applications %}
+                        <tr>
+                            <td>{{ app.applied_date.strftime('%Y-%m-%d') }}</td>
+                            <td><a href="{{ url_for('bills.view', id=app.bill_id) }}">{{ app.bill.bill_number }}</a></td>
+                            <td>{{ app.applied_amount | currency }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        {% if vendor_credit.status in [VendorCreditStatus.OPEN, VendorCreditStatus.PARTIAL] and open_bills %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Apply to Bill</h6></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('vendor_credits.apply_to_bill', id=vendor_credit.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label">Bill</label>
+                        <select class="form-select" name="bill_id" required>
+                            <option value="">Select Bill</option>
+                            {% for bill in open_bills %}
+                            <option value="{{ bill.id }}">{{ bill.bill_number }} (Balance: {{ bill.balance | currency }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <input type="number" class="form-control" name="apply_amount" step="0.01" max="{{ vendor_credit.balance }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if vendor_credit.notes %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Notes</h6></div>
+            <div class="card-body">{{ vendor_credit.notes }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

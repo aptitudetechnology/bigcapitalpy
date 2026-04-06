@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Bill {{ bill.bill_number }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Bill {{ bill.bill_number }}</h1>
+    <div>
+        {% if bill.status == BillStatus.DRAFT %}
+        <form method="POST" action="{{ url_for('bills.approve', id=bill.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-success">Approve</button>
+        </form>
+        <a href="{{ url_for('bills.edit', id=bill.id) }}" class="btn btn-warning">Edit</a>
+        <form method="POST" action="{{ url_for('bills.delete', id=bill.id) }}" class="d-inline" onsubmit="return confirm('Delete this bill?')">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        {% endif %}
+        {% if bill.status in [BillStatus.RECEIVED, BillStatus.PARTIAL, BillStatus.OVERDUE] %}
+        <a href="{{ url_for('bills.pay', id=bill.id) }}" class="btn btn-primary">Record Payment</a>
+        {% endif %}
+        <a href="{{ url_for('bills.index') }}" class="btn btn-secondary">Back</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Bill Details</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Vendor:</strong> {{ bill.vendor.display_name }}</p>
+                        <p><strong>Bill Number:</strong> {{ bill.bill_number }}</p>
+                        {% if bill.vendor_bill_number %}<p><strong>Vendor Bill #:</strong> {{ bill.vendor_bill_number }}</p>{% endif %}
+                        {% if bill.reference %}<p><strong>Reference:</strong> {{ bill.reference }}</p>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Bill Date:</strong> {{ bill.bill_date.strftime('%Y-%m-%d') }}</p>
+                        <p><strong>Due Date:</strong> {{ bill.due_date.strftime('%Y-%m-%d') }}</p>
+                        <p><strong>Status:</strong>
+                            {% if bill.status == BillStatus.DRAFT %}<span class="badge bg-secondary">Draft</span>
+                            {% elif bill.status == BillStatus.RECEIVED %}<span class="badge bg-primary">Received</span>
+                            {% elif bill.status == BillStatus.PARTIAL %}<span class="badge bg-info">Partial</span>
+                            {% elif bill.status == BillStatus.PAID %}<span class="badge bg-success">Paid</span>
+                            {% elif bill.status == BillStatus.OVERDUE %}<span class="badge bg-danger">Overdue</span>
+                            {% elif bill.status == BillStatus.CANCELLED %}<span class="badge bg-dark">Cancelled</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <h6 class="font-weight-bold">Line Items</h6>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr><th>Description</th><th>Qty</th><th>Rate</th><th>Tax</th><th class="text-end">Amount</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for item in bill.line_items %}
+                            <tr>
+                                <td>{{ item.description }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.rate | currency }}</td>
+                                <td>{{ item.tax_amount | currency }}</td>
+                                <td class="text-end">{{ item.amount | currency }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr><td colspan="4" class="text-end"><strong>Subtotal:</strong></td><td class="text-end">{{ bill.subtotal | currency }}</td></tr>
+                            <tr><td colspan="4" class="text-end"><strong>Tax:</strong></td><td class="text-end">{{ bill.tax_amount | currency }}</td></tr>
+                            <tr><td colspan="4" class="text-end"><strong>Total:</strong></td><td class="text-end"><strong>{{ bill.total | currency }}</strong></td></tr>
+                            <tr><td colspan="4" class="text-end"><strong>Paid:</strong></td><td class="text-end">{{ bill.paid_amount | currency }}</td></tr>
+                            <tr><td colspan="4" class="text-end"><strong>Balance:</strong></td><td class="text-end"><strong>{{ bill.balance | currency }}</strong></td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        {% if bill.terms %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Terms</h6></div>
+            <div class="card-body">{{ bill.terms }}</div>
+        </div>
+        {% endif %}
+        {% if bill.notes %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Notes</h6></div>
+            <div class="card-body">{{ bill.notes }}</div>
+        </div>
+        {% endif %}
+
+        {% if bill.payment_allocations %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Payments</h6></div>
+            <div class="card-body">
+                {% for alloc in bill.payment_allocations %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span>{{ alloc.bill_payment.payment_date.strftime('%Y-%m-%d') }} - {{ alloc.bill_payment.payment_number }}</span>
+                    <span>{{ alloc.allocated_amount | currency }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

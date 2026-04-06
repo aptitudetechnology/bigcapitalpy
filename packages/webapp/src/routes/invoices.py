@@ -9,8 +9,8 @@ from decimal import Decimal
 from sqlalchemy import desc, func, and_, or_
 
 from packages.server.src.models import (
-    Invoice, InvoiceLineItem, Customer, Item, Account, AccountType, 
-    InvoiceStatus, JournalEntry, JournalLineItem
+    Invoice, InvoiceLineItem, Customer, Item, Account, AccountType,
+    InvoiceStatus, JournalEntry, JournalLineItem, TaxCode
 )
 from packages.server.src.database import db
 
@@ -147,12 +147,18 @@ def create():
         Account.type == AccountType.INCOME,
         Account.name.ilike('%sales%')
     ).first()
-    
-    return render_template('invoices/create.html', 
+
+    tax_codes = TaxCode.query.filter(
+        TaxCode.organization_id == current_user.organization_id,
+        TaxCode.is_active == True
+    ).all()
+
+    return render_template('invoices/create.html',
                          customers=customers,
                          items=items,
                          next_number=next_number,
                          sales_account=sales_account,
+                         tax_codes=tax_codes,
                          today=date.today())
 
 @invoices_bp.route('/save', methods=['POST'])
@@ -219,44 +225,57 @@ def save():
         descriptions = request.form.getlist('description[]')
         quantities = request.form.getlist('quantity[]')
         rates = request.form.getlist('rate[]')
-        
+        tax_code_ids = request.form.getlist('tax_code_id[]')
+
         # Clear existing line items if updating
         if invoice_id:
             InvoiceLineItem.query.filter(InvoiceLineItem.invoice_id == invoice.id).delete()
-        
+
         subtotal = Decimal('0.00')
+        total_tax = Decimal('0.00')
         line_items = []
-        
+
         for i in range(len(descriptions)):
-            if descriptions[i].strip():  # Only add non-empty items
+            if descriptions[i].strip():
                 try:
                     quantity = Decimal(quantities[i] or '0')
                     rate = Decimal(rates[i] or '0')
                     amount = quantity * rate
-                    
+
+                    tax_amount = Decimal('0.00')
+                    tax_rate = Decimal('0')
+                    tax_code_id = tax_code_ids[i] if i < len(tax_code_ids) and tax_code_ids[i] else None
+                    if tax_code_id:
+                        tax_code = TaxCode.query.get(int(tax_code_id))
+                        if tax_code:
+                            tax_rate = tax_code.rate
+                            tax_amount = amount * (tax_rate / Decimal('100'))
+
                     line_item = InvoiceLineItem(
                         item_id=item_ids[i] if item_ids[i] else None,
                         description=descriptions[i],
                         quantity=quantity,
                         rate=rate,
-                        amount=amount
+                        amount=amount,
+                        tax_code_id=tax_code_id,
+                        tax_rate=tax_rate,
+                        tax_amount=tax_amount
                     )
                     line_items.append(line_item)
                     subtotal += amount
+                    total_tax += tax_amount
                 except (ValueError, TypeError):
                     continue
-        
+
         if not line_items:
             flash('Please add at least one line item.', 'error')
             return redirect(url_for('invoices.create'))
-        
-        # Calculate totals (simplified - no tax for now)
-        tax_amount = Decimal('0.00')
+
         discount_amount = Decimal('0.00')
-        total = subtotal + tax_amount - discount_amount
-        
+        total = subtotal + total_tax - discount_amount
+
         invoice.subtotal = subtotal
-        invoice.tax_amount = tax_amount
+        invoice.tax_amount = total_tax
         invoice.discount_amount = discount_amount
         invoice.total = total
         invoice.balance = total
