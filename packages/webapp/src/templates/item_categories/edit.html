@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Category - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Edit Category: {{ category.name }}</h1>
+    <a href="{{ url_for('item_categories.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ category.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ category.description or '' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="parent_id" class="form-label">Parent Category</label>
+                        <select class="form-select" id="parent_id" name="parent_id">
+                            <option value="">None (Top Level)</option>
+                            {% for cat in parent_categories %}
+                            <option value="{{ cat.id }}" {% if category.parent_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Update Category</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

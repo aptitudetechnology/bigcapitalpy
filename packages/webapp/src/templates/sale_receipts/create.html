@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Create Sale Receipt - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Create Sale Receipt</h1>
+    <a href="{{ url_for('sale_receipts.index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Sale Receipts
+    </a>
+</div>
+
+<form method="POST" action="{{ url_for('sale_receipts.save') }}" id="receiptForm">
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Receipt Header -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Receipt Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="customer_id" class="form-label">Customer <span class="text-danger">*</span></label>
+                                <select class="form-select" id="customer_id" name="customer_id" required>
+                                    <option value="">Select Customer</option>
+                                    {% for customer in customers %}
+                                    <option value="{{ customer.id }}">{{ customer.display_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="receipt_number" class="form-label">Receipt Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="receipt_number" name="receipt_number"
+                                       value="{{ next_number }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="reference" class="form-label">Reference</label>
+                                <input type="text" class="form-control" id="reference" name="reference"
+                                       placeholder="P.O. Number, etc.">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="receipt_date" class="form-label">Receipt Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="receipt_date" name="receipt_date"
+                                       value="{{ today.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="deposit_account_id" class="form-label">Deposit To</label>
+                                <select class="form-select" id="deposit_account_id" name="deposit_account_id">
+                                    <option value="">Select Account</option>
+                                    {% for account in deposit_accounts %}
+                                    <option value="{{ account.id }}">{{ account.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="payment_method" class="form-label">Payment Method</label>
+                                <select class="form-select" id="payment_method" name="payment_method">
+                                    <option value="">Select Method</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="check">Check</option>
+                                    <option value="credit_card">Credit Card</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Line Items -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Line Items</h6>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="addLineItem()">
+                        <i class="bi bi-plus"></i> Add Item
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-borderless" id="lineItemsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 25%;">Item/Description <span class="text-danger">*</span></th>
+                                    <th style="width: 12%;">Quantity</th>
+                                    <th style="width: 15%;">Rate</th>
+                                    <th style="width: 15%;">Tax</th>
+                                    <th style="width: 15%;">Amount</th>
+                                    <th style="width: 8%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="lineItemsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Additional Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="statement_message" class="form-label">Statement Message</label>
+                                <textarea class="form-control" id="statement_message" name="statement_message" rows="3"
+                                          placeholder="Message to display on statement"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3"
+                                          placeholder="Internal notes"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Summary -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Receipt Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span id="subtotalAmount">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax:</span>
+                        <span id="taxAmount">$0.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Total:</strong>
+                        <strong id="totalAmount">$0.00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" name="action" value="save_draft">
+                            <i class="bi bi-save"></i> Save as Draft
+                        </button>
+                        <a href="{{ url_for('sale_receipts.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-x"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Hidden template for line items -->
+<div id="lineItemTemplate" style="display: none;">
+    <tr class="line-item">
+        <td>
+            <select class="form-select item-select" name="item_id[]" onchange="selectItem(this)">
+                <option value="">Select Item or Enter Custom</option>
+                {% for item in items %}
+                <option value="{{ item.id }}" data-description="{{ item.description }}" data-price="{{ item.sell_price }}">
+                    {{ item.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <input type="text" class="form-control mt-2" name="description[]" placeholder="Description" required>
+        </td>
+        <td>
+            <input type="number" class="form-control quantity-input" name="quantity[]"
+                   value="1" min="0" step="0.01" onchange="calculateLineTotal(this)">
+        </td>
+        <td>
+            <input type="number" class="form-control rate-input" name="rate[]"
+                   value="0.00" min="0" step="0.01" onchange="calculateLineTotal(this)">
+        </td>
+        <td>
+            <select class="form-select tax-code-select" name="tax_code_id[]" onchange="calculateLineTotal(this)">
+                <option value="" data-rate="0">No Tax</option>
+                {% for tc in tax_codes %}
+                <option value="{{ tc.id }}" data-rate="{{ tc.rate }}">{{ tc.name }} ({{ tc.rate }}%)</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <input type="text" class="form-control amount-display" readonly value="$0.00">
+        </td>
+        <td>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLineItem(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    </tr>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    addLineItem();
+});
+
+function addLineItem() {
+    const template = document.getElementById('lineItemTemplate');
+    const tbody = document.getElementById('lineItemsBody');
+    tbody.insertAdjacentHTML('beforeend', template.innerHTML);
+}
+
+function removeLineItem(button) {
+    button.closest('tr').remove();
+    calculateTotal();
+}
+
+function selectItem(select) {
+    const row = select.closest('tr');
+    const descriptionInput = row.querySelector('input[name="description[]"]');
+    const rateInput = row.querySelector('input[name="rate[]"]');
+    if (select.value) {
+        const option = select.selectedOptions[0];
+        descriptionInput.value = option.getAttribute('data-description') || option.text;
+        rateInput.value = parseFloat(option.getAttribute('data-price') || '0.00').toFixed(2);
+        calculateLineTotal(rateInput);
+    }
+}
+
+function calculateLineTotal(input) {
+    const row = input.closest('tr');
+    const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+    const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
+    row.querySelector('.amount-display').value = '$' + (quantity * rate).toFixed(2);
+    calculateTotal();
+}
+
+function calculateTotal() {
+    let subtotal = 0;
+    let totalTax = 0;
+    document.querySelectorAll('#lineItemsBody tr').forEach(function(row) {
+        const quantity = parseFloat(row.querySelector('.quantity-input')?.value) || 0;
+        const rate = parseFloat(row.querySelector('.rate-input')?.value) || 0;
+        const lineAmount = quantity * rate;
+        subtotal += lineAmount;
+        const taxSelect = row.querySelector('.tax-code-select');
+        if (taxSelect) {
+            const taxRate = parseFloat(taxSelect.options[taxSelect.selectedIndex]?.dataset?.rate) || 0;
+            totalTax += lineAmount * (taxRate / 100);
+        }
+    });
+    document.getElementById('subtotalAmount').textContent = '$' + subtotal.toFixed(2);
+    document.getElementById('taxAmount').textContent = '$' + totalTax.toFixed(2);
+    document.getElementById('totalAmount').textContent = '$' + (subtotal + totalTax).toFixed(2);
+}
+</script>
+{% endblock %}

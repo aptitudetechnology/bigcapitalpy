@@ -68,10 +68,15 @@
                         <div class="submenu-content" id="sales">
                             <a href="{{ url_for('invoices.index') }}" class="submenu-link">Invoices</a>
                             <a href="{{ url_for('estimates.index') }}" class="submenu-link">Estimates</a>
+                            <a href="{{ url_for('sale_receipts.index') }}" class="submenu-link">Sale Receipts</a>
                             <a href="{{ url_for('payments.index') }}" class="submenu-link">Payments Received</a>
                             <a href="{{ url_for('credit_notes.index') }}" class="submenu-link">Credit Notes</a>
                         </div>
                     </div>
+                    <a href="{{ url_for('item_categories.index') }}" class="dropdown-link {{ 'active' if 'item_categories' in request.endpoint }}">
+                        <i class="bi bi-tags"></i>
+                        <span>Item Categories</span>
+                    </a>
                 </div>
             </div>
 
@@ -159,6 +164,10 @@
                     <a href="{{ url_for('preferences.index') }}" class="dropdown-link">
                         <i class="bi bi-sliders"></i>
                         <span>Preferences</span>
+                    </a>
+                    <a href="{{ url_for('import_export.index') }}" class="dropdown-link">
+                        <i class="bi bi-arrow-left-right"></i>
+                        <span>Import & Export</span>
                     </a>
                     <a href="{{ url_for('backup.index') }}" class="dropdown-link">
                         <i class="bi bi-cloud-arrow-down"></i>

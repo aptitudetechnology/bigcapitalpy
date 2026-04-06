@@ -12,7 +12,6 @@ from wtforms.validators import DataRequired, Length, Optional
 # from packages.server.src.models import Account, AccountType
 # from packages.server.src.database import db
 from packages.server.src.modules.Accounts.accounts_constants import ACCOUNT_TYPES, SEED_ACCOUNTS
-from packages.server.src.modules.Accounts.accounts_constants import ACCOUNT_TYPES
 
 accounts_bp = Blueprint('accounts', __name__)
 

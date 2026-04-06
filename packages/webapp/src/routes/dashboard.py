@@ -72,7 +72,7 @@ def api_metrics():
     
     sales_data = [
         {
-            'month': sale.month.strftime('%Y-%m'),
+            'month': sale.month,
             'total': float(sale.total or 0)
         }
         for sale in monthly_sales

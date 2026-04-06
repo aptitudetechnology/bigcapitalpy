@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Sale Receipts - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Sale Receipts</h1>
+    <a href="{{ url_for('sale_receipts.create') }}" class="btn btn-primary">
+        <i class="bi bi-plus"></i> New Sale Receipt
+    </a>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Receipts</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_receipts }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-receipt fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Amount</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ "%.2f"|format(stats.total_amount) }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-currency-dollar fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Closed</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ "%.2f"|format(stats.closed_amount) }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-check-circle fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Drafts</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.draft_count }}</div>
+                    </div>
+                    <div class="col-auto"><i class="bi bi-pencil-square fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Receipts Table -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Receipt #</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for receipt in receipts.items %}
+                    <tr>
+                        <td><a href="{{ url_for('sale_receipts.view', id=receipt.id) }}">{{ receipt.receipt_number }}</a></td>
+                        <td>{{ receipt.customer.display_name }}</td>
+                        <td>{{ receipt.receipt_date.strftime('%Y-%m-%d') }}</td>
+                        <td>${{ "%.2f"|format(receipt.total) }}</td>
+                        <td>
+                            {% if receipt.status == SaleReceiptStatus.DRAFT %}
+                            <span class="badge bg-secondary">Draft</span>
+                            {% elif receipt.status == SaleReceiptStatus.CLOSED %}
+                            <span class="badge bg-success">Closed</span>
+                            {% elif receipt.status == SaleReceiptStatus.CANCELLED %}
+                            <span class="badge bg-dark">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('sale_receipts.view', id=receipt.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted">No sale receipts found</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if receipts.pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% for p in receipts.iter_pages() %}
+                {% if p %}
+                <li class="page-item {% if p == receipts.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('sale_receipts.index', page=p) }}">{{ p }}</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

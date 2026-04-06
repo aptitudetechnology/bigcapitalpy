@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Import & Export - BigCapitalPy{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800">Import & Export</h1>
+
+<div class="row">
+    <!-- Export Section -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-download me-2"></i>Export Data</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Download your data as CSV files.</p>
+                <div class="list-group">
+                    <a href="{{ url_for('import_export.export_customers') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-people me-2"></i>
+                            <strong>Customers</strong>
+                            <br><small class="text-muted">Export all customers to CSV</small>
+                        </div>
+                        <i class="bi bi-file-earmark-arrow-down"></i>
+                    </a>
+                    <a href="{{ url_for('import_export.export_vendors') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-building me-2"></i>
+                            <strong>Vendors</strong>
+                            <br><small class="text-muted">Export all vendors to CSV</small>
+                        </div>
+                        <i class="bi bi-file-earmark-arrow-down"></i>
+                    </a>
+                    <a href="{{ url_for('import_export.export_items') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-box me-2"></i>
+                            <strong>Items</strong>
+                            <br><small class="text-muted">Export all items to CSV</small>
+                        </div>
+                        <i class="bi bi-file-earmark-arrow-down"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Section -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success"><i class="bi bi-upload me-2"></i>Import Data</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Upload CSV files to import data. Duplicates will be skipped.</p>
+                <div class="list-group">
+                    <a href="{{ url_for('import_export.import_customers') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-people me-2"></i>
+                            <strong>Customers</strong>
+                            <br><small class="text-muted">Import customers from CSV</small>
+                        </div>
+                        <i class="bi bi-file-earmark-arrow-up"></i>
+                    </a>
+                    <a href="{{ url_for('import_export.import_vendors') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-building me-2"></i>
+                            <strong>Vendors</strong>
+                            <br><small class="text-muted">Import vendors from CSV</small>
+                        </div>
+                        <i class="bi bi-file-earmark-arrow-up"></i>
+                    </a>
+                    <a href="{{ url_for('import_export.import_items') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-box me-2"></i>
+                            <strong>Items</strong>
+                            <br><small class="text-muted">Import items from CSV</small>
+                        </div>
+                        <i class="bi bi-file-earmark-arrow-up"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

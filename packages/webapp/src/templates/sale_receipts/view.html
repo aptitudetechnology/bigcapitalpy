@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}{{ receipt.receipt_number }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">{{ receipt.receipt_number }}</h1>
+        <small class="text-muted">Sale Receipt</small>
+    </div>
+    <div>
+        {% if receipt.status == SaleReceiptStatus.DRAFT %}
+        <form method="POST" action="{{ url_for('sale_receipts.close', id=receipt.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-success" onclick="return confirm('Close this receipt? This will create journal entries.')">
+                <i class="bi bi-check-circle"></i> Close Receipt
+            </button>
+        </form>
+        <form method="POST" action="{{ url_for('sale_receipts.delete', id=receipt.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this receipt?')">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('sale_receipts.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Receipt Details -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Receipt Details</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Customer:</strong> {{ receipt.customer.display_name }}</p>
+                        <p><strong>Receipt Number:</strong> {{ receipt.receipt_number }}</p>
+                        {% if receipt.reference %}
+                        <p><strong>Reference:</strong> {{ receipt.reference }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Date:</strong> {{ receipt.receipt_date.strftime('%B %d, %Y') }}</p>
+                        {% if receipt.deposit_account %}
+                        <p><strong>Deposit To:</strong> {{ receipt.deposit_account.name }}</p>
+                        {% endif %}
+                        {% if receipt.payment_method %}
+                        <p><strong>Payment Method:</strong> {{ receipt.payment_method.value | replace('_', ' ') | title }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Items -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Line Items</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Rate</th>
+                                <th>Tax</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for li in receipt.line_items %}
+                            <tr>
+                                <td>{{ li.description }}</td>
+                                <td>{{ li.quantity }}</td>
+                                <td>${{ "%.2f"|format(li.rate) }}</td>
+                                <td>${{ "%.2f"|format(li.tax_amount or 0) }}</td>
+                                <td class="text-end">${{ "%.2f"|format(li.amount) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {% if receipt.notes %}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Notes</h6>
+            </div>
+            <div class="card-body">{{ receipt.notes }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Summary -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Status:</span>
+                    {% if receipt.status == SaleReceiptStatus.DRAFT %}
+                    <span class="badge bg-secondary">Draft</span>
+                    {% elif receipt.status == SaleReceiptStatus.CLOSED %}
+                    <span class="badge bg-success">Closed</span>
+                    {% elif receipt.status == SaleReceiptStatus.CANCELLED %}
+                    <span class="badge bg-dark">Cancelled</span>
+                    {% endif %}
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span>${{ "%.2f"|format(receipt.subtotal) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Tax:</span>
+                    <span>${{ "%.2f"|format(receipt.tax_amount) }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <strong>Total:</strong>
+                    <strong>${{ "%.2f"|format(receipt.total) }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

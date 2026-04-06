@@ -107,6 +107,7 @@ class Organization(db.Model):
     currency = db.Column(db.String(3), default='USD')
     fiscal_year_start = db.Column(db.String(5), default='01-01')  # MM-DD format
     timezone = db.Column(db.String(50), default='UTC')
+    language = db.Column(db.String(10), default='en')
     logo_url = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -301,7 +302,8 @@ class Item(db.Model):
     
     # Settings
     type = db.Column(db.String(50), default='inventory')  # inventory, service, non-inventory
-    category = db.Column(db.String(100))
+    category = db.Column(db.String(100))  # Legacy text field
+    category_id = db.Column(db.Integer, db.ForeignKey('item_categories.id'))
     unit = db.Column(db.String(50))
     weight = db.Column(db.Numeric(10, 2))
     dimensions = db.Column(db.String(100))
@@ -828,6 +830,11 @@ class ExpenseStatus(enum.Enum):
     PAID = "paid"
     CANCELLED = "cancelled"
 
+class SaleReceiptStatus(enum.Enum):
+    DRAFT = "draft"
+    CLOSED = "closed"
+    CANCELLED = "cancelled"
+
 
 # --- Bill (Purchase Bill) Models ---
 
@@ -1233,6 +1240,96 @@ class EstimateLineItem(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     estimate_id = db.Column(db.Integer, db.ForeignKey('estimates.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
+
+    description = db.Column(db.String(500), nullable=False)
+    quantity = db.Column(db.Numeric(15, 2), nullable=False, default=1)
+    rate = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+    amount = db.Column(db.Numeric(15, 2), nullable=False, default=0)
+
+    tax_rate = db.Column(db.Numeric(5, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    tax_code_id = db.Column(db.Integer, db.ForeignKey('tax_codes.id'))
+
+    # Relationships
+    item = db.relationship('Item')
+    tax_code = db.relationship('TaxCode')
+
+
+# --- Item Category Model ---
+
+class ItemCategory(db.Model):
+    __tablename__ = 'item_categories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    parent_id = db.Column(db.Integer, db.ForeignKey('item_categories.id'))
+
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    parent = db.relationship('ItemCategory', remote_side=[id], backref='subcategories')
+
+    def __repr__(self):
+        return f'<ItemCategory {self.name}>'
+
+
+# --- Sale Receipt Models ---
+
+class SaleReceipt(db.Model):
+    __tablename__ = 'sale_receipts'
+
+    id = db.Column(db.Integer, primary_key=True)
+    receipt_number = db.Column(db.String(50), nullable=False, unique=True)
+    reference = db.Column(db.String(100))
+
+    # Dates
+    receipt_date = db.Column(db.Date, nullable=False, default=date.today)
+
+    # Customer
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+
+    # Financial
+    subtotal = db.Column(db.Numeric(15, 2), default=0)
+    tax_amount = db.Column(db.Numeric(15, 2), default=0)
+    discount_amount = db.Column(db.Numeric(15, 2), default=0)
+    total = db.Column(db.Numeric(15, 2), default=0)
+
+    # Payment
+    deposit_account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
+    payment_method = db.Column(db.Enum(PaymentMethod))
+
+    # Settings
+    currency = db.Column(db.String(3), default='USD')
+    status = db.Column(db.Enum(SaleReceiptStatus), default=SaleReceiptStatus.DRAFT)
+    statement_message = db.Column(db.Text)
+    notes = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Foreign Keys
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    # Relationships
+    customer = db.relationship('Customer', backref='sale_receipts')
+    deposit_account = db.relationship('Account', backref='sale_receipts')
+    creator = db.relationship('User', backref='sale_receipts')
+    line_items = db.relationship('SaleReceiptLineItem', backref='sale_receipt', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<SaleReceipt {self.receipt_number}>'
+
+
+class SaleReceiptLineItem(db.Model):
+    __tablename__ = 'sale_receipt_line_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    sale_receipt_id = db.Column(db.Integer, db.ForeignKey('sale_receipts.id'), nullable=False)
     item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
 
     description = db.Column(db.String(500), nullable=False)

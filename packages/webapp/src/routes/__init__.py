@@ -28,6 +28,9 @@ from .expenses_routes import expenses_bp as expenses_mgmt_bp
 from .credit_notes import credit_notes_bp
 from .vendor_credits import vendor_credits_bp
 from .estimates import estimates_bp
+from .sale_receipts import sale_receipts_bp
+from .item_categories import item_categories_bp
+from .import_export import import_export_bp
 
 # Import the reports blueprint registration function
 from .reports import register_reports_blueprints
@@ -64,3 +67,6 @@ def register_blueprints(app):
     app.register_blueprint(credit_notes_bp, url_prefix='/credit-notes')
     app.register_blueprint(vendor_credits_bp, url_prefix='/vendor-credits')
     app.register_blueprint(estimates_bp)
+    app.register_blueprint(sale_receipts_bp, url_prefix='/sale-receipts')
+    app.register_blueprint(item_categories_bp, url_prefix='/item-categories')
+    app.register_blueprint(import_export_bp, url_prefix='/import-export')
