@@ -145,7 +145,7 @@ async function seedAustralianTaxCodes() {
     }
     
     try {
-        const response = await fetch('{{ url_for("reports.seed_australian_tax_codes") }}', {
+        const response = await fetch('{{ url_for("reports.tax.seed_australian_tax_codes") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

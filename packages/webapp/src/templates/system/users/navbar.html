@@ -4,7 +4,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
         <!-- Your existing navbar content -->
-        <a class="navbar-brand" href="{{ url_for('main.dashboard') }}">BigCapital</a>
+        <a class="navbar-brand" href="{{ url_for('dashboard.index') }}">BigCapital</a>
         
         <!-- Navbar toggler for mobile -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -15,7 +15,7 @@
             <!-- Your existing navigation links -->
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('dashboard.index') }}">Dashboard</a>
                 </li>
                 <!-- Add other navigation items here -->
             </ul>
@@ -35,17 +35,17 @@
                                 </h6>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('user.profile') }}">
+                                <a class="dropdown-item" href="{{ url_for('users.profile') }}">
                                     <i class="fas fa-user-circle"></i> My Profile
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('user.settings') }}">
+                                <a class="dropdown-item" href="{{ url_for('users.settings') }}">
                                     <i class="fas fa-cog"></i> Settings
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('user.change_password') }}">
+                                <a class="dropdown-item" href="{{ url_for('users.change_password') }}">
                                     <i class="fas fa-key"></i> Change Password
                                 </a>
                             </li>

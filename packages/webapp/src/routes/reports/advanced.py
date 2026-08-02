@@ -14,7 +14,7 @@ def profitability_analysis():
         'profit_by_item': [],
         'margin_analysis': {}
     }
-    return render_template('reports/profitability_analysis.html', report_data=report_data)
+    return render_template('reports/profitability.html', report_data=report_data)
 
 @advanced_bp.route('/executive-dashboard')
 def executive_dashboard():

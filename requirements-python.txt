@@ -1,74 +1,84 @@
 # BigCapitalPy - Python Accounting Software Dependencies
+#
+# Pins updated 2026-08-02 for Python 3.14. The previous pinset targeted Python
+# 3.12; numpy 1.26.4 and pandas 2.1.1 have no 3.13+/3.14 support, and Flask 2.3 /
+# Werkzeug 2.3 are several majors behind. Verified against Python 3.14.4.
 
 # Core Flask Dependencies
-Flask==2.3.3
-Werkzeug==2.3.7
-Jinja2==3.1.2
-MarkupSafe==2.1.3
+Flask==3.1.3
+Werkzeug==3.1.8
+Jinja2==3.1.6
+MarkupSafe==3.0.3
 
 # Database
-Flask-SQLAlchemy==3.0.5
-Flask-Migrate==4.0.5
-SQLAlchemy==2.0.21
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.1.0
+SQLAlchemy==2.0.51
+alembic==1.18.5
 # psycopg2-binary==2.9.7  # Commented out for SQLite development
 
 # Authentication & Security
 Flask-Login==0.6.3
-Flask-WTF==1.1.1
-WTForms==3.0.1
-PyJWT==2.8.0
-cryptography==41.0.7
+Flask-WTF==1.3.0
+WTForms==3.2.2
+PyJWT==2.13.0
+cryptography==50.0.0
 
 # Data Processing
-pandas==2.1.1
-numpy==1.26.4
+pandas==3.0.5
+numpy==2.5.1
 
 # Date and Time
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
 
 # Email
-Flask-Mail==0.9.1
+Flask-Mail==0.10.0
 
 # Environment Variables
-python-dotenv==1.0.0
+python-dotenv==1.2.2
 
 # Web Scraping
-requests==2.31.0
-beautifulsoup4==4.12.2
+requests==2.34.2
+beautifulsoup4==4.15.0
 
 # PDF Generation
-reportlab==4.0.4
-WeasyPrint==60.1
+reportlab==5.0.0
+WeasyPrint==69.0
 
 # Excel Support
-openpyxl==3.1.2
-xlsxwriter==3.1.3
+openpyxl==3.1.5
+xlsxwriter==3.2.9
 
 # API Documentation
-flask-restx==1.2.0
+flask-restx==1.3.2
 
 # Logging
-loguru==0.7.2
-
-# Configuration
-configparser==6.0.0
+loguru==0.7.3
 
 # Validation
-marshmallow==3.20.1
-marshmallow-sqlalchemy==0.29.0
+marshmallow==4.3.0
+marshmallow-sqlalchemy==1.5.0
+
+# E-mail Validation
+email_validator==2.3.0
 
 # Development Dependencies (optional)
 # flask-debugtoolbar==0.13.1
 
-# E-mail Validation
-email_validator>=1.3.1
-
 # Managing and visualising python modules
-ruff==0.12.4
-pycycle
+ruff==0.16.1
 
 # Python gpg
-python-gnupg==0.5
+python-gnupg==0.5.6
 
 # gunicorn
-gunicorn==22.0.0
+gunicorn==26.0.0
+
+# Two packages were dropped on 2026-08-02.
+#
+# The "configparser" pin was removed because configparser has been part of the
+# standard library since Python 3; the PyPI package of that name is a Python 2
+# backport and shadows the stdlib module if installed.
+#
+# The "pycycle" pin was removed because it is unmaintained and has no Python
+# 3.14 support. Use ruff, or python -X importtime, for import-cycle work.

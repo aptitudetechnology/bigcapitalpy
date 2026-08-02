@@ -148,9 +148,9 @@ def create_app(config_name='development'):
             return default
 
     # Register blueprints
+    # estimates_bp is registered inside register_blueprints() and declares its own
+    # url_prefix='/estimates', so it must not be registered again here.
     register_blueprints(app)
-    from packages.webapp.src.routes.estimates import estimates_bp
-    app.register_blueprint(estimates_bp, url_prefix='/estimates')
 
     # Register API blueprints
     register_api_blueprints(app)

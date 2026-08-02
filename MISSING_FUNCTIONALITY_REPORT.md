@@ -1,550 +1,230 @@
-# Missing Functionality Report: Accounting & Reporting Sidebar (base.html)
-
-This report summarizes the missing or incomplete user-facing functionality in the accounting and reporting sections of the sidebar, as defined in `base.html`.
-
----
-
-## 1. Financial Submenu Links
-- **Current State:**
-  - All submenu links under "Financial" (Financial Dashboard, Banking, Manual Journals, Bank Reconciliation, Cash Flow) point to the same route: `reports.index` (the main reports dashboard).
-- **Missing:**
-  - Dedicated pages/routes for each feature. Users cannot access specific banking, manual journals, reconciliation, or cash flow pages—they all go to the main reports dashboard.
-
-## 2. Direct Access to Core Financial Reports
-- **Missing Links:**
-  - Trial Balance
-  - Balance Sheet
-  - Profit & Loss (Income Statement)
-  - Tax/BAS Reports
-  - Custom Reports
-- **Impact:**
-  - Users cannot directly navigate to these essential accounting reports from the sidebar.
-
-## 3. Manual Journals
-- **Current State:**
-  - Link exists, but points to the reports dashboard.
-- **Missing:**
-  - Actual manual journal entry/listing functionality.
-
-## 4. Banking
-- **Current State:**
-  - Link exists, but points to the reports dashboard.
-- **Missing:**
-  - Banking dashboard, bank account management, or transaction import features.
-
-## 5. Bank Reconciliation
-- **Current State:**
-  - Link exists, but points to the reports dashboard.
-- **Missing:**
-  - Actual reconciliation workflow/page.
-
-## 6. Cash Flow
-- **Current State:**
-  - Link exists, but points to the reports dashboard.
-- **Missing:**
-  - Dedicated cash flow report or forecast.
-
-## 7. Reports Section
-- **Current State:**
-  - Only a general "Reports" link is present.
-- **Missing:**
-  - Submenu or links for different report types (e.g., financial, tax, management, custom).
-
-## 8. Quick Actions
-- **Missing:**
-  - No "New Journal", "New Account", or "Export" actions in the sidebar.
-
-## 9. Recent/Favorite Reports
-- **Missing:**
-  - No section for recent reports, favorite reports, or quick links.
-
-## 10. Role-based Visibility
-- **Missing:**
-  - All links are visible; no logic for hiding/showing based on user role or permissions.
-
----
-
-## Summary Table
-
-| Feature/Section                | Link Present | Dedicated Page/Route | Missing/Incomplete |
-|------------------------------- |:------------:|:-------------------:|:------------------|
-| Chart of Accounts              |      ✔       |         ✔           |        –          |
-| Financial Dashboard            |      ✔       |         ✖           |   All point to reports.index |
-| Banking                        |      ✔       |         ✖           |   All point to reports.index |
-| Manual Journals                |      ✔       |         ✖           |   All point to reports.index |
-| Bank Reconciliation            |      ✔       |         ✖           |   All point to reports.index |
-| Cash Flow                      |      ✔       |         ✖           |   All point to reports.index |
-| Reports (General)              |      ✔       |         ✔           |   No sub-reports/filters    |
-| Trial Balance                  |      ✖       |         ✖           |   No link                   |
-| Balance Sheet                  |      ✖       |         ✖           |   No link                   |
-| Profit & Loss                  |      ✖       |         ✖           |   No link                   |
-| Tax/BAS                        |      ✖       |         ✖           |   No link                   |
-| Custom Reports                 |      ✖       |         ✖           |   No link                   |
-| Quick Actions (New/Export)     |      ✖       |         ✖           |   No link                   |
-| Recent/Favorite Reports        |      ✖       |         ✖           |   No link                   |
-| Role-based Visibility          |      ✖       |         ✖           |   No logic                  |
-
----
-
-**In summary:**
-- The sidebar/menu provides the main accounting/reporting sections. All financial submenu links currently go to the dashboard, but the dashboard itself offers direct access to core financial reports (trial balance, P&L, balance sheet, tax/BAS, custom reports) and dedicated pages for banking, journals, and reconciliation.
-- The navigation flow is functional. For improved user experience, consider adding direct sidebar links to these specific reports and features in the future.
-- Quick actions, recent/favorite reports, and role-based visibility are also missing.
-
----
-
-_Last updated: 2025-07-25_
 # BigCapitalPy Missing Functionality Report
 
-## Executive Summary
+**Last verified: 2026-08-02** · Branch `development` @ `da35365ca`
+Comparison base: the original BigCapital (TypeScript/NestJS/React), which lives alongside the port in
+this repo at `packages/server/src/modules/**` (76 NestJS modules) and
+`packages/webapp/src/containers/**` + `routes/dashboard.tsx` (~95 React routes).
 
-This report analyzes the functionality gaps between the original BigCapital (TypeScript/React/NestJS) and BigCapitalPy (Python/Flask/HTML). BigCapitalPy has successfully implemented core accounting functionality but is missing several advanced features, modules, and integrations present in the original.
+> **Companion document:** [OUTSTANDING_WORK.md](OUTSTANDING_WORK.md) carries the file-and-line-level
+> defect list (broken `url_for` targets, mock implementations, security gaps) and a suggested work
+> order. This report is the feature-parity ledger.
+
+> **Revision note:** this file previously contained two concatenated reports dated 2025-07-05 and
+> 2025-07-25. Both had drifted badly — six modules they listed as missing have since been built, and
+> several marked "✅ complete" are not. It has been rewritten from a fresh source audit.
+
+---
 
 ## Implementation Status Overview
 
-### ✅ **Implemented (Complete/Functional)**
-- ✅ Core Authentication & User Management
-- ✅ Dashboard with basic metrics
-- ✅ Customers Management (CRUD operations)
-- ✅ Vendors Management (CRUD operations)
-- ✅ Items/Inventory Management (CRUD operations)
-- ✅ Chart of Accounts (CRUD operations)
-- ✅ Manual Journal Entries (Financial section)
-- ✅ Bank Transaction Import & Management
-- ✅ Bank Reconciliation Workflow
-- ✅ Payment Received Module (Complete CRUD)
-- ✅ Financial Reports (P&L, Balance Sheet, Trial Balance, Cash Flow, Customer/Vendor Aging, BAS Report)
-- ✅ REST API structure (v1)
-- ✅ Database models for all core entities (Fixed import issues)
-- ✅ Multi-tenancy foundation
-- ✅ Docker & development environment
-- ✅ Tax Code Management
-- ✅ Journal Entry & Line Item Models
+### ✅ Implemented and backed by real database work
 
-### 🟡 **Partially Implemented**
-- 🟡 Invoice management (models exist, UI needs completion)
-- 🟡 API endpoints (core endpoints only, needs expansion)
-- 🟡 Import/Export functionality (CSV import implemented for bank transactions)
+- Customers, Vendors, Items, Item Categories — full CRUD
+- **Sales invoices** — full lifecycle incl. GL posting and mark-paid
+- **Sale estimates** — incl. approve/reject and convert-to-invoice
+- **Sale receipts** — create/view/close/delete
+- **Bills** — full lifecycle incl. approve, pay and record-payment
+- **Credit notes & vendor credits** — incl. open and apply-to-document
+- **Expenses** — full lifecycle incl. approve
+- **Payments received** — with allocation to invoices
+- Manual journal entries; bank transaction CSV import; bank reconciliation with auto-match
+- Financial reports: Balance Sheet, P&L, Trial Balance, General Ledger, Cash Flow, AR aging
+- Australian GST/BAS reporting and tax codes — **a deliberate addition the original lacks**
+- Double-entry posting: `JournalEntry`/`JournalLineItem` rows are written by invoices, bills,
+  payments, expenses, credit notes, vendor credits and sale receipts
+- REST API v1 — 84 endpoints across 16 blueprints
+- Docker environment; SQLAlchemy models for all of the above
 
-### ❌ **Missing (Not Implemented)**
+### 🟡 Partially implemented
+
+- **Import/Export** — CSV import and export for customers, vendors and items only (3 resources vs
+  ~15 importable resources in the original)
+- **Authentication** — login/logout work; **registration is a no-op stub** and password reset sends
+  no mail
+- **Tax** — AU BAS complete; no sales-tax liability summary, no other jurisdictions
+- **Multi-tenancy** — single database with an `organization_id` column, scoped per query rather than
+  centrally enforced. The original gives each tenant its own database.
+- **Preferences/Settings** — pages render but several handlers flash success and save nothing
+
+### ⚠️ Reported complete previously, but is not
+
+These were marked ✅ in the prior revision. They are not.
+
+| Claim | Reality |
+|---|---|
+| "Chart of Accounts (CRUD operations)" | Was **entirely mock** — zero `.query.` calls, hardcoded seed list, discarded input. **Rewritten 2026-08-02** against the `Account` model: real CRUD, balances derived from journal lines, parent/child tree with cycle prevention, delete guards, org scoping. Now genuinely implemented. |
+| "Aging Reports — AP aging complete" | Vendor aging is a data-less stub — `# TODO: Replace with real data` in [reports/expenses.py](packages/webapp/src/routes/reports/expenses.py) |
+| "Core Authentication & User Management" | No registration, no user list, no invites, no roles |
+| "Financial reporting engine complete" | 7 of the original's 20 reports are ported — see §4 |
+| "Production-ready for basic accounting operations" | Contradicted by the README's own PRE-ALPHA warning. The boot-blocking and 500-level defects have since been cleared, but the platform gaps below remain; see [OUTSTANDING_WORK.md](OUTSTANDING_WORK.md) |
+
+---
 
 ## 1. Core Business Modules
 
-### Sales & Revenue Management
-- ❌ **Sale Estimates/Quotes**
-  - Estimate creation, editing, conversion to invoices
-  - Estimate templates and branding
-  - Customer approval workflows
-  
-- ❌ **Sale Invoices** (Partial structure exists)
-  - Complete invoice lifecycle management
-  - Invoice templates and customization
-  - Recurring invoices
-  - Invoice approval workflows
-  - Multiple payment terms
-  
-- ❌ **Sale Receipts**
-  - Point-of-sale functionality
-  - Receipt templates
-  - Cash sales management
-  
-- ❌ **Payment Received** ✅ **COMPLETED**
-  - ✅ Customer payment tracking
-  - ✅ Payment allocation to invoices  
-  - ✅ Payment methods management
-  - ✅ Partial payments handling
+Largely **done**. The prior revision's ❌ marks on estimates, sale receipts, bills, bill payments,
+credit notes and vendor credits are obsolete. Remaining gaps within these modules:
 
-### Purchasing & Vendor Management
-- ❌ **Bills/Purchase Invoices**
-  - Vendor bill processing
-  - Bill approval workflows
-  - Purchase order management
-  - Three-way matching (PO, Receipt, Invoice)
-  
-- ❌ **Purchase Orders**
-  - PO creation and management
-  - Vendor communication
-  - Delivery tracking
-  
-- ❌ **Payment Made/Bill Payments**
-  - Vendor payment processing
-  - Payment scheduling
-  - Check printing
-  - Electronic payments integration
-
-### Credit Management
-- ❌ **Credit Notes (Sales)**
-  - Customer credit note processing
-  - Credit application to invoices
-  - Refund management
-  
-- ❌ **Vendor Credits**
-  - Vendor credit processing
-  - Credit application to bills
-  - Vendor refunds
+- ❌ No edit route for sale receipts, credit notes or vendor credits (create/view/delete only)
+- ❌ Purchase orders — no PO module, no three-way matching
+- ❌ Recurring invoices; no approval hierarchies beyond a single `approve` action
+- ❌ Invoice/estimate "send" changes status only — **no email is sent**
+  ([invoices.py:391](packages/webapp/src/routes/invoices.py#L391) `# TODO: Send email to customer`)
+- ❌ Check printing, payment scheduling, electronic payment execution
 
 ## 2. Advanced Financial Features
 
-### Banking & Cash Management
-- ✅ **Bank Transaction Management** ✅ **COMPLETED**
-  - ✅ Manual transaction entry
-  - ✅ CSV transaction import
-  - ✅ Transaction categorization
-  
-- ✅ **Bank Reconciliation** ✅ **COMPLETED**
-  - ✅ Reconciliation workflows
-  - ✅ Transaction matching (manual)
-  - ✅ Outstanding items tracking
-  - ✅ Reconciliation reports
-  
-- ❌ **Bank Account Integration**
-  - Plaid/Open Banking integration
-  - Automatic transaction import
-  - Bank feeds connectivity
-  
-- ❌ **Bank Rules & Categorization**
-  - Automatic transaction categorization
-  - Rule-based transaction matching
-  - Machine learning categorization
-  
-- ❌ **Cash Flow Management**
-  - Cash flow forecasting
-  - Cash position analysis
-  - Liquidity planning
+- ❌ **Multi-currency** — `currency` is a bare `String(3)` on 11 models with **no exchange-rate table
+  and no revaluation**. Realized/unrealized gain-loss reporting is impossible until this lands.
+- ❌ **Inventory costing** (`InventoryCost`) — no FIFO/average cost layers, so COGS is not computed
+- ❌ **Transaction locking** (`TransactionsLocking`) — no period close; posted periods stay editable
+- ❌ **Bank feeds** (`Plaid`/`BankingPlaid`) — import is manual CSV only
+- ❌ **Bank rules engine** (`BankRules`, `BankingCategorize`, `BankingTranasctionsRegonize`) — the
+  port has a hand-rolled `auto_match_transactions` in `financial.py`, but no user-definable rules
+- ❌ **Landed costs** (`BillLandedCosts`)
+- ❌ **Auto-increment document numbering** (`AutoIncrementOrders`)
+- ❌ **Projects / cost centers** — no project tracking or profitability
 
-### Advanced Accounting
-- ❌ **Multi-Currency Support**
-  - Foreign currency transactions
-  - Exchange rate management
-  - Currency conversion reports
-  - Realized/unrealized gains/losses
-  
-- ✅ **Tax Management** ✅ **PARTIALLY COMPLETED**
-  - ✅ Tax codes configuration
-  - ✅ Tax rate management
-  - ✅ Tax type classification (GST, VAT, etc.)
-  - ✅ BAS Report generation (Australian GST)
-  - ❌ Sales tax liability tracking
-  - ❌ Multi-jurisdiction tax compliance
-  
-- ❌ **Cost Centers & Project Tracking**
-  - Project profitability analysis
-  - Cost center allocation
-  - Project budgeting
-  - Time and expense tracking
+## 3. Inventory & Warehouse
 
-## 3. Inventory & Warehouse Management
+- ❌ Inventory adjustments (`InventoryAdjutments`) — no stock adjustment or cycle counting
+- ❌ Multi-warehouse (`Warehouses`, `WarehousesTransfers`)
+- ❌ Branches (`Branches`) — no multi-branch operations or branch-scoped reporting
+- ❌ Bill of materials / assembly items
+- ❌ All inventory reports (see §4)
 
-### Advanced Inventory
-- ❌ **Inventory Adjustments**
-  - Stock adjustments
-  - Cycle counting
-  - Inventory valuation methods (FIFO, LIFO, Average)
-  
-- ❌ **Multi-Warehouse Management**
-  - Multiple location tracking
-  - Inter-warehouse transfers
-  - Location-based inventory reports
-  
-- ❌ **Bill of Materials (BOM)**
-  - Assembly item management
-  - Manufacturing cost tracking
-  - Component tracking
-  
-- ❌ **Landed Costs**
-  - Import duty allocation
-  - Shipping cost distribution
-  - True cost calculation
+## 4. Financial Reporting — 7 of 20 ported
 
-## 4. Financial Reporting & Analytics
+| Report | Status |
+|---|---|
+| Balance Sheet | ✅ |
+| Profit & Loss | ✅ |
+| Trial Balance | ✅ |
+| General Ledger | ✅ |
+| Cash Flow | ✅ |
+| Receivable (customer) Aging | ✅ |
+| Payable (vendor) Aging | ⚠️ stub, no data |
+| Sales Tax Liability Summary | ⚠️ partially covered by AU BAS |
+| Journal Sheet | ❌ |
+| Sales by Items | ❌ |
+| Purchases by Items | ❌ |
+| Inventory Valuation | ❌ *(linked from `reports/index.html` → 500)* |
+| Inventory Item Details | ❌ |
+| Customers Balance Summary | ❌ |
+| Vendors Balance Summary | ❌ |
+| Transactions by Customers | ❌ |
+| Transactions by Vendors | ❌ |
+| Realized Gain/Loss | ❌ *(blocked on multi-currency)* |
+| Unrealized Gain/Loss | ❌ *(blocked on multi-currency)* |
+| Project Profitability | ❌ *(blocked on Projects)* |
 
-### Advanced Reports
-- ✅ **Balance Sheet** ✅ **COMPLETED**
-  - ✅ Period comparisons
-  - ✅ Asset, Liability, Equity breakdown
-  - ✅ Custom date ranges
-  
-- ✅ **Profit & Loss Statement** ✅ **COMPLETED**
-  - ✅ Income and expense categorization
-  - ✅ Period analysis
-  - ✅ Custom date ranges
-  
-- ✅ **Cash Flow Statement** ✅ **COMPLETED**
-  - ✅ Operating activities
-  - ✅ Custom period selection
-  
-- ✅ **Trial Balance** ✅ **COMPLETED**
-  - ✅ Account balances summary
-  - ✅ Debit/Credit verification
-  
-- ✅ **Aging Reports** ✅ **COMPLETED**
-  - ✅ Accounts Receivable aging
-  - ✅ Accounts Payable aging
-  - ✅ Customer/vendor aging summary
-  
-- ✅ **Tax Reports** ✅ **PARTIALLY COMPLETED**
-  - ✅ BAS Report (Australian GST)
-  - ❌ Sales tax liability summary
-  - ❌ VAT returns (other jurisdictions)
-  
-- ❌ **Inventory Reports**
-  - Inventory valuation report
-  - Stock movement analysis
-  - Reorder point reports
-  
-- ❌ **Analysis Reports**
-  - Sales by items/customers
-  - Purchases by items/vendors
-  - Profitability analysis
-  - Trend analysis
+Additionally: `reports/aging.py` and `reports/inventory.py` are **0-byte files**. (`custom.py` and
+`advanced.py` *are* registered — an earlier revision of this report claimed otherwise, having
+misread a stale duplicate of `register_reports_blueprints()` that used to sit in `expenses.py`. That
+dead copy has since been deleted.)
 
-### Business Intelligence
-- ❌ **Dashboard Analytics**
-  - Key performance indicators (KPIs)
-  - Interactive charts and graphs
-  - Real-time financial metrics
-  
-- ❌ **Budgeting & Forecasting**
-  - Budget creation and management
-  - Budget vs. actual reporting
-  - Financial forecasting
+**Report output:** ❌ no PDF export anywhere —
+[reports/financial.py:623](packages/webapp/src/routes/reports/financial.py#L623) returns the literal
+string `"PDF export not implemented yet"`. `reportlab` and `WeasyPrint` are pinned in
+`requirements-python.txt` but imported by zero files.
 
-## 5. System Administration & Configuration
+**Dashboard analytics:** ❌ no KPI widgets, interactive charts, budgeting or forecasting.
 
-### User Management & Security
-- ❌ **Role-Based Access Control (RBAC)**
-  - Custom user roles
-  - Permission management
-  - Access level controls
-  
-- ❌ **Multi-User Collaboration**
-  - User activity tracking
-  - Collaborative workflows
-  - Approval hierarchies
-  
-- ❌ **Audit Trail**
-  - Transaction audit logs
-  - User activity monitoring
-  - Data change tracking
+## 5. System Administration & Security
 
-### System Configuration
-- ❌ **Branches Management**
-  - Multi-branch operations
-  - Branch-specific reporting
-  - Inter-branch transactions
-  
-- ❌ **Preferences & Settings**
-  - Company information management
-  - Financial year configuration
-  - Number format settings
-  - Date format preferences
-  
-- ❌ **Document Templates**
-  - Customizable invoice templates
-  - PDF template designer
-  - Branding customization
+- ❌ **RBAC** — the original has `Roles`, `RolePermission`, `ViewRole` and `InviteUser` models. The
+  port has a single `role = db.Column(db.String(50))` on `User`
+  ([models/__init__.py:143](packages/server/src/models/__init__.py#L143)) and **no permission checks
+  anywhere in the codebase**. Sidebar visibility is likewise unconditional.
+- ❌ **User management** — no user list, no invite flow, no activity tracking
+- ❌ **Audit trail** — no transaction audit log or data-change tracking
+- ❌ **Attachments** (`Attachments` + `S3`) — no file attachments on any transaction
+- ❌ **Saved/custom views** (`CustomViews`, `Views`, `DynamicListing`, `Resource`) — every list page
+  is fixed-column with no user filtering or column customization
+- ❌ **Universal search** (`Search`/`UniversalSearch`)
+- ❌ **Document/PDF templates** (`PdfTemplate`, `TemplateInjectable`, `ChromiumlyTenancy`,
+  `BrandingTemplates`)
+- ⚠️ **CSRF is globally disabled** — `WTF_CSRF_ENABLED = False` in [app.py:52](app.py#L52), with the
+  code's own comment saying it should be on for production. Every form POST is unprotected.
+- ⚠️ **`SECRET_KEY` falls back to a hardcoded dev value** ([app.py:49](app.py#L49))
 
-## 6. Integration & Data Management
+## 6. Integrations & Notifications
 
-### Import/Export Functionality
-- ❌ **Data Import**
-  - CSV/Excel data import
-  - QuickBooks import
-  - Bulk data loading
-  - Data validation and error handling
-  
-- ❌ **Data Export**
-  - Financial reports export (PDF, Excel)
-  - Data backup and restore
-  - Custom export formats
-  
-- ❌ **Third-Party Integrations**
-  - Payment gateway integration
-  - E-commerce platform integration
-  - CRM system integration
-  - Email marketing integration
+- ❌ **Email** (`Mail`, `MailNotification`, `MailTenancy`) — no `smtplib` or `Flask-Mail` usage
+  anywhere, despite `Flask-Mail` being pinned. Blocks invoice delivery, password reset, and every
+  notification.
+- ❌ **Online payments** (`StripePayment`, `PaymentServices`, `PaymentLinks`)
+- ❌ **Subscription/billing** (`Subscription`)
+- ❌ Webhooks; QuickBooks import; e-commerce/CRM integrations
+- ❌ OpenAPI/Swagger docs, API rate limiting
 
-### API & Developer Features
-- ❌ **Webhooks**
-  - Event-driven notifications
-  - Real-time data synchronization
-  
-- ❌ **Advanced API Features**
-  - GraphQL endpoints
-  - API rate limiting
-  - API documentation (Swagger/OpenAPI)
-  - SDK development
+**API consistency issue:** 11 of 16 API blueprints use `@require_api_key`, but `bills.py`,
+`expenses.py` and `sale_receipts.py` use `@login_required` instead — so those 10 endpoints are
+unreachable to API-key clients. No API exists for estimates, credit notes or vendor credits.
 
-## 7. User Experience & Interface
+## 7. Performance, Testing & Ops
 
-### Advanced UI Components
-- ❌ **Advanced Data Tables**
-  - Sortable columns
-  - Advanced filtering
-  - Column customization
-  - Bulk operations
-  
-- ❌ **Interactive Dashboards**
-  - Drag-and-drop widgets
-  - Customizable layouts
-  - Real-time updates
-  
-- ❌ **Mobile Responsiveness**
-  - Mobile-optimized interface
-  - Touch-friendly controls
-  - Offline capability
+- ❌ **No test suite for the Python app.** `test_mvp_api.py` is a live-server smoke script; the only
+  real specs (`e2e/*.spec.ts`, `test/jest-e2e.json`) still target the React app.
+- ❌ Background task processing (Celery), caching layer, structured logging/monitoring
+- ⚠️ Repo hygiene: 14 committed `.bak` files across `routes/` and `routes/reports/`, plus four stray
+  `.tsx` files in the Python routes directory. `user-management-code/` appears to be an unmerged
+  scratch copy that nothing imports.
 
-### Workflow Management
-- ❌ **Document Approval Workflows**
-  - Multi-level approvals
-  - Email notifications
-  - Approval history tracking
-  
-- ❌ **Automated Workflows**
-  - Recurring transaction automation
-  - Payment reminders
-  - Follow-up notifications
-
-## 8. Compliance & Regulatory
-
-### Financial Compliance
-- ❌ **Tax Compliance**
-  - Sales tax reporting
-  - VAT compliance
-  - International tax regulations
-  
-- ❌ **Accounting Standards**
-  - GAAP compliance
-  - IFRS support
-  - Industry-specific accounting
-  
-- ❌ **Data Privacy**
-  - GDPR compliance
-  - Data encryption
-  - Privacy controls
-
-## 9. Performance & Scalability
-
-### System Performance
-- ❌ **Caching Layer**
-  - Redis-based caching
-  - Query optimization
-  - Performance monitoring
-  
-- ❌ **Background Processing**
-  - Asynchronous task processing
-  - Queue management
-  - Batch operations
-  
-- ❌ **Scalability Features**
-  - Horizontal scaling
-  - Load balancing
-  - Database optimization
-
-## 10. Subscription & Billing (SaaS Features)
-
-### SaaS Platform Features
-- ❌ **Subscription Management**
-  - Plan-based feature access
-  - Usage tracking
-  - Billing automation
-  
-- ❌ **Multi-Tenancy**
-  - Complete tenant isolation
-  - Tenant-specific customization
-  - Resource allocation
+---
 
 ## Priority Recommendations
 
-### High Priority (Core Business Functionality)
-1. **Complete Invoice Management** - Critical for accounting workflow
-2. **Bills/Purchase Invoice Processing** - Essential for vendor management  
-3. **Payment Made/Bill Payments** - Core to vendor cash flow
-4. **Multi-Currency Support** - International business requirement
-5. **Inventory Adjustments** - Inventory accuracy
+**Blocking — cleared 2026-08-02**
+1. ~~Rebuild the virtualenv.~~ Done — rebuilt on Python 3.14 with bumped pins; app starts.
+2. ~~Fix the broken `url_for` targets.~~ Done — 0 remain, verified against the live `url_map`.
+   (There were 11, not 14; three were inside a Jinja comment and never rendered.)
+3. ~~Relink the sidebar.~~ Done — four links repointed at the `financial.*` pages.
 
-### Medium Priority (Enhanced Functionality)
-1. **Advanced Banking Features** - API integrations, automated rules
-2. **Role-Based Access Control** - Security and compliance
-3. **Advanced Import/Export** - Data migration and bulk operations
-4. **Workflow Automation** - Operational efficiency
-5. **Tax Compliance Enhancement** - Multi-jurisdiction support
+**High — core correctness**
+4. ~~Rewrite `accounts.py` against the `Account` model.~~ Done — see the table above.
+5. Clear the remaining 500s: the `'liabilitys'` KeyError and PostgreSQL-only `date_trunc` in
+   `api/v1/reports.py`, and the missing `payments/edit.html`.
+6. Enable CSRF and require a real `SECRET_KEY`.
+7. Stand up a real test suite before the items below start changing accounting behaviour.
+8. Email + PDF (dependencies already pinned) — unblocks registration, password reset and invoice delivery.
+9. Fill in the aging/inventory/journal reports; give `aging.py` and `inventory.py` content.
 
-### Low Priority (Advanced Features)
-1. **Workflow Automation** - Operational efficiency
-2. **Advanced Analytics** - Business intelligence
-3. **Third-Party Integrations** - Ecosystem connectivity
-4. **Mobile Interface** - User experience enhancement
+**Medium**
+10. RBAC with real permission checks, then user management and invites.
+11. Inventory costing and inventory adjustments.
+12. Multi-currency with an exchange-rate table.
+13. Transaction locking / period close.
+14. Broaden import/export beyond three resources; unify API auth.
+15. An account-subtype column, to reach parity with the original's 19 fine-grained account types
+    (the rewritten Chart of Accounts currently offers the five root types the schema can store).
 
-## Technical Debt & Architecture Considerations
+**Lower** — bank feeds and rules, warehouses/branches, projects, attachments, saved views,
+online payments, subscriptions, background processing.
 
-### Current Architecture Strengths
-- ✅ Clean separation of concerns (routes, models, templates)
-- ✅ RESTful API structure
-- ✅ Comprehensive database model foundation
-- ✅ Docker-based development environment
-- ✅ Modular blueprint architecture
-- ✅ All core models properly defined and imported
-- ✅ Payment processing workflow implemented
-- ✅ Bank reconciliation system functional
-- ✅ Financial reporting engine complete
-
-### Areas for Improvement
-- ❌ Background task processing (Celery integration needed)
-- ❌ Caching layer implementation  
-- ❌ API rate limiting and throttling
-- ❌ Comprehensive error handling
-- ❌ Logging and monitoring system
-- ❌ Test coverage expansion
-- ❌ Performance optimization
-- ❌ Security hardening
-- ✅ ~~Model import issues~~ **RESOLVED**
-- ✅ ~~Route conflicts~~ **RESOLVED**
-
-## Estimated Development Effort
-
-### Phase 1: Core Business Completion (2-3 months)
-- Complete Invoice/Bill management
-- Payment Made/Bill payment processing
-- Multi-currency support basics
-- Inventory adjustments
-
-### Phase 2: Enhanced Features (2-3 months)  
-- Advanced banking API integrations
-- RBAC implementation
-- Advanced import/export functionality
-- Workflow automation basics
-
-### Phase 3: Advanced Features (3-4 months)
-- Advanced analytics and BI features
-- Third-party integrations
-- Performance optimization
-- Advanced compliance features
-
-### Phase 4: Enterprise Features (2-3 months)
-- Scalability improvements
-- Mobile interface
-- Advanced workflow automation
-- Enterprise reporting
+---
 
 ## Conclusion
 
-BigCapitalPy has made significant progress and now includes a robust foundation with core accounting functionality successfully implemented. **Recent major achievements include:**
+The port covers the **sales and purchase document lifecycle well** — invoices, estimates, receipts,
+bills, credit notes, vendor credits, expenses and payments are all implemented with genuine
+double-entry GL posting behind them. That is a real accounting core, and it is further along than the
+previous revision of this report suggested for those modules.
 
-- ✅ **Complete Payment Received module** with full CRUD operations
-- ✅ **Comprehensive Financial Reporting** (P&L, Balance Sheet, Cash Flow, Trial Balance, Aging Reports, BAS)
-- ✅ **Full Bank Reconciliation workflow** with CSV import and transaction matching
-- ✅ **Tax Management system** with configurable tax codes and BAS reporting
-- ✅ **Resolved all model import issues** and route conflicts
-- ✅ **Complete database model coverage** for all implemented features
+As of the 2026-08-02 remediation pass the **Chart of Accounts is real** — it reads and writes the
+`Account` table and derives balances from the ledger, so the screen and the books finally agree. The
+small mechanical defects that were masking the true state of the port (broken route names, an
+unlinked sidebar, a boot-blocking duplicate blueprint registration, a dead virtualenv) are cleared.
 
-**Current Status:** Approximately 40-50% of the original BigCapital's features are now implemented (up from 30-40% previously), with the core accounting workflows operational. 
+Two gaps remain, and they are the substantive ones: **reporting depth** is roughly a third of the
+original, and every **platform concern** (RBAC, multi-currency, PDF, email, attachments, saved views,
+inventory costing, period locking) is still absent. Neither is mechanical; both are real
+implementation work.
 
-The priority should now be on completing the remaining core business modules (invoice completion, bills/purchase management, vendor payments) before moving to advanced features.
+The most valuable next step is not a feature. There is **no test suite for the Python app**, and
+everything remaining on the roadmap changes accounting behaviour. That should come first.
 
-The current architecture provides an excellent foundation for implementing the remaining functionality, with all technical debt around model definitions and imports now resolved. The system is production-ready for basic accounting operations.
+The PRE-ALPHA warning in the README remains accurate; this is not yet safe for real financial data.
 
 ---
-*Report generated on: July 5, 2025*
-*BigCapitalPy Version: Development*
-*Comparison Base: BigCapital TypeScript/React Version*
+*Comparison base: BigCapital TypeScript/React version, in-repo*

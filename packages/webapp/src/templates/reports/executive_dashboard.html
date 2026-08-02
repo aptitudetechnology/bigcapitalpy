@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Executive Dashboard - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Executive Dashboard</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Key Performance Indicators</h6>
+        </div>
+        <div class="card-body">
+            <div class="text-center py-5">
+                <i class="bi bi-speedometer2 fs-1 text-muted d-block mb-3"></i>
+                <p class="lead text-muted">This is the placeholder for the Executive Dashboard.</p>
+                <p class="text-muted">Revenue, profit and customer KPIs are not yet calculated &mdash; the
+                    underlying report has no data source wired up, so every figure would read zero.
+                    This page will be populated once those metrics are implemented.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

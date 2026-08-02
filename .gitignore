@@ -79,3 +79,6 @@ venv.bak/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Throwaway databases created by scripts/smoke.py and scripts/test_coa.py
+scripts/.tmp/

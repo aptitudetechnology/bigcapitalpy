@@ -265,7 +265,7 @@
                 <hr>
                 
                 <div class="d-grid">
-                    <a href="{{ url_for('customers.view', id=payment.customer.id) }}" 
+                    <a href="{{ url_for('customers.show', customer_id=payment.customer.id) }}" 
                        class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-eye"></i> View Customer
                     </a>
