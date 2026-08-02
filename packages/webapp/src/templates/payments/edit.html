@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Payment {{ payment.payment_number }} - BigCapitalPy{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('payments.index') }}">Payments Received</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('payments.view', id=payment.id) }}">{{ payment.payment_number }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Edit</li>
+            </ol>
+        </nav>
+        <h1 class="h3 mb-0 text-gray-800">Edit Payment {{ payment.payment_number }}</h1>
+    </div>
+    <div>
+        <a href="{{ url_for('payments.view', id=payment.id) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Payment
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-pencil"></i> Editable Details
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="payment_method" class="form-label fw-bold">
+                                Payment Method <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="payment_method" name="payment_method" required>
+                                {% for method in PaymentMethod %}
+                                <option value="{{ method.value }}" {% if payment.payment_method == method %}selected{% endif %}>
+                                    {{ method.value.replace('_', ' ').title() }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="reference" class="form-label fw-bold">Reference</label>
+                            <input type="text" class="form-control" id="reference" name="reference"
+                                   value="{{ payment.reference or '' }}" maxlength="100">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="bank_name" class="form-label fw-bold">Bank Name</label>
+                            <input type="text" class="form-control" id="bank_name" name="bank_name"
+                                   value="{{ payment.bank_name or '' }}" maxlength="255">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="check_number" class="form-label fw-bold">Check Number</label>
+                            <input type="text" class="form-control" id="check_number" name="check_number"
+                                   value="{{ payment.check_number or '' }}" maxlength="50">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label fw-bold">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3">{{ payment.notes or '' }}</textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('payments.view', id=payment.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-lock"></i> Accounting Details
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info small mb-3">
+                    <i class="bi bi-info-circle"></i>
+                    These fields are posted to the general ledger and to the balances of the
+                    allocated invoices. To change any of them, delete this payment and re-enter
+                    it &mdash; that unwinds the allocations correctly.
+                </div>
+
+                <dl class="row mb-0 small">
+                    <dt class="col-5">Payment No.</dt>
+                    <dd class="col-7">{{ payment.payment_number }}</dd>
+
+                    <dt class="col-5">Date</dt>
+                    <dd class="col-7">{{ payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else '-' }}</dd>
+
+                    <dt class="col-5">Customer</dt>
+                    <dd class="col-7">{{ payment.customer.display_name if payment.customer else '-' }}</dd>
+
+                    <dt class="col-5">Amount</dt>
+                    <dd class="col-7 fw-bold">{{ payment.amount | currency }}</dd>
+
+                    <dt class="col-5">Deposit To</dt>
+                    <dd class="col-7">
+                        {% if payment.deposit_account %}
+                            <code>{{ payment.deposit_account.code }}</code> {{ payment.deposit_account.name }}
+                        {% else %}-{% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -25,29 +25,45 @@ def index():
 # and registered below.
 
 
+# reports_bp is a module-level singleton, so attaching its sub-blueprints is a
+# once-per-process operation. Flask forbids calling setup methods such as
+# register_blueprint() on a blueprint that has already been registered on an app,
+# so without this guard a second create_app() -- as any test suite building more
+# than one app instance will do -- raised:
+#   AssertionError: The setup method 'register_blueprint' can no longer be called
+#   on the blueprint 'reports'.
+# Registering the same blueprint object onto additional app instances is fine; it
+# is only the sub-blueprint wiring that must not be repeated.
+_sub_blueprints_attached = False
+
+
 def register_reports_blueprints(app):
     """
     Registers all report-related blueprints with the Flask application.
     Imports are placed inside this function to prevent circular import issues
     and ensure all sub-blueprints are registered before their routes are accessed.
     """
-    # Import sub-blueprints that are confirmed to exist and define a blueprint object.
-    from .tax import tax_bp
-    from .sales import sales_bp
-    from .financial import financial_bp
-    from .expenses import expenses_bp
-    from .custom import custom_bp
-    from .advanced import advanced_bp
-    # reports_dashboard_bp import and registration removed
-    # Register sub-blueprints to the main reports_bp
-    reports_bp.register_blueprint(tax_bp)
-    reports_bp.register_blueprint(sales_bp)
-    reports_bp.register_blueprint(financial_bp)
-    reports_bp.register_blueprint(expenses_bp)
-    reports_bp.register_blueprint(custom_bp)
-    reports_bp.register_blueprint(advanced_bp)
-    
-    # utils_bp was removed as it's not a Flask Blueprint.
+    global _sub_blueprints_attached
+
+    if not _sub_blueprints_attached:
+        # Import sub-blueprints that are confirmed to exist and define a blueprint object.
+        from .tax import tax_bp
+        from .sales import sales_bp
+        from .financial import financial_bp
+        from .expenses import expenses_bp
+        from .custom import custom_bp
+        from .advanced import advanced_bp
+        # reports_dashboard_bp import and registration removed
+        # Register sub-blueprints to the main reports_bp
+        reports_bp.register_blueprint(tax_bp)
+        reports_bp.register_blueprint(sales_bp)
+        reports_bp.register_blueprint(financial_bp)
+        reports_bp.register_blueprint(expenses_bp)
+        reports_bp.register_blueprint(custom_bp)
+        reports_bp.register_blueprint(advanced_bp)
+
+        # utils_bp was removed as it's not a Flask Blueprint.
+        _sub_blueprints_attached = True
 
     # Register the main reports_bp with the app
     app.register_blueprint(reports_bp)

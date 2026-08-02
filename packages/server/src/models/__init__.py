@@ -647,7 +647,12 @@ class BankTransaction(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    account = db.relationship('BankAccount')
+    # Paired with BankAccount.transactions via back_populates. Previously this was a
+    # bare relationship() while BankAccount.transactions carried backref='bank_account',
+    # which produced two independent many-to-one relationships writing the same
+    # account_id column -- SQLAlchemy warned about it on every boot, and whichever was
+    # set last silently won.
+    account = db.relationship('BankAccount', back_populates='transactions')
     organization = db.relationship('Organization')
     reconciled_by = db.relationship('User', foreign_keys=[reconciled_by_id])
     
@@ -730,7 +735,7 @@ class BankAccount(db.Model):
     
     # Relationships
     organization = db.relationship('Organization', backref='bank_accounts')
-    transactions = db.relationship('BankTransaction', backref='bank_account', lazy='dynamic')
+    transactions = db.relationship('BankTransaction', back_populates='account', lazy='dynamic')
     
     def __repr__(self):
         return f'<BankAccount {self.name}: {self.account_type}>'

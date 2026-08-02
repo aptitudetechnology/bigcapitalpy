@@ -183,8 +183,10 @@ unreachable to API-key clients. No API exists for estimates, credit notes or ven
 
 **High — core correctness**
 4. ~~Rewrite `accounts.py` against the `Account` model.~~ Done — see the table above.
-5. Clear the remaining 500s: the `'liabilitys'` KeyError and PostgreSQL-only `date_trunc` in
-   `api/v1/reports.py`, and the missing `payments/edit.html`.
+5. ~~Clear the remaining 500s.~~ Done — the `'liabilitys'` KeyError and PostgreSQL-only
+   `date_trunc` in `api/v1/reports.py` are fixed, and payment editing now has a template and a
+   working save path (restricted to fields with no ledger consequence). Every no-argument GET route
+   now returns non-500.
 6. Enable CSRF and require a real `SECRET_KEY`.
 7. Stand up a real test suite before the items below start changing accounting behaviour.
 8. Email + PDF (dependencies already pinned) — unblocks registration, password reset and invoice delivery.

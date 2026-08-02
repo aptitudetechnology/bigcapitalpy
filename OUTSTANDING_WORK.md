@@ -5,15 +5,35 @@ Audit date: 2026-08-02 · Branch: `development` @ `da35365ca`
 
 ## Progress
 
-Done in the first pass (all verified against a running app):
+All verified against a running app.
 
-- ✅ **Virtualenv rebuilt on Python 3.14**, pins bumped. The app starts; 253 routes register.
+**First pass:**
+
+- ✅ **Virtualenv rebuilt on Python 3.14**, pins bumped. The app starts; 255 routes register.
 - ✅ **All broken `url_for` targets fixed** — 0 remain (verified against the live `url_map`).
 - ✅ **Sidebar relinked** to `financial.*` pages that already existed.
 - ✅ **Two report pages fixed** that were raising `TemplateNotFound`.
 - ✅ **Chart of Accounts rewritten** against the `Account` model — real CRUD, balances
   derived from journal lines, parent/child tree, delete guards, org scoping. 27/27 functional
   tests pass.
+
+**Second pass:**
+
+- ✅ **All remaining 500s cleared** — every no-argument GET route now returns non-500
+  (balance-sheet `KeyError`, PostgreSQL-only `date_trunc`, missing `payments/edit.html`).
+- ✅ **`create_app()` made idempotent**, unblocking per-test app instances.
+- ✅ **Overlapping `BankTransaction` relationships collapsed** — boot is now warning-free.
+
+Current state of the automated checks:
+
+| Check | Result |
+|---|---|
+| `scripts/smoke.py` — every no-arg GET route | 111 routes, **0** returning ≥500 |
+| `scripts/check_urls.py` — `url_for` vs live `url_map` | **0** broken |
+| `scripts/check_templates.py` — `render_template` targets | **0** missing |
+| `scripts/test_coa.py` — Chart of Accounts | **27/27** |
+| `scripts/test_fixes.py` — regressions for the three 500s | **24/24** |
+| SQLAlchemy warnings on boot | **0** |
 
 Two corrections to the original audit, found while fixing:
 
@@ -46,16 +66,73 @@ Defects found during the remediation pass that were **not** in the agreed scope,
 
 | Issue | Location | Effect |
 |---|---|---|
-| `KeyError: 'liabilitys'` | [api/v1/reports.py:201](packages/webapp/src/api/v1/reports.py#L201) | `GET /api/v1/reports/balance-sheet` → 500. Naive `+ 's'` pluralisation of the section name. |
-| `date_trunc` is PostgreSQL-only | [api/v1/reports.py:439](packages/webapp/src/api/v1/reports.py#L439) | `GET /api/v1/reports/dashboard-metrics` → 500 on SQLite, which is the default dev database. |
-| `payments/edit.html` does not exist | [routes/payments.py:339](packages/webapp/src/routes/payments.py#L339) | Editing a payment → `TemplateNotFound` 500. |
-| `create_app()` is not idempotent | [routes/reports/__init__.py:5](packages/webapp/src/routes/reports/__init__.py#L5) | `reports_bp` is a module-level singleton that accumulates sub-blueprint registrations, so a second `create_app()` raises. Blocks any test suite that builds more than one app instance. |
-| Conflicting SQLAlchemy relationships | [models/__init__.py](packages/server/src/models/__init__.py) | `BankTransaction.bank_account` and `BankTransaction.account` both write `bank_transactions.account_id`; emits `SAWarning` on every boot and can silently clobber. |
+| **`bank_transactions.account_id` holds two different ID spaces** | [routes/banking.py:194](packages/webapp/src/routes/banking.py#L194) vs [routes/financial.py:275](packages/webapp/src/routes/financial.py#L275) | **Serious — see below.** |
 | `instance/bigcapitalpy.db` is stale | — | Predates the `users.api_key` column; any query on `User` fails with `no such column`. `add_api_key_migration.sql` at the repo root was never applied. |
 | Dead root route | [app.py:164](app.py#L164) | `@app.route('/')` renders `dashboard.html`, which does not exist. Harmless only because `dashboard_bp` registers `/` first and wins. |
 
+### The `account_id` ID-space collision — needs a design decision
+
+`BankTransaction.account_id` is declared `ForeignKey('bank_accounts.id')`, but the two flows that
+write it disagree about what it means:
+
+- **`banking.py`** (`import_transactions`) resolves the route arg with
+  `BankAccount.query.filter_by(id=account_id)` and stores a **`bank_accounts.id`**. Matches the FK.
+- **`financial.py`** (`upload_bank_statement`) resolves it with
+  `Account.query.filter(Account.id == account_id)` — the *chart of accounts* — and stores an
+  **`accounts.id`**. Violates the declared FK.
+
+Downstream, `create_journal_entry_from_bank` then does
+`JournalLineItem(account_id=bank_txn.account_id, …)` and
+`Account.query.get(bank_txn.account_id)`, both of which treat the value as a chart-of-accounts id.
+So for any transaction imported through `banking.py`, reconciliation **posts journal lines against
+whichever unrelated GL account happens to share that integer, and mutates its `current_balance`.**
+
+This has not blown up yet only because SQLite does not enforce foreign keys by default. On
+PostgreSQL the `financial.py` inserts would be rejected outright.
+
+Fixing it is not a one-liner — it needs a decision about the intended model, plus a migration and a
+backfill:
+
+- **Option A** — a bank transaction belongs to a `BankAccount`, and `BankAccount` gains a
+  `gl_account_id` FK to `accounts.id`. `financial.py`'s upload flow is reworked to go through
+  `BankAccount`, and the journal-posting code resolves the GL account via that new FK. Keeps the
+  bank-feed model intact and is the closest match to the original's design.
+- **Option B** — a bank transaction points straight at a GL account; `BankAccount` drops out of
+  this path and the FK is redeclared against `accounts.id`. Simpler, but loses the bank-account
+  abstraction that the Plaid/import work would need.
+
+I have deliberately **not** guessed at this. Whichever way it goes, existing `bank_transactions`
+rows need auditing to work out which space each one's `account_id` came from.
+
 ### Fixed in this pass
 
+- **Overlapping `BankTransaction` relationships** — `BankTransaction.account` was a bare
+  `relationship()` while `BankAccount.transactions` carried `backref='bank_account'`, producing two
+  independent many-to-one relationships writing the same `account_id` column. SQLAlchemy warned on
+  every boot and whichever was set last silently won. Collapsed into one bidirectional pair via
+  `back_populates`; the redundant `bank_account` attribute is gone (nothing referenced it). Boot is
+  now warning-free. *Note this fixes the ORM-level ambiguity only — the ID-space collision above is
+  a separate and more serious problem in the same area.*
+- **`create_app()` is now idempotent.** Both `reports_bp` and `api_v1_bp` are module-level
+  singletons whose sub-blueprint wiring was being repeated on every call, which Flask forbids once a
+  blueprint has been registered. Guarded so the wiring happens once per process while each new app
+  still gets the blueprint. Three successive `create_app()` calls now yield distinct app objects
+  with identical route counts (255). This unblocks any real test suite.
+- **`KeyError: 'liabilitys'`** in `api/v1/reports.py` — the section key was built as
+  `account_type.value + 's'`, which turns `liability` into `liabilitys`. Replaced with an explicit
+  type→section map. `GET /api/v1/reports/balance-sheet` now returns 200.
+- **PostgreSQL-only `date_trunc`** in `api/v1/reports.py` — `dashboard_metrics` grouped the sales
+  trend with `func.date_trunc('month', …)`, which does not exist on SQLite (the default dev
+  database). Regrouped using `func.extract('year'/'month', …)`, which SQLAlchemy compiles for both
+  backends. *Verified on SQLite only; the PostgreSQL path is standard `EXTRACT` but untested here.*
+- **Payment editing** — `payments/edit.html` did not exist and the route was GET-only, so there was
+  no way to save even once the template existed. Added the template and POST handling, scoped to
+  fields with **no ledger consequence** (method, reference, notes, bank name, cheque number).
+  Amount, customer, deposit account, payment date and invoice allocations are deliberately
+  read-only: each is baked into the payment's journal entry and into the paid/balance figures on
+  allocated invoices, so editing them in place would silently desync the ledger. The page states
+  this and directs the user to delete and re-enter instead. Covered by 24 assertions in
+  `scripts/test_fixes.py`, including that the locked fields are untouched after a save.
 - All 11 genuinely-broken `url_for` targets (endpoint renames, nested-blueprint names, and the
   missing `accounts.edit` / `accounts.delete` routes).
 - `estimates_bp` was registered twice — once inside `register_blueprints()` and again in
@@ -265,22 +342,28 @@ customers, vendors and items — 3 resources against ~15 importable resources in
 ~~3. Relink the sidebar to the financial pages that already exist.~~ **done**
 ~~4. Rewrite `accounts.py` against the `Account` model.~~ **done**
 
+~~5. Clear the balance-sheet `KeyError`, the PostgreSQL-only `date_trunc`, and the missing
+`payments/edit.html`.~~ **done**
+
+~~6. Make `create_app()` idempotent.~~ **done**
+~~7. Resolve the overlapping `BankTransaction` relationships.~~ **done** (ORM ambiguity only)
+
 Next:
 
-5. Clear the remaining §1 defects — they are all small: the `'liabilitys'` KeyError, the
-   PostgreSQL-only `date_trunc`, the missing `payments/edit.html`, and the non-idempotent
-   `create_app()`.
-6. Apply `add_api_key_migration.sql` to `instance/bigcapitalpy.db`, or regenerate it, so the
+8. **Decide and fix the `bank_transactions.account_id` ID-space collision** (§1). This is now the
+   most serious known defect: bank reconciliation posts journal lines against the wrong GL accounts
+   for any transaction imported via `banking.py`.
+9. Apply `add_api_key_migration.sql` to `instance/bigcapitalpy.db`, or regenerate it, so the
    checked-in database matches the models.
-7. Resolve the overlapping `BankTransaction` relationships before they corrupt bank data.
-8. Enable CSRF; require a real `SECRET_KEY`.
-9. Stand up a real test suite. There is currently none for the Python app — the Chart of Accounts
-   work above was verified with a throwaway harness that should be made permanent, since every
-   later item on this list changes accounting behaviour.
-10. Implement registration + password reset (needs email, so pair with #11).
-11. Add PDF and email — the dependencies are already pinned; invoices/estimates are unusable
+10. Enable CSRF; require a real `SECRET_KEY`.
+11. Grow `scripts/` into a real test suite. The five harnesses there
+    (`test_coa.py`, `test_fixes.py`, `smoke.py`, `check_urls.py`, `check_templates.py`) are a
+    starting point, not a suite — every later item on this list changes accounting behaviour.
+    `create_app()` being idempotent now makes per-test app instances possible.
+12. Implement registration + password reset (needs email, so pair with #13).
+13. Add PDF and email — the dependencies are already pinned; invoices/estimates are unusable
     without them.
-12. Fill in the aging, inventory and journal reports; give `aging.py` and `inventory.py` content.
-13. Add RBAC (roles + permission checks), then user management/invites.
-14. Longer term: an account-subtype column to reach parity with the original's 19 account types,
+14. Fill in the aging, inventory and journal reports; give `aging.py` and `inventory.py` content.
+15. Add RBAC (roles + permission checks), then user management/invites.
+16. Longer term: an account-subtype column to reach parity with the original's 19 account types,
     inventory costing, multi-currency with exchange rates, transaction locking.

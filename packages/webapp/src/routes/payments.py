@@ -314,32 +314,48 @@ def view(id):
     
     return render_template('payments/view.html', payment=payment)
 
-@payments_bp.route('/<int:id>/edit')
+@payments_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit(id):
-    """Edit payment form"""
+    """Edit the non-accounting details of a payment.
+
+    Only fields with no ledger consequence can be changed here. The amount,
+    customer, deposit account, payment date and invoice allocations are all baked
+    into the payment's journal entry and into the paid/balance figures on the
+    allocated invoices, so editing them in place would silently desync the ledger.
+    Changing those requires deleting the payment and re-entering it, which unwinds
+    the allocations properly.
+    """
     payment = Payment.query.filter(
         Payment.id == id,
         Payment.organization_id == current_user.organization_id
     ).first_or_404()
-    
-    # Get customers
-    customers = Customer.query.filter(
-        Customer.organization_id == current_user.organization_id,
-        Customer.is_active == True
-    ).order_by(Customer.display_name).all()
-    
-    # Get deposit accounts
-    deposit_accounts = Account.query.filter(
-        Account.organization_id == current_user.organization_id,
-        Account.type == AccountType.ASSET,
-        Account.is_active == True
-    ).order_by(Account.name).all()
-    
+
+    if request.method == 'POST':
+        method_value = request.form.get('payment_method', '')
+        try:
+            payment.payment_method = PaymentMethod(method_value)
+        except ValueError:
+            flash('Invalid payment method.', 'error')
+            return redirect(url_for('payments.edit', id=payment.id))
+
+        payment.reference = request.form.get('reference', '')
+        payment.notes = request.form.get('notes', '')
+        payment.bank_name = request.form.get('bank_name', '')
+        payment.check_number = request.form.get('check_number', '')
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating payment: {str(e)}', 'error')
+            return redirect(url_for('payments.edit', id=payment.id))
+
+        flash(f'Payment {payment.payment_number} updated successfully.', 'success')
+        return redirect(url_for('payments.view', id=payment.id))
+
     return render_template('payments/edit.html',
                          payment=payment,
-                         customers=customers,
-                         deposit_accounts=deposit_accounts,
                          PaymentMethod=PaymentMethod)
 
 @payments_bp.route('/<int:id>/delete', methods=['POST'])

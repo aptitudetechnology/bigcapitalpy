@@ -163,16 +163,21 @@ def balance_sheet_report():
     
     _, end_date = get_date_range_api(period, None, end_date_str)
     
-    # Get accounts by type
-    account_types = [AccountType.ASSET, AccountType.LIABILITY, AccountType.EQUITY]
+    # Get accounts by type. The section key is mapped explicitly rather than
+    # pluralised by appending 's', which produced 'liabilitys' and raised KeyError.
+    section_by_type = {
+        AccountType.ASSET: 'assets',
+        AccountType.LIABILITY: 'liabilities',
+        AccountType.EQUITY: 'equity',
+    }
     report_data = {
         'as_of_date': end_date.isoformat(),
         'assets': {'accounts': [], 'total': 0.0},
         'liabilities': {'accounts': [], 'total': 0.0},
         'equity': {'accounts': [], 'total': 0.0}
     }
-    
-    for account_type in account_types:
+
+    for account_type in section_by_type:
         accounts = Account.query.filter(
             Account.organization_id == current_user.organization_id,
             Account.type == account_type,
@@ -197,7 +202,7 @@ def balance_sheet_report():
             })
             total_balance += balance
         
-        section_name = account_type.value + 's' if account_type != AccountType.EQUITY else 'equity'
+        section_name = section_by_type[account_type]
         report_data[section_name]['accounts'] = accounts_data
         report_data[section_name]['total'] = float(total_balance)
     
@@ -427,21 +432,26 @@ def dashboard_metrics():
         ).count()
         invoice_counts[status.value] = count
     
-    # Monthly sales trend (last 6 months)
+    # Monthly sales trend (last 6 months).
+    # Grouped with extract() rather than date_trunc(), which is PostgreSQL-only and
+    # raised "no such function: date_trunc" on SQLite, the default dev database.
     six_months_ago = today - timedelta(days=180)
+    year_col = func.extract('year', Invoice.invoice_date).label('year')
+    month_col = func.extract('month', Invoice.invoice_date).label('month')
     monthly_trends = db.session.query(
-        func.date_trunc('month', Invoice.invoice_date).label('month'),
+        year_col,
+        month_col,
         func.sum(Invoice.total).label('total')
     ).filter(
         Invoice.organization_id == org_id,
         Invoice.invoice_date >= six_months_ago,
         Invoice.status != InvoiceStatus.CANCELLED
-    ).group_by('month').order_by('month').all()
-    
+    ).group_by(year_col, month_col).order_by(year_col, month_col).all()
+
     trends_data = []
     for trend in monthly_trends:
         trends_data.append({
-            'month': trend.month.strftime('%Y-%m'),
+            'month': f'{int(trend.year):04d}-{int(trend.month):02d}',
             'total': float(trend.total or 0)
         })
     
